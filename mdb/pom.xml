@@ -19,18 +19,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.jboss.as.quickstarts</groupId>
-    <artifactId>jboss-as-helloworld-mdb</artifactId>
-    <version>7.1.2-SNAPSHOT</version>
+    <groupId>org.fiteagle</groupId>
+    <artifactId>mdb</artifactId>
+    <version>0.1-SNAPSHOT</version>
     <packaging>war</packaging>
-    <name>JBoss AS Quickstarts: Helloworld Message-Driven Bean with Servlet 3.0 as client</name>
+    <name>FITeagle :: Message-Driven Bean</name>
 	<parent>
 		<groupId>org.fiteagle</groupId>
 		<artifactId>core</artifactId>
 		<version>0.1-SNAPSHOT</version>
 	</parent>
 
-    <url>http://jboss.org/jbossas</url>
+    <url>http://fiteagle.org</url>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>

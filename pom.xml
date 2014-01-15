@@ -10,7 +10,7 @@
 	<url>https://github.com/fiteagle</url>
 
 	<modules>
-        <module>helloworld-mdb</module>
+        <module>mdb</module>
 	</modules>
 
 	<description>
