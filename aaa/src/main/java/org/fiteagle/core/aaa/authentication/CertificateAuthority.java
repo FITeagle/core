@@ -1,35 +1,10 @@
 package org.fiteagle.core.aaa.authentication;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.security.KeyPair;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Date;
-
-import javax.security.auth.x500.X500Principal;
-
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.fiteagle.core.config.preferences.InterfaceConfiguration;
 
 public class CertificateAuthority {
 
@@ -93,12 +68,12 @@ public class CertificateAuthority {
 		}
 	}
 
-	private SubjectPublicKeyInfo getPublicKey(PublicKey key) throws Exception {
-
-		SubjectPublicKeyInfo subPubInfo = new SubjectPublicKeyInfo(
-				(ASN1Sequence) ASN1Sequence.fromByteArray(key.getEncoded()));
-		return subPubInfo;
-	}
+//	private SubjectPublicKeyInfo getPublicKey(PublicKey key) throws Exception {
+//
+//		SubjectPublicKeyInfo subPubInfo = new SubjectPublicKeyInfo(
+//				(ASN1Sequence) ASN1Sequence.fromByteArray(key.getEncoded()));
+//		return subPubInfo;
+//	}
 
 //	private X500Name createX500Name(User newUser) {
 //		X500Principal prince = new X500Principal("CN=" + newUser.getUsername());

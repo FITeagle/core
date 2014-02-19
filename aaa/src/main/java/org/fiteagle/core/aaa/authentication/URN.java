@@ -35,7 +35,7 @@ public class URN {
 	}
 
 	private boolean isCorrectPrefix(String prefix) {
-		return this.prefix.equals(prefix);
+		return prefix.equals(prefix);
 	}
 
 	private boolean isCorrectLength(String[] splitted) {

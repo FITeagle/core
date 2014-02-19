@@ -1,20 +1,15 @@
 package org.fiteagle.core.aaa.authentication;
 
 import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.sql.SQLException;
 import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,10 +34,10 @@ public class AuthenticationHandler {
   
   
   
-  private void storeNewUser(X509Certificate certificate) {
+//  private void storeNewUser(X509Certificate certificate) {
     // TODO Auto-generated method stub
     
-  }
+//  }
 
 //  private boolean userIsUnknown(X509Certificate certificate) throws CertificateParsingException {
 //    UserDBManager  userDBManager = UserDBManager.getInstance();

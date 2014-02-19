@@ -4,11 +4,9 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
-import junit.framework.Assert;
+import static org.junit.Assert.assertEquals;
 
-import org.fiteagle.core.persistence.userdatabase.User;
-import org.fiteagle.core.persistence.userdatabase.UserPublicKey;
-import org.fiteagle.core.persistence.userdatabase.UserPublicKey.CouldNotParseException;
+import org.fiteagle.core.aaa.authentication.KeyManagement;
 import org.junit.Test;
 
 public class UserPublicKeyTest {
@@ -26,7 +24,7 @@ public class UserPublicKeyTest {
     new UserPublicKey(PUBLICKEY_STRING, "key#1");
   }
   
-  @Test(expected=CouldNotParseException.class)
+  @Test(expected=KeyManagement.CouldNotParse.class)
   public void createPublicKeyWithInvalidKeyString() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
     new UserPublicKey(PUBLICKEY_STRING_INVALID, "invalidkey");
   }
@@ -35,7 +33,7 @@ public class UserPublicKeyTest {
   public void createPublicKeyWithDifferentConstructors() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
     UserPublicKey key1 = new UserPublicKey(PUBLICKEY_STRING, "key1");
     UserPublicKey key2 = new UserPublicKey(key1.getPublicKey(), "key2");
-    Assert.assertEquals(key1, key2);
-    Assert.assertEquals(key1.getPublicKeyString(), key2.getPublicKeyString());
+    assertEquals(key1, key2);
+    assertEquals(key1.getPublicKeyString(), key2.getPublicKeyString());
   }
 }

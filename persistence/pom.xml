@@ -33,7 +33,7 @@
     <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-entitymanager</artifactId>
-      <version>4.3.0.Final</version>
+      <version>4.3.1.Final</version>
     </dependency>
     <dependency>
       <groupId>net.iharder</groupId>
@@ -62,7 +62,7 @@
 			<plugin>
 				<groupId>org.wildfly.plugins</groupId>
 				<artifactId>wildfly-maven-plugin</artifactId>
-				<version>1.0.0.Beta1</version>
+				<version>1.0.1.Final</version>
 				<configuration>
 					<skip>false</skip>
 					<filename>${project.build.finalName}.war</filename>

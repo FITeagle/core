@@ -1,8 +1,5 @@
 package org.fiteagle.core.config.preferences;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 public class InterfaceConfiguration {
   
