@@ -10,7 +10,6 @@
 	<url>https://github.com/fiteagle</url>
 
 	<modules>
-        <module>mdb</module>
         <module>persistence</module>
         <module>config</module>
         <module>aaa</module>
