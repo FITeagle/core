@@ -11,6 +11,10 @@
 
 	<modules>
         <module>mdb</module>
+        <module>persistence</module>
+        <module>config</module>
+        <module>aaa</module>
+        <module>usermanagement</module>
 	</modules>
 
 	<description>
@@ -133,12 +137,13 @@
 		</dependency>
 		
 		<!-- General FITeagle dependencies -->
-		          <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-jms-client-bom</artifactId>
-            <version>8.0.0.Beta1</version>
-            <type>pom</type>
-        </dependency>
+		<dependency>
+			<groupId>org.wildfly</groupId>
+			<artifactId>wildfly-jms-client-bom</artifactId>
+			<version>8.0.0.Beta1</version>
+			<type>pom</type>
+		</dependency>
+
 	</dependencies>
 	<build>
 		<plugins>
