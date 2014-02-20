@@ -32,6 +32,7 @@ public class UserPublicKey implements Serializable{
   private final static Pattern KEY_DESCRIPTION_PATTERN = Pattern.compile("[\\w|\\s]+");
   
   @JsonIgnore
+  @Column(length=1024)
   private PublicKey publicKey;  
   
   private String description;

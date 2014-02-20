@@ -6,45 +6,43 @@ import java.util.List;
 
 //import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import org.fiteagle.core.persistence.userdatabase.User.Role;
+import org.hibernate.exception.ConstraintViolationException;
 
 
 //@Stateless
 public class JPAUserDB{
   
-//  private final String PERSISTENCE_TYPE;  
+  private final String PERSISTENCE_TYPE;  
+  private EntityManagerFactory factory;
   
 //  private static final String DEFAULT_DATABASE_PATH = System.getProperty("user.home")+"/.fiteagle/db/";
 //  private static FiteaglePreferences preferences = new FiteaglePreferencesXML(JPAUserDB.class);
   
 //  private static final String PERSISTENCE_UNIT_NAME_DERBY = "Users_Derby";
-//  private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "Users_InMemory";
+  private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";
   
 //  private static JPAUserDB derbyInstance;
-//  private static JPAUserDB inMemoryInstance;
+  private static JPAUserDB inMemoryInstance;
   
-//  private JPAUserDB(String persistenceUnitName) {
-//    PERSISTENCE_TYPE = persistenceUnitName;
-//  }
+  private JPAUserDB(String persistenceUnitName) {
+    PERSISTENCE_TYPE = persistenceUnitName;
+  }
 	
-  private JPAUserDB(){};
-  
   @PersistenceContext(unitName="usersDB")
   EntityManager entityManager;
   
-//  static{
-//    System.setProperty("derby.system.home", getDatabasePath());
-//  }
-  
-//  public static JPAUserDB getInMemoryInstance(){
-//    if(inMemoryInstance == null){
-//      inMemoryInstance = new JPAUserDB(PERSISTENCE_UNIT_NAME_INMEMORY);
-//    }
-//    return inMemoryInstance;
-//  }
+  public static JPAUserDB getInMemoryInstance(){
+    if(inMemoryInstance == null){
+      inMemoryInstance = new JPAUserDB(PERSISTENCE_UNIT_NAME_INMEMORY);
+    }
+    return inMemoryInstance;
+  }
 //  
 //  public static JPAUserDB getDerbyInstance(){
 //    if(derbyInstance == null){
@@ -61,10 +59,20 @@ public class JPAUserDB{
 //  }
   
   
+  static{
+    try {
+      Class.forName("org.h2.Driver");
+    } catch (ClassNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+  
   private synchronized EntityManager getEntityManager() {
-//    if (factory == null){
-//      factory = Persistence.createEntityManagerFactory(PERSISTENCE_TYPE);
-//    }
+    if (entityManager == null){
+      factory = Persistence.createEntityManagerFactory(PERSISTENCE_TYPE);
+      entityManager = factory.createEntityManager();
+    }
     return entityManager;
   }
   
@@ -75,15 +83,19 @@ public class JPAUserDB{
       em.persist(user);
       em.getTransaction().commit();
     } catch(Exception e){
-      if(e.getCause() != null && e.getCause().getCause() instanceof SQLIntegrityConstraintViolationException && e.getMessage().contains("'EMAIL' defined on 'USERS'")){
-        throw new DuplicateEmailException();
+      if(e.getCause() != null && e.getCause().getCause() instanceof ConstraintViolationException){
+        ConstraintViolationException ec = (ConstraintViolationException) e.getCause().getCause();
+        if(ec.getConstraintName().contains("EMAIL_INDEX_4 ON PUBLIC.USERS(EMAIL) VALUES")){
+          em.clear();
+          throw new DuplicateEmailException();
+        }
       }
       if(e.getCause().getCause() instanceof SQLIntegrityConstraintViolationException && e.getMessage().contains("defined on 'USERS'")){
         throw new DuplicateUsernameException();
       }
       throw e;
     }finally{
-      em.close();
+//      em.close();
     }
   }
   
@@ -100,7 +112,7 @@ public class JPAUserDB{
       }
       return user;
     }finally{
-      em.close();
+//      em.close();
     }
   }
   
@@ -111,7 +123,7 @@ public class JPAUserDB{
       em.remove(em.merge(user));
       em.getTransaction().commit();
     }finally{
-      em.close();
+//      em.close();
     }
   }
   
@@ -130,12 +142,16 @@ public class JPAUserDB{
       user.updateAttributes(firstName, lastName, email, affiliation, password, publicKeys);
       em.getTransaction().commit();
     }catch(Exception e){
-      if(e.getCause() != null && e.getCause().getCause() instanceof SQLIntegrityConstraintViolationException && e.getMessage().contains("'EMAIL' defined on 'USERS'")){
-        throw new DuplicateEmailException();
+      if(e.getCause() != null && e.getCause().getCause() instanceof ConstraintViolationException){
+        ConstraintViolationException ec = (ConstraintViolationException) e.getCause().getCause();
+        if(ec.getConstraintName().contains("EMAIL_INDEX_4 ON PUBLIC.USERS(EMAIL) VALUES")){
+          em.clear();
+          throw new DuplicateEmailException();
+        }
       }
       throw e;
     }finally{
-      em.close();
+//      em.close();
     }
   }
 
@@ -150,7 +166,7 @@ public class JPAUserDB{
       user.setRole(role);
       em.getTransaction().commit();
     }finally{
-      em.close();
+//      em.close();
     }
   }
 
@@ -171,7 +187,7 @@ public class JPAUserDB{
       }
       throw e;
     }finally{
-      em.close();
+//      em.close();
     }
   }
   
@@ -186,7 +202,7 @@ public class JPAUserDB{
       user.deletePublicKey(description);
       em.getTransaction().commit();
     }finally{
-      em.close();
+//      em.close();
     }
   }
   
@@ -197,16 +213,16 @@ public class JPAUserDB{
       if(user == null){
         throw new UserNotFoundException();
       }
-      em.getTransaction().begin();
+//      em.getTransaction().begin();
       user.renamePublicKey(description, newDescription);
-      em.getTransaction().commit();
+//      em.getTransaction().commit();
     }catch(Exception e){
       if(e.getCause() != null && e.getCause().getCause() instanceof SQLIntegrityConstraintViolationException && e.getMessage().contains("defined on 'PUBLICKEYS'")){
         throw new DuplicatePublicKeyException();
       }
       throw e;
     }finally{
-      em.close();
+//      em.close();
     }
   }
   
@@ -218,7 +234,7 @@ public class JPAUserDB{
       List<User> resultList = (List<User>) query.getResultList();
       return resultList;
     }finally{
-      em.close();
+//      em.close();
     }
   }
   

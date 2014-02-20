@@ -14,27 +14,34 @@
   </properties>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.fiteagle</groupId>
-			<artifactId>config</artifactId>
-			<version>0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.fiteagle</groupId>
-			<artifactId>aaa</artifactId>
-			<version>0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-      <groupId>org.hibernate.javax.persistence</groupId>
-      <artifactId>hibernate-jpa-2.1-api</artifactId>
-      <version>1.0.0.Final</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-entitymanager</artifactId>
-      <version>4.3.1.Final</version>
-    </dependency>
+	<dependency>
+		<groupId>org.fiteagle</groupId>
+		<artifactId>config</artifactId>
+		<version>0.1-SNAPSHOT</version>
+	</dependency>
+	<dependency>
+		<groupId>org.fiteagle</groupId>
+		<artifactId>aaa</artifactId>
+		<version>0.1-SNAPSHOT</version>
+	</dependency>
+	<dependency>
+		<groupId>org.hibernate.javax.persistence</groupId>
+		<artifactId>hibernate-jpa-2.1-api</artifactId>
+		<version>1.0.0.Final</version>
+		<scope>provided</scope>
+	</dependency>
+	<dependency>
+		<groupId>com.h2database</groupId>
+		<artifactId>h2</artifactId>
+		<version>1.3.175</version>
+	</dependency>
+
+	<dependency>
+		<groupId>org.hibernate</groupId>
+		<artifactId>hibernate-entitymanager</artifactId>
+		<version>4.3.1.Final</version>
+	</dependency>
+    
     <dependency>
       <groupId>net.iharder</groupId>
       <artifactId>base64</artifactId>
@@ -45,6 +52,7 @@
       <artifactId>jersey-json</artifactId>
       <version>1.17</version>
     </dependency>
+		
 		
 
 <!-- 		<dependency> -->
