@@ -14,6 +14,7 @@
         <module>config</module>
         <module>aaa</module>
         <module>usermanagement</module>
+        <module>resourcerepository</module>
 	</modules>
 
 	<description>
@@ -140,6 +141,7 @@
 			<groupId>org.wildfly</groupId>
 			<artifactId>wildfly-jms-client-bom</artifactId>
 			<version>8.0.0.Final</version>
+			<scope>provided</scope>
 			<type>pom</type>
 		</dependency>
 
