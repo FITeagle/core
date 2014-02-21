@@ -12,7 +12,6 @@ import java.util.Date;
 import org.fiteagle.api.User;
 import org.fiteagle.api.User.Role;
 import org.fiteagle.api.UserDB;
-import org.fiteagle.api.UserPublicKey;
 import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
 import org.fiteagle.core.persistence.userdatabase.FiteagleUser.PublicKeyNotFoundException;
 import org.fiteagle.core.persistence.userdatabase.JPAUserDB.DuplicateEmailException;
@@ -26,8 +25,8 @@ import org.junit.Test;
 
 public class JPAUserDBTest {
   
-  protected static ArrayList<UserPublicKey> KEYS1;
-  protected static ArrayList<UserPublicKey> KEYS2; 
+  protected static ArrayList<FiteagleUserPublicKey> KEYS1;
+  protected static ArrayList<FiteagleUserPublicKey> KEYS2; 
   protected static User USER1;
   protected static User USER2;
   protected static User USER3;
@@ -36,7 +35,7 @@ public class JPAUserDBTest {
   private static UserDB manager;
   
   private void createUser1() {
-    KEYS1 = new ArrayList<UserPublicKey>();
+    KEYS1 = new ArrayList<FiteagleUserPublicKey>();
     try {
       KEYS1.add(new FiteagleUserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCarsTCyAf8gYXwei8rhJnLTqYI6P88weRaY5dW9j3DT4mvfQPna79Bjq+uH4drmjbTD2n3s3ytqupFfNko1F0+McstA2EEkO8pAo5NEPcreygUcB2d49So032GKGPETB8chRkDsaBCm/KKL2vXdQoicofli8JJRPK2kXfUW34qww==", "key1"));
       KEYS1.add(new FiteagleUserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCOHoq0DYsW793kyhbW1sj6aNm5OWeRn3HQ6nZxU9ax3FnDmtJsxvq2u0RwtPQki5JEMG58aqJPs3s4Go6LrTyw4jqnodKyOfcFupUYHTbQYnzxudLwyU59RfBmH01cLiyu26ECdVNXX+Y1mgofRUx72thBTtY6vyuM5nR1l7UNTw==", "key2"));
@@ -47,7 +46,7 @@ public class JPAUserDBTest {
   }
   
   private void createUser2() {
-    KEYS2 = new ArrayList<UserPublicKey>(); 
+    KEYS2 = new ArrayList<FiteagleUserPublicKey>(); 
     try {
       KEYS2.add(new FiteagleUserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDKpQJGxnReKal3p7d/95G5d3RQb002gso1QJrjxFKED+1cD157FsT2bCPcWpTYdLeTFRWBDUQa91yUPdkjkvoMsL2e3ah7nugRD6QfrFki0Po9oENrbujzaExPV8SAvXSuqcCG4/pidqEqjXJlAMXrphJcoFdKSzXLJtjUwfxyEw==", "key3"));
     } catch (FiteagleUser.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
@@ -57,11 +56,11 @@ public class JPAUserDBTest {
   }
   
   private void createUser3() {
-     USER3 = new FiteagleUser("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());    
+     USER3 = new FiteagleUser("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<FiteagleUserPublicKey>());    
   }
   
   private void createUser4() {
-     USER4 = new FiteagleUser("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());
+     USER4 = new FiteagleUser("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<FiteagleUserPublicKey>());
   }
   
   

@@ -43,7 +43,7 @@ public class FiteagleUserPublicKey implements Serializable, UserPublicKey{
   @Id
   @JoinColumn(name="owner_username")
   @ManyToOne
-  private User owner;
+  private FiteagleUser owner;
   
   @Id
   @Column(length=1024)
@@ -136,7 +136,7 @@ public class FiteagleUserPublicKey implements Serializable, UserPublicKey{
 
   @Override
   public void setOwner(User owner) {
-    this.owner = owner;
+    this.owner = (FiteagleUser) owner;
   }
 
   @Override

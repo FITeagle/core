@@ -239,7 +239,7 @@ public class JPAUserDB implements UserDB{
   public List<User> getAllUsers(){
     EntityManager em = getEntityManager();
     try{
-      Query query = em.createQuery("SELECT u FROM User u");
+      Query query = em.createQuery("SELECT u FROM FiteagleUser u");
       @SuppressWarnings("unchecked")
       List<User> resultList = (List<User>) query.getResultList();
       return resultList;

@@ -59,7 +59,7 @@ public class FiteagleUser implements Serializable, User{
   private String passwordSalt;
   
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy="owner")
-  private List<UserPublicKey> publicKeys;
+  private List<FiteagleUserPublicKey> publicKeys;
   
   private final static int MINIMUM_PASSWORD_LENGTH = 3;
   private final static Pattern USERNAME_PATTERN = Pattern.compile("[\\w|-|@|.]{3,200}");
@@ -70,7 +70,7 @@ public class FiteagleUser implements Serializable, User{
   protected FiteagleUser(){
   }
   
-  public FiteagleUser(String username, String firstName, String lastName, String email, String affiliation, String password, List<UserPublicKey> publicKeys){
+  public FiteagleUser(String username, String firstName, String lastName, String email, String affiliation, String password, List<FiteagleUserPublicKey> publicKeys){
     this.username = username;
     this.firstName = firstName;
     this.lastName = lastName;
@@ -106,7 +106,7 @@ public static User createAdminUser(String username, String password) throws NotE
     return admin;
   }
   
-  private void setOwners(List<UserPublicKey> publicKeys){
+  private void setOwners(List<FiteagleUserPublicKey> publicKeys){
     if(publicKeys != null){
       for(UserPublicKey publicKey : publicKeys){
         publicKey.setOwner(this);
@@ -186,6 +186,7 @@ public static User createAdminUser(String username, String password) throws NotE
     return digest.digest(password.getBytes());
   }
   
+  @SuppressWarnings("unchecked")
   @Override
   public void updateAttributes(String firstName, String lastName, String email, String affiliation, String password, List<UserPublicKey> publicKeys) {
     if(firstName != null){
@@ -195,7 +196,7 @@ public static User createAdminUser(String username, String password) throws NotE
       this.lastName = lastName;
     }
     if(publicKeys != null && publicKeys.size() != 0){
-      this.publicKeys = publicKeys;
+      this.publicKeys = (List<FiteagleUserPublicKey>)(List<?>) publicKeys;
     }
     if(email != null){
       this.email = email;
@@ -214,7 +215,7 @@ public static User createAdminUser(String username, String password) throws NotE
   @Override
   public void addPublicKey(UserPublicKey publicKey){
     publicKey.setOwner(this);
-    this.publicKeys.add(publicKey);
+    this.publicKeys.add((FiteagleUserPublicKey) publicKey);
   }
   
   @Override
@@ -383,11 +384,12 @@ public static User createAdminUser(String username, String password) throws NotE
     return passwordSalt;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public List<UserPublicKey> getPublicKeys() {
-    return publicKeys;
+    return (List<UserPublicKey>)(List<?>) publicKeys;
   }
-  
+ 
   @Override
   public boolean hasKeyWithDescription(String description){
     for(UserPublicKey key: publicKeys){
