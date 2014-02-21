@@ -3,8 +3,8 @@ package org.fiteagle.core.persistence.userdatabase;
 
 import java.util.List;
 
-
-//import javax.ejb.Stateless;
+import javax.ejb.Remote;
+import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -17,8 +17,8 @@ import org.fiteagle.api.UserDB;
 import org.fiteagle.api.UserPublicKey;
 import org.hibernate.exception.ConstraintViolationException;
 
-
-//@Stateless
+@Stateless
+@Remote(UserDB.class)
 public class JPAUserDB implements UserDB{
   
   private final String PERSISTENCE_TYPE;  
