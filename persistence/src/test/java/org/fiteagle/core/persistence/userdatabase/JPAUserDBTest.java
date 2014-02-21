@@ -75,14 +75,14 @@ public class JPAUserDBTest {
     assertTrue(manager.getAllUsers().size() > 0); 
   }
   
-//  @Test(expected=DuplicateUsernameException.class)
-//  public void testAddFails() {
-//    createUser1();
-//    createUser2();
-//    manager.add(USER2);
-//    USER1.setUsername(USER2.getUsername());
-//    manager.add(USER2);
-//  }
+  @Test(expected=DuplicateUsernameException.class)
+  public void testAddFails() {
+    createUser1();
+    createUser2();
+    manager.add(USER2);
+    USER1.setUsername(USER2.getUsername());
+    manager.add(USER2);
+  }
 
   @Test
   public void testGetUserWhoHasNoKeys() throws DuplicateUsernameException, NoSuchAlgorithmException{
@@ -141,20 +141,20 @@ public class JPAUserDBTest {
     assertTrue(manager.get(USER1).getPublicKeys().contains(new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key4")));
   }
     
-//  @Test(expected = DuplicatePublicKeyException.class)
-//  public void testAddDuplicateKey() {
-//    createUser1();
-//    manager.add(USER1);  
-//    manager.addKey(USER1.getUsername(), KEYS1.get(0));
-//  }
+  @Test(expected = DuplicatePublicKeyException.class)
+  public void testAddDuplicateKey() {
+    createUser1();
+    manager.add(USER1);  
+    manager.addKey(USER1.getUsername(), KEYS1.get(0));
+  }
   
-//  @Test(expected = DuplicatePublicKeyException.class)
-//  public void testAddDuplicateKeysWithDifferentDescription() throws UserNotFoundException, DuplicatePublicKeyException, InvalidKeySpecException, NoSuchAlgorithmException, IOException{
-//    createUser1();
-//    manager.add(USER1);  
-//    manager.addKey(USER1.getUsername(), new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key5"));
-//    manager.addKey(USER1.getUsername(), new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key6"));
-//  }
+  @Test(expected = DuplicatePublicKeyException.class)
+  public void testAddDuplicateKeysWithDifferentDescription() throws UserNotFoundException, DuplicatePublicKeyException, InvalidKeySpecException, NoSuchAlgorithmException, IOException{
+    createUser1();
+    manager.add(USER1);  
+    manager.addKey(USER1.getUsername(), new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key5"));
+    manager.addKey(USER1.getUsername(), new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key6"));
+  }
 
   @Test
   public void testDeleteKey() {
@@ -173,12 +173,12 @@ public class JPAUserDBTest {
     assertEquals("my new description", manager.get(USER2).getPublicKeys().get(0).getDescription());
   }
   
-//  @Test(expected = DuplicatePublicKeyException.class)
-//  public void testRenameKeyDuplicateDescription() {
-//    createUser1();
-//    manager.add(USER1);
-//    manager.renameKey(USER1.getUsername(), "key1", "key2");
-//  }
+  @Test(expected = DuplicatePublicKeyException.class)
+  public void testRenameKeyDuplicateDescription() {
+    createUser1();
+    manager.add(USER1);
+    manager.renameKey(USER1.getUsername(), "key1", "key2");
+  }
   
   @Test(expected = PublicKeyNotFoundException.class)
   public void testRenameKeyNotFound() {

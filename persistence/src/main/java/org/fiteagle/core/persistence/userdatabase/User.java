@@ -368,6 +368,15 @@ public static User createAdminUser(String username, String password) throws NotE
   public List<UserPublicKey> getPublicKeys() {
     return publicKeys;
   }
+  
+  public boolean hasKeyWithDescription(String description){
+    for(UserPublicKey key: publicKeys){
+      if(key.getDescription().equals(description)){
+        return true;
+      }
+    }
+    return false;
+  }
 
   public class PublicKeyNotFoundException extends RuntimeException {
     private static final long serialVersionUID = 4906415519200726744L;  

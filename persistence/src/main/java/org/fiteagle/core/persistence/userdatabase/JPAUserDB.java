@@ -1,7 +1,6 @@
 package org.fiteagle.core.persistence.userdatabase;
 
 
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 
 //import javax.ejb.Stateless;
@@ -78,6 +77,9 @@ public class JPAUserDB{
   
   public void add(User user){
     EntityManager em = getEntityManager();
+    if(em.contains(user)){
+      throw new DuplicateUsernameException();
+    }
     try{
       em.getTransaction().begin();
       em.persist(user);
@@ -89,9 +91,6 @@ public class JPAUserDB{
           em.clear();
           throw new DuplicateEmailException();
         }
-      }
-      if(e.getCause().getCause() instanceof SQLIntegrityConstraintViolationException && e.getMessage().contains("defined on 'USERS'")){
-        throw new DuplicateUsernameException();
       }
       throw e;
     }finally{
@@ -178,14 +177,12 @@ public class JPAUserDB{
       if(user == null){
         throw new UserNotFoundException();
       }
+      if(user.getPublicKeys().contains(publicKey)){
+        throw new DuplicatePublicKeyException();
+      }
       em.getTransaction().begin();
       user.addPublicKey(publicKey);
       em.getTransaction().commit();
-    }catch(Exception e){
-      if(e.getCause() != null && e.getCause().getCause() instanceof SQLIntegrityConstraintViolationException && e.getMessage().contains("defined on 'PUBLICKEYS'")){
-        throw new DuplicatePublicKeyException();
-      }
-      throw e;
     }finally{
 //      em.close();
     }
@@ -213,14 +210,12 @@ public class JPAUserDB{
       if(user == null){
         throw new UserNotFoundException();
       }
+      if(user.hasKeyWithDescription(newDescription)){
+        throw new DuplicatePublicKeyException();
+      }
 //      em.getTransaction().begin();
       user.renamePublicKey(description, newDescription);
 //      em.getTransaction().commit();
-    }catch(Exception e){
-      if(e.getCause() != null && e.getCause().getCause() instanceof SQLIntegrityConstraintViolationException && e.getMessage().contains("defined on 'PUBLICKEYS'")){
-        throw new DuplicatePublicKeyException();
-      }
-      throw e;
     }finally{
 //      em.close();
     }
