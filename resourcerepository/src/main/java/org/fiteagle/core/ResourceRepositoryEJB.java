@@ -8,8 +8,8 @@ import org.fiteagle.api.core.ResourceRepository;
 @Stateless
 @Remote(ResourceRepository.class)
 public class ResourceRepositoryEJB implements ResourceRepository {
-    @Override
+
 	public String listResources() {
-        return "<rdf></rdf>";
-    }
+		return "<rdf></rdf>";
+	}
 }
