@@ -20,11 +20,11 @@
       <artifactId>config</artifactId>
       <version>0.1-SNAPSHOT</version>
     </dependency>    
-<!--     <dependency> -->
-<!--       <groupId>org.fiteagle</groupId> -->
-<!--       <artifactId>users</artifactId> -->
-<!--       <version>0.1-SNAPSHOT</version> -->
-<!--     </dependency> -->
+    <dependency>
+      <groupId>org.fiteagle</groupId>
+      <artifactId>api</artifactId>
+      <version>0.1-SNAPSHOT</version>
+    </dependency>
     
     <dependency>
       <groupId>org.bouncycastle</groupId>

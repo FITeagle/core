@@ -20,12 +20,14 @@ import javax.persistence.TemporalType;
 import javax.persistence.UniqueConstraint;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.fiteagle.api.User;
+import org.fiteagle.api.UserPublicKey;
 import org.fiteagle.core.aaa.authentication.KeyManagement;
 
 
 @Entity
 @Table(name="PUBLICKEYS", uniqueConstraints=@UniqueConstraint(columnNames={"owner_username", "description"}))
-public class UserPublicKey implements Serializable{
+public class FiteagleUserPublicKey implements Serializable, UserPublicKey{
   
   private static final long serialVersionUID = -374246341434116808L;
   
@@ -41,7 +43,7 @@ public class UserPublicKey implements Serializable{
   @Id
   @JoinColumn(name="owner_username")
   @ManyToOne
-  private User owner;
+  private FiteagleUser owner;
   
   @Id
   @Column(length=1024)
@@ -51,10 +53,10 @@ public class UserPublicKey implements Serializable{
   private Date created;    
   
    
-  protected UserPublicKey() {
+  protected FiteagleUserPublicKey() {
   } 
   
-  public UserPublicKey(String publicKeyString, String description) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
+  public FiteagleUserPublicKey(String publicKeyString, String description) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
     checkPublicKeyString(publicKeyString);
     this.publicKeyString = publicKeyString;
     
@@ -64,7 +66,7 @@ public class UserPublicKey implements Serializable{
     this.description = description;      
   }
   
-  public UserPublicKey(PublicKey publicKey, String description) throws User.NotEnoughAttributesException, IOException {
+  public FiteagleUserPublicKey(PublicKey publicKey, String description) throws FiteagleUser.NotEnoughAttributesException, IOException {
     this.publicKey = publicKey;
     
     this.publicKeyString = KeyManagement.getInstance().encodePublicKey(publicKey);
@@ -74,18 +76,18 @@ public class UserPublicKey implements Serializable{
     this.description = description;
   } 
   
-  private void checkDescription(String description) throws User.NotEnoughAttributesException {
+  private void checkDescription(String description) throws FiteagleUser.NotEnoughAttributesException {
     if(description == null || description.length() == 0){
-      throw new User.NotEnoughAttributesException("no description for public key given");
+      throw new FiteagleUser.NotEnoughAttributesException("no description for public key given");
     }
     if(!KEY_DESCRIPTION_PATTERN.matcher(description).matches()){
-      throw new User.InValidAttributeException("empty or invalid key description, only letters, numbers and whitespace is allowed: "+description);
+      throw new FiteagleUser.InValidAttributeException("empty or invalid key description, only letters, numbers and whitespace is allowed: "+description);
     }
   }   
   
-  private void checkPublicKeyString(String publicKeyString) throws User.NotEnoughAttributesException {
+  private void checkPublicKeyString(String publicKeyString) throws FiteagleUser.NotEnoughAttributesException {
     if(publicKeyString == null || publicKeyString.length() == 0){
-      throw new User.NotEnoughAttributesException("no publicKeyString given");
+      throw new FiteagleUser.NotEnoughAttributesException("no publicKeyString given");
     }
   }   
   
@@ -101,36 +103,43 @@ public class UserPublicKey implements Serializable{
     return "PublicKey [publicKey=" + publicKey + ", description=" + description + ", created=" + created + "]";
   }
   
+  @Override
   public PublicKey getPublicKey() {
     return publicKey;
   }
 
+  @Override
   public String getDescription() {
     return description;
   }
 
+  @Override
   public void setDescription(String description) {
     checkDescription(description);
     this.description = description;
   }
 
+  @Override
   public String getPublicKeyString() {
     return publicKeyString;
   }
 
+  @Override
   public Date getCreated() {
     return created;
   }
 
+  @Override
   public User getOwner() {
     return owner;
   }
 
+  @Override
   public void setOwner(User owner) {
-    this.owner = owner;
+    this.owner = (FiteagleUser) owner;
   }
 
-	@Override
+  @Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
@@ -142,7 +151,7 @@ public class UserPublicKey implements Serializable{
 		return result;
 	}
 
-	@Override
+  @Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
@@ -150,7 +159,7 @@ public class UserPublicKey implements Serializable{
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		UserPublicKey other = (UserPublicKey) obj;
+		FiteagleUserPublicKey other = (FiteagleUserPublicKey) obj;
 		if (publicKey == null) {
 			if (other.publicKey != null)
 				return false;
