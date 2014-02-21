@@ -3,6 +3,7 @@ package org.fiteagle.core.persistence.userdatabase;
 
 import java.util.List;
 
+
 //import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -10,12 +11,15 @@ import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
-import org.fiteagle.core.persistence.userdatabase.User.Role;
+import org.fiteagle.api.User;
+import org.fiteagle.api.User.Role;
+import org.fiteagle.api.UserDB;
+import org.fiteagle.api.UserPublicKey;
 import org.hibernate.exception.ConstraintViolationException;
 
 
 //@Stateless
-public class JPAUserDB{
+public class JPAUserDB implements UserDB{
   
   private final String PERSISTENCE_TYPE;  
   private EntityManagerFactory factory;
@@ -27,7 +31,7 @@ public class JPAUserDB{
   private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";
   
 //  private static JPAUserDB derbyInstance;
-  private static JPAUserDB inMemoryInstance;
+  private static UserDB inMemoryInstance;
   
   private JPAUserDB(String persistenceUnitName) {
     PERSISTENCE_TYPE = persistenceUnitName;
@@ -36,7 +40,7 @@ public class JPAUserDB{
   @PersistenceContext(unitName="usersDB")
   EntityManager entityManager;
   
-  public static JPAUserDB getInMemoryInstance(){
+  public static UserDB getInMemoryInstance(){
     if(inMemoryInstance == null){
       inMemoryInstance = new JPAUserDB(PERSISTENCE_UNIT_NAME_INMEMORY);
     }
@@ -75,6 +79,7 @@ public class JPAUserDB{
     return entityManager;
   }
   
+  @Override
   public void add(User user){
     EntityManager em = getEntityManager();
     if(em.contains(user)){
@@ -98,14 +103,16 @@ public class JPAUserDB{
     }
   }
   
+  @Override
   public User get(User user) throws UserNotFoundException{
     return get(user.getUsername());
   }
   
-  public User get(String username) throws UserNotFoundException{
+  @Override
+  public FiteagleUser get(String username) throws UserNotFoundException{
     EntityManager em = getEntityManager();
     try{
-      User user = em.find(User.class, username);
+      FiteagleUser user = em.find(FiteagleUser.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
@@ -115,6 +122,7 @@ public class JPAUserDB{
     }
   }
   
+  @Override
   public void delete(User user){
     EntityManager em = getEntityManager();
     try{
@@ -126,14 +134,16 @@ public class JPAUserDB{
     }
   }
   
+  @Override
   public void delete(String username){
     delete(get(username));
   }
  
+  @Override
   public void update(String username, String firstName, String lastName, String email, String affiliation, String password, List<UserPublicKey> publicKeys) {
     EntityManager em = getEntityManager();
     try{
-      User user = em.find(User.class, username);
+      User user = em.find(FiteagleUser.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
@@ -154,10 +164,11 @@ public class JPAUserDB{
     }
   }
 
+  @Override
   public void setRole(String username, Role role) {
     EntityManager em = getEntityManager();
     try{
-      User user = em.find(User.class, username);
+      User user = em.find(FiteagleUser.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
@@ -170,10 +181,11 @@ public class JPAUserDB{
   }
 
   
+  @Override
   public void addKey(String username, UserPublicKey publicKey){
     EntityManager em = getEntityManager();
     try{
-      User user = em.find(User.class, username);
+      User user = em.find(FiteagleUser.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
@@ -188,10 +200,11 @@ public class JPAUserDB{
     }
   }
   
+  @Override
   public void deleteKey(String username, String description){
     EntityManager em = getEntityManager();
     try{
-      User user = em.find(User.class, username);
+      User user = em.find(FiteagleUser.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
@@ -203,10 +216,11 @@ public class JPAUserDB{
     }
   }
   
+  @Override
   public void renameKey(String username, String description, String newDescription){
     EntityManager em = getEntityManager();
     try{
-      User user = em.find(User.class, username);
+      User user = em.find(FiteagleUser.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
@@ -221,6 +235,7 @@ public class JPAUserDB{
     }
   }
   
+  @Override
   public List<User> getAllUsers(){
     EntityManager em = getEntityManager();
     try{

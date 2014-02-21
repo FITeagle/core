@@ -24,18 +24,18 @@ import javax.persistence.UniqueConstraint;
 import net.iharder.Base64;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.fiteagle.api.User;
+import org.fiteagle.api.UserPublicKey;
 
 
 @Entity
 @Table(name="USERS", uniqueConstraints=@UniqueConstraint(name="EMAIL", columnNames={"email"}))
-public class User implements Serializable{
+public class FiteagleUser implements Serializable, User{
 
   private static final long serialVersionUID = -8580256972066486588L;
 //  private static Logger log = LoggerFactory.getLogger(User.class);
   
-  public enum Role {
-    ADMIN, USER
-  }
+  
   
   @Id
   @Column(updatable = false)
@@ -67,10 +67,10 @@ public class User implements Serializable{
   private final static int MINIMUM_FIRST_AND_LASTNAME_LENGTH = 2;
   private final static int MINIMUM_AFFILITAION_LENGTH = 2;
   
-  protected User(){
+  protected FiteagleUser(){
   }
   
-  public User(String username, String firstName, String lastName, String email, String affiliation, String password, List<UserPublicKey> publicKeys){
+  public FiteagleUser(String username, String firstName, String lastName, String email, String affiliation, String password, List<UserPublicKey> publicKeys){
     this.username = username;
     this.firstName = firstName;
     this.lastName = lastName;
@@ -88,7 +88,7 @@ public class User implements Serializable{
     checkAttributes();
   }
   public static User createDefaultUser(String username) {
-    return new User(username, "default", "default", createDefaultEmail(username), "default", "default", null);
+    return new FiteagleUser(username, "default", "default", createDefaultEmail(username), "default", "default", null);
   }
   
   private static String createDefaultEmail(String username2) {
@@ -101,7 +101,7 @@ public class User implements Serializable{
 }
 
 public static User createAdminUser(String username, String password) throws NotEnoughAttributesException, InValidAttributeException{
-    User admin = new User(username, "default", "default", "default", "default", password, null);
+    User admin = new FiteagleUser(username, "default", "default", "default", "default", password, null);
     admin.setRole(Role.ADMIN);
     return admin;
   }
@@ -186,7 +186,8 @@ public static User createAdminUser(String username, String password) throws NotE
     return digest.digest(password.getBytes());
   }
   
-  public void updateAttributes(String firstName, String lastName, String email, String affiliation, String password, List<UserPublicKey> publicKeys) throws User.NotEnoughAttributesException, User.InValidAttributeException {
+  @Override
+  public void updateAttributes(String firstName, String lastName, String email, String affiliation, String password, List<UserPublicKey> publicKeys) {
     if(firstName != null){
      this.firstName = firstName;
     }
@@ -210,11 +211,13 @@ public static User createAdminUser(String username, String password) throws NotE
     checkAttributes();      
   } 
   
+  @Override
   public void addPublicKey(UserPublicKey publicKey){
     publicKey.setOwner(this);
     this.publicKeys.add(publicKey);
   }
   
+  @Override
   public void deletePublicKey(String description){
     UserPublicKey keyToRemove = null;
     for(UserPublicKey key : this.publicKeys){
@@ -227,6 +230,7 @@ public static User createAdminUser(String username, String password) throws NotE
     }
   }
   
+  @Override
   public void renamePublicKey(String description, String newDescription){
     for(UserPublicKey key : publicKeys){
       if(key.getDescription().equals(description)){
@@ -237,6 +241,7 @@ public static User createAdminUser(String username, String password) throws NotE
     throw new PublicKeyNotFoundException();
   }
   
+  @Override
   public UserPublicKey getPublicKey(String description){
     for(UserPublicKey key : publicKeys){
       if(key.getDescription().equals(description)){
@@ -261,7 +266,7 @@ public static User createAdminUser(String username, String password) throws NotE
       return false;
     if (getClass() != obj.getClass())
       return false;
-    User other = (User) obj;
+    FiteagleUser other = (FiteagleUser) obj;
     if (affiliation == null) {
       if (other.affiliation != null)
         return false;
@@ -305,10 +310,12 @@ public static User createAdminUser(String username, String password) throws NotE
     return true;
   }
   
+  @Override
   public String getUsername() {
     return username;
   }
 
+  @Override
   public void setUsername(String username) {
     if(username == null || !USERNAME_PATTERN.matcher(username).matches()){
       throw new InValidAttributeException("invalid username, only letters, numbers, \"@\", \".\", \"_\" and \"-\" is allowed and the username has to be from 3 to 200 characters long");
@@ -316,18 +323,22 @@ public static User createAdminUser(String username, String password) throws NotE
     this.username = username;
   }
 
+  @Override
   public String getFirstName() {
     return firstName;
   }
 
+  @Override
   public String getLastName() {
     return lastName;
   }
 
+  @Override
   public String getEmail() {
     return email;
   }
 
+  @Override
   public void setEmail(String email) {
     if(email == null || (!EMAIL_PATTERN.matcher(email).matches() && !email.equals("default"))){
       throw new InValidAttributeException("an email needs to contain \"@\" and \".\"");
@@ -335,40 +346,49 @@ public static User createAdminUser(String username, String password) throws NotE
     this.email = email;
   }
 
+  @Override
   public String getAffiliation() {
     return affiliation;
   }
 
+  @Override
   public Role getRole() {
     return role;
   }
 
+  @Override
   public void setRole(Role role) {
     if(role != null){
       this.role = role;
     }
   }
 
+  @Override
   public Date getCreated() {
     return created;
   }
 
+  @Override
   public Date getLastModified() {
     return lastModified;
   }
 
+  @Override
   public String getPasswordHash() {
     return passwordHash;
   }
 
+  @Override
   public String getPasswordSalt() {
     return passwordSalt;
   }
 
+  @Override
   public List<UserPublicKey> getPublicKeys() {
     return publicKeys;
   }
   
+  @Override
   public boolean hasKeyWithDescription(String description){
     for(UserPublicKey key: publicKeys){
       if(key.getDescription().equals(description)){
