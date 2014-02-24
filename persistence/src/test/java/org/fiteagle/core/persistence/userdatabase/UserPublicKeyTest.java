@@ -14,25 +14,25 @@ public class UserPublicKeyTest {
   private static final String PUBLICKEY_STRING = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCLq3fDWATRF8tNlz79sE4Ug5z2r5CLDG353SFneBL5z9Mwoub2wnLey8iqVJxIAE4nJsjtN0fUXC548VedJVGDK0chwcQGVinADbsIAUwpxlc2FGo3sBoGOkGBlMxLc/+5LT1gMH+XD6LljxrekF4xG6ddHTgcNO26VtqQw/VeGw==";
   private static final String PUBLICKEY_STRING_INVALID = "ssh-rsa AAAAA3NzaC1yc2EABAADAQABAAAAgQCLq3fDWATRF8tNlz79sE4Ug5z2r5CLDG353SFneBL5z9Mwoub2wnLey8iqVJxIAE4nJsjtN0fUXC548VedJVGDK0chwcQGVinADbsIAUwpxlc2FGo3sBoGOkGBlMxLc/+5LT1gMH+XD6LljxrekF4xG6ddHTgcNO26VtqQw/VeGw==";
 
-  @Test(expected=User.NotEnoughAttributesException.class)
+  @Test(expected=FiteagleUser.NotEnoughAttributesException.class)
   public void createPublicKeyWithoutDescription() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
-    new UserPublicKey(PUBLICKEY_STRING, "");
+    new FiteagleUserPublicKey(PUBLICKEY_STRING, "");
   }
   
-  @Test(expected=User.InValidAttributeException.class)
+  @Test(expected=FiteagleUser.InValidAttributeException.class)
   public void createPublicKeyWithInvalidDescription() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
-    new UserPublicKey(PUBLICKEY_STRING, "key#1");
+    new FiteagleUserPublicKey(PUBLICKEY_STRING, "key#1");
   }
   
   @Test(expected=KeyManagement.CouldNotParse.class)
   public void createPublicKeyWithInvalidKeyString() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
-    new UserPublicKey(PUBLICKEY_STRING_INVALID, "invalidkey");
+    new FiteagleUserPublicKey(PUBLICKEY_STRING_INVALID, "invalidkey");
   }
   
   @Test
   public void createPublicKeyWithDifferentConstructors() throws InvalidKeySpecException, NoSuchAlgorithmException, IOException{
-    UserPublicKey key1 = new UserPublicKey(PUBLICKEY_STRING, "key1");
-    UserPublicKey key2 = new UserPublicKey(key1.getPublicKey(), "key2");
+    FiteagleUserPublicKey key1 = new FiteagleUserPublicKey(PUBLICKEY_STRING, "key1");
+    FiteagleUserPublicKey key2 = new FiteagleUserPublicKey(key1.getPublicKey(), "key2");
     assertEquals(key1, key2);
     assertEquals(key1.getPublicKeyString(), key2.getPublicKeyString());
   }

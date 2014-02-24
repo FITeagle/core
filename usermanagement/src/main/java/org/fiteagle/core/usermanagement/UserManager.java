@@ -18,25 +18,13 @@
 //
 //import net.iharder.Base64;
 //
-//import org.fiteagle.core.aaa.authentication.AuthenticationHandler;
-//import org.fiteagle.core.aaa.authentication.CertificateAuthority;
-//import org.fiteagle.core.aaa.authentication.KeyManagement;
-//import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
-//import org.fiteagle.core.aaa.authentication.x509.X509Util;
+//import org.fiteagle.api.User;
+//import org.fiteagle.api.User.Role;
+//import org.fiteagle.api.UserDB;
+//import org.fiteagle.api.UserPublicKey;
 //import org.fiteagle.core.config.preferences.FiteaglePreferences;
 //import org.fiteagle.core.config.preferences.FiteaglePreferencesXML;
 //import org.fiteagle.core.config.preferences.InterfaceConfiguration;
-//import org.fiteagle.core.persistence.userdatabase.JPAUserDB;
-//import org.fiteagle.core.persistence.userdatabase.JPAUserDB.DuplicateEmailException;
-//import org.fiteagle.core.persistence.userdatabase.JPAUserDB.DuplicatePublicKeyException;
-//import org.fiteagle.core.persistence.userdatabase.JPAUserDB.DuplicateUsernameException;
-//import org.fiteagle.core.persistence.userdatabase.JPAUserDB.UserNotFoundException;
-//import org.fiteagle.core.users.User;
-//import org.fiteagle.core.users.User.InValidAttributeException;
-//import org.fiteagle.core.users.User.NotEnoughAttributesException;
-//import org.fiteagle.core.users.User.PublicKeyNotFoundException;
-//import org.fiteagle.core.users.User.Role;
-//import org.fiteagle.core.users.UserPublicKey;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 //
@@ -49,7 +37,7 @@
 //	}
 //
 //	private static final databaseType DEFAULT_DATABASE_TYPE = databaseType.Persistent;
-//	private static JPAUserDB database;
+//	private static UserDB database;
 //
 //	private static UserManager dbManager;
 //	static Logger log = LoggerFactory.getLogger(UserManager.class);

@@ -9,13 +9,15 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.fiteagle.api.User;
+import org.fiteagle.api.User.Role;
+import org.fiteagle.api.UserDB;
 import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
+import org.fiteagle.core.persistence.userdatabase.FiteagleUser.PublicKeyNotFoundException;
 import org.fiteagle.core.persistence.userdatabase.JPAUserDB.DuplicateEmailException;
 import org.fiteagle.core.persistence.userdatabase.JPAUserDB.DuplicatePublicKeyException;
 import org.fiteagle.core.persistence.userdatabase.JPAUserDB.DuplicateUsernameException;
 import org.fiteagle.core.persistence.userdatabase.JPAUserDB.UserNotFoundException;
-import org.fiteagle.core.persistence.userdatabase.User.PublicKeyNotFoundException;
-import org.fiteagle.core.persistence.userdatabase.User.Role;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -23,42 +25,42 @@ import org.junit.Test;
 
 public class JPAUserDBTest {
   
-  protected static ArrayList<UserPublicKey> KEYS1;
-  protected static ArrayList<UserPublicKey> KEYS2; 
+  protected static ArrayList<FiteagleUserPublicKey> KEYS1;
+  protected static ArrayList<FiteagleUserPublicKey> KEYS2; 
   protected static User USER1;
   protected static User USER2;
   protected static User USER3;
   protected static User USER4;
   
-  private static JPAUserDB manager;
+  private static UserDB manager;
   
   private void createUser1() {
-    KEYS1 = new ArrayList<UserPublicKey>();
+    KEYS1 = new ArrayList<FiteagleUserPublicKey>();
     try {
-      KEYS1.add(new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCarsTCyAf8gYXwei8rhJnLTqYI6P88weRaY5dW9j3DT4mvfQPna79Bjq+uH4drmjbTD2n3s3ytqupFfNko1F0+McstA2EEkO8pAo5NEPcreygUcB2d49So032GKGPETB8chRkDsaBCm/KKL2vXdQoicofli8JJRPK2kXfUW34qww==", "key1"));
-      KEYS1.add(new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCOHoq0DYsW793kyhbW1sj6aNm5OWeRn3HQ6nZxU9ax3FnDmtJsxvq2u0RwtPQki5JEMG58aqJPs3s4Go6LrTyw4jqnodKyOfcFupUYHTbQYnzxudLwyU59RfBmH01cLiyu26ECdVNXX+Y1mgofRUx72thBTtY6vyuM5nR1l7UNTw==", "key2"));
-    } catch (User.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
+      KEYS1.add(new FiteagleUserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCarsTCyAf8gYXwei8rhJnLTqYI6P88weRaY5dW9j3DT4mvfQPna79Bjq+uH4drmjbTD2n3s3ytqupFfNko1F0+McstA2EEkO8pAo5NEPcreygUcB2d49So032GKGPETB8chRkDsaBCm/KKL2vXdQoicofli8JJRPK2kXfUW34qww==", "key1"));
+      KEYS1.add(new FiteagleUserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCOHoq0DYsW793kyhbW1sj6aNm5OWeRn3HQ6nZxU9ax3FnDmtJsxvq2u0RwtPQki5JEMG58aqJPs3s4Go6LrTyw4jqnodKyOfcFupUYHTbQYnzxudLwyU59RfBmH01cLiyu26ECdVNXX+Y1mgofRUx72thBTtY6vyuM5nR1l7UNTw==", "key2"));
+    } catch (FiteagleUser.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
       e.printStackTrace();
     }
-    USER1 = new User("test1", "mitja", "nikolaus", "test1@test.org", "mitjasAffiliation", "mitjasPassword", KEYS1);
+    USER1 = new FiteagleUser("test1", "mitja", "nikolaus", "test1@test.org", "mitjasAffiliation", "mitjasPassword", KEYS1);
   }
   
   private void createUser2() {
-    KEYS2 = new ArrayList<UserPublicKey>(); 
+    KEYS2 = new ArrayList<FiteagleUserPublicKey>(); 
     try {
-      KEYS2.add(new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDKpQJGxnReKal3p7d/95G5d3RQb002gso1QJrjxFKED+1cD157FsT2bCPcWpTYdLeTFRWBDUQa91yUPdkjkvoMsL2e3ah7nugRD6QfrFki0Po9oENrbujzaExPV8SAvXSuqcCG4/pidqEqjXJlAMXrphJcoFdKSzXLJtjUwfxyEw==", "key3"));
-    } catch (User.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
+      KEYS2.add(new FiteagleUserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDKpQJGxnReKal3p7d/95G5d3RQb002gso1QJrjxFKED+1cD157FsT2bCPcWpTYdLeTFRWBDUQa91yUPdkjkvoMsL2e3ah7nugRD6QfrFki0Po9oENrbujzaExPV8SAvXSuqcCG4/pidqEqjXJlAMXrphJcoFdKSzXLJtjUwfxyEw==", "key3"));
+    } catch (FiteagleUser.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
       e.printStackTrace();
     }
-    USER2 = new User("test2", "hans", "schmidt", "hschmidt@test.org", "hansAffiliation", "hansPassword", KEYS2);
+    USER2 = new FiteagleUser("test2", "hans", "schmidt", "hschmidt@test.org", "hansAffiliation", "hansPassword", KEYS2);
   }
   
   private void createUser3() {
-     USER3 = new User("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());    
+     USER3 = new FiteagleUser("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<FiteagleUserPublicKey>());    
   }
   
   private void createUser4() {
-     USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());
+     USER4 = new FiteagleUser("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<FiteagleUserPublicKey>());
   }
   
   
@@ -75,14 +77,14 @@ public class JPAUserDBTest {
     assertTrue(manager.getAllUsers().size() > 0); 
   }
   
-//  @Test(expected=DuplicateUsernameException.class)
-//  public void testAddFails() {
-//    createUser1();
-//    createUser2();
-//    manager.add(USER2);
-//    USER1.setUsername(USER2.getUsername());
-//    manager.add(USER2);
-//  }
+  @Test(expected=DuplicateUsernameException.class)
+  public void testAddFails() {
+    createUser1();
+    createUser2();
+    manager.add(USER2);
+    USER1.setUsername(USER2.getUsername());
+    manager.add(USER2);
+  }
 
   @Test
   public void testGetUserWhoHasNoKeys() throws DuplicateUsernameException, NoSuchAlgorithmException{
@@ -137,24 +139,24 @@ public class JPAUserDBTest {
   public void testAddKey() throws UserNotFoundException, InvalidKeySpecException, NoSuchAlgorithmException, IOException{
     createUser1();
     manager.add(USER1);    
-    manager.addKey(USER1.getUsername(), new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key4"));
-    assertTrue(manager.get(USER1).getPublicKeys().contains(new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key4")));
+    manager.addKey(USER1.getUsername(), new FiteagleUserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key4"));
+    assertTrue(manager.get(USER1).getPublicKeys().contains(new FiteagleUserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key4")));
   }
     
-//  @Test(expected = DuplicatePublicKeyException.class)
-//  public void testAddDuplicateKey() {
-//    createUser1();
-//    manager.add(USER1);  
-//    manager.addKey(USER1.getUsername(), KEYS1.get(0));
-//  }
+  @Test(expected = DuplicatePublicKeyException.class)
+  public void testAddDuplicateKey() {
+    createUser1();
+    manager.add(USER1);  
+    manager.addKey(USER1.getUsername(), KEYS1.get(0));
+  }
   
-//  @Test(expected = DuplicatePublicKeyException.class)
-//  public void testAddDuplicateKeysWithDifferentDescription() throws UserNotFoundException, DuplicatePublicKeyException, InvalidKeySpecException, NoSuchAlgorithmException, IOException{
-//    createUser1();
-//    manager.add(USER1);  
-//    manager.addKey(USER1.getUsername(), new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key5"));
-//    manager.addKey(USER1.getUsername(), new UserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key6"));
-//  }
+  @Test(expected = DuplicatePublicKeyException.class)
+  public void testAddDuplicateKeysWithDifferentDescription() throws UserNotFoundException, DuplicatePublicKeyException, InvalidKeySpecException, NoSuchAlgorithmException, IOException{
+    createUser1();
+    manager.add(USER1);  
+    manager.addKey(USER1.getUsername(), new FiteagleUserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key5"));
+    manager.addKey(USER1.getUsername(), new FiteagleUserPublicKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==", "key6"));
+  }
 
   @Test
   public void testDeleteKey() {
@@ -173,12 +175,12 @@ public class JPAUserDBTest {
     assertEquals("my new description", manager.get(USER2).getPublicKeys().get(0).getDescription());
   }
   
-//  @Test(expected = DuplicatePublicKeyException.class)
-//  public void testRenameKeyDuplicateDescription() {
-//    createUser1();
-//    manager.add(USER1);
-//    manager.renameKey(USER1.getUsername(), "key1", "key2");
-//  }
+  @Test(expected = DuplicatePublicKeyException.class)
+  public void testRenameKeyDuplicateDescription() {
+    createUser1();
+    manager.add(USER1);
+    manager.renameKey(USER1.getUsername(), "key1", "key2");
+  }
   
   @Test(expected = PublicKeyNotFoundException.class)
   public void testRenameKeyNotFound() {
