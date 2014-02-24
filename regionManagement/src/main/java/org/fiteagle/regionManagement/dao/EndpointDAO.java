@@ -1,0 +1,162 @@
+package org.fiteagle.regionManagement.dao;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.ejb.Remote;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaDelete;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+import org.fiteagle.api.IEndpoint;
+import org.fiteagle.api.IEndpointDAO;
+import org.fiteagle.regionManagement.dao.model.Endpoint;
+
+@Stateless(name = "EndpointDAO", mappedName="IEndpointDAO")
+@Remote(IEndpointDAO.class)
+public class EndpointDAO implements IEndpointDAO {
+	@PersistenceContext(unitName="registryDB")
+	EntityManager em;
+
+	/* (non-Javadoc)
+	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#findEndpoints(java.lang.String, java.lang.String, java.lang.String)
+	 */
+	@Override
+	public List<? extends IEndpoint> findEndpoints(String serviceId, String regionId,
+			String interfaceType) {
+		
+			CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+			CriteriaQuery<Endpoint> query = criteriaBuilder.createQuery(Endpoint.class);
+			Root<Endpoint> root = query.from(Endpoint.class);
+			query.select(root);
+			List<Predicate> predicateList = new ArrayList<>();
+			Predicate serviceidpred, regionidpred, interfaceTypepred;
+			
+			if(serviceId != null){
+				serviceidpred = criteriaBuilder.equal(root.get("service_id"), Long.valueOf(serviceId));
+				if(serviceidpred != null){
+					predicateList.add(serviceidpred);
+				}
+					
+			}
+			
+			if(regionId != null){
+				regionidpred = criteriaBuilder.equal(root.get("regionId"), Long.valueOf(regionId));
+				if(regionidpred != null){
+					predicateList.add(regionidpred);
+				}
+			}
+			
+			if(interfaceType != null){
+				interfaceTypepred = criteriaBuilder.equal(root.get("interfaceType"), interfaceType);
+				if(interfaceTypepred != null){
+					predicateList.add(interfaceTypepred);
+				}
+			}
+			
+			if(predicateList.size()>0){
+				Predicate[] predicates = new Predicate[predicateList.size()];
+				predicateList.toArray(predicates);
+				query.where(predicates);
+			}
+			List<Endpoint> list =  em.createQuery(query).getResultList();
+			return list;
+			
+			
+		
+			
+	}
+
+	/* (non-Javadoc)
+	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#addEndpoint(org.fiteagle.xifi.api.model.Endpoint)
+	 */
+	@Override
+	public IEndpoint addEndpoint(IEndpoint endpoint) {
+		 em.persist(endpoint);
+		 return endpoint;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#findEndpoint(long)
+	 */
+	@Override
+	public IEndpoint findEndpoint(long endpointId) {
+		IEndpoint endpoint = em.find(Endpoint.class, endpointId);
+		return endpoint;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#updateEndpoint(long, org.fiteagle.xifi.api.model.Endpoint)
+	 */
+	@Override
+	public IEndpoint updateEndpoint(long endpointId, IEndpoint endpoint) {
+		Endpoint from =  em.find(Endpoint.class, endpointId);
+		if(endpoint.getInterfaceType() != null)
+			from.setInterfaceType(endpoint.getInterfaceType());
+		if(endpoint.getName()!= null)
+			from.setName(endpoint.getName());
+		if(endpoint.getRegionId() != 0)
+			from.setRegionId(endpoint.getRegionId());
+		if(endpoint.getService_id() != 0)
+			from.setService_id(endpoint.getService_id());
+		if(endpoint.getUrl() != null)
+			from.setUrl(endpoint.getUrl());
+		
+		IEndpoint e = em.merge(from);
+		return e;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#deleteEndpoint(long)
+	 */
+	@Override
+	public void deleteEndpoint(long endpointId) {
+		IEndpoint e = findEndpoint(endpointId);
+		em.remove(e);
+		
+	}
+
+	/* (non-Javadoc)
+	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#deleteEndpointsForRegion(long)
+	 */
+	@Override
+	public void deleteEndpointsForRegion(long regionid) {
+		CriteriaBuilder ctb  = em.getCriteriaBuilder();
+		CriteriaDelete<Endpoint> query = ctb.createCriteriaDelete(Endpoint.class);
+		
+		Root<Endpoint> root =  query.from(Endpoint.class);
+		Predicate regionpred = ctb.equal(root.get("regionId"),regionid);
+		Predicate[] preds = new Predicate[]{regionpred};
+		query.where(preds);
+		em.createQuery(query).executeUpdate();
+		
+	}
+
+	/* (non-Javadoc)
+	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#deleteEndpointForServiceId(long)
+	 */
+	@Override
+	public void deleteEndpointForServiceId(long serviceid) {
+		CriteriaBuilder ctb  = em.getCriteriaBuilder();
+		CriteriaDelete<Endpoint> query = ctb.createCriteriaDelete(Endpoint.class);
+		
+		Root<Endpoint> root =  query.from(Endpoint.class);
+		Predicate servicepred = ctb.equal(root.get("service_id"),serviceid);
+		Predicate[] preds = new Predicate[]{servicepred};
+		query.where(preds);
+		em.createQuery(query).executeUpdate();
+		
+	}
+
+	
+//	public void deleteEndpointForRegion(long regionId){
+//		
+//	}
+	
+
+}
