@@ -17,7 +17,7 @@ import org.fiteagle.api.Endpoint;
 import org.fiteagle.api.IEndpointDAO;
 
 @Stateless(name = "EndpointDAO", mappedName="IEndpointDAO")
-@Remote(EndpointDAO.class)
+@Remote(IEndpointDAO.class)
 public class EndpointDAO implements IEndpointDAO {
 	@PersistenceContext(unitName="registryDB")
 	EntityManager em;
