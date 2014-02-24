@@ -13,21 +13,20 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import org.fiteagle.api.IEndpoint;
+import org.fiteagle.api.Endpoint;
 import org.fiteagle.api.IEndpointDAO;
-import org.fiteagle.regionManagement.dao.model.Endpoint;
 
 @Stateless(name = "EndpointDAO", mappedName="IEndpointDAO")
-@Remote(IEndpointDAO.class)
+@Remote(EndpointDAO.class)
 public class EndpointDAO implements IEndpointDAO {
 	@PersistenceContext(unitName="registryDB")
 	EntityManager em;
 
 	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#findEndpoints(java.lang.String, java.lang.String, java.lang.String)
+	 * @see org.fiteagle.xifi.api.dao.EndpointDAO#findEndpoints(java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public List<? extends IEndpoint> findEndpoints(String serviceId, String regionId,
+	public List<? extends Endpoint> findEndpoints(String serviceId, String regionId,
 			String interfaceType) {
 		
 			CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
@@ -73,28 +72,28 @@ public class EndpointDAO implements IEndpointDAO {
 	}
 
 	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#addEndpoint(org.fiteagle.xifi.api.model.Endpoint)
+	 * @see org.fiteagle.xifi.api.dao.EndpointDAO#addEndpoint(org.fiteagle.xifi.api.model.Endpoint)
 	 */
 	@Override
-	public IEndpoint addEndpoint(IEndpoint endpoint) {
+	public Endpoint addEndpoint(Endpoint endpoint) {
 		 em.persist(endpoint);
 		 return endpoint;
 	}
 
 	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#findEndpoint(long)
+	 * @see org.fiteagle.xifi.api.dao.EndpointDAO#findEndpoint(long)
 	 */
 	@Override
-	public IEndpoint findEndpoint(long endpointId) {
-		IEndpoint endpoint = em.find(Endpoint.class, endpointId);
+	public Endpoint findEndpoint(long endpointId) {
+		Endpoint endpoint = em.find(Endpoint.class, endpointId);
 		return endpoint;
 	}
 
 	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#updateEndpoint(long, org.fiteagle.xifi.api.model.Endpoint)
+	 * @see org.fiteagle.xifi.api.dao.EndpointDAO#updateEndpoint(long, org.fiteagle.xifi.api.model.Endpoint)
 	 */
 	@Override
-	public IEndpoint updateEndpoint(long endpointId, IEndpoint endpoint) {
+	public Endpoint updateEndpoint(long endpointId, Endpoint endpoint) {
 		Endpoint from =  em.find(Endpoint.class, endpointId);
 		if(endpoint.getInterfaceType() != null)
 			from.setInterfaceType(endpoint.getInterfaceType());
@@ -107,22 +106,22 @@ public class EndpointDAO implements IEndpointDAO {
 		if(endpoint.getUrl() != null)
 			from.setUrl(endpoint.getUrl());
 		
-		IEndpoint e = em.merge(from);
+		Endpoint e = em.merge(from);
 		return e;
 	}
 
 	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#deleteEndpoint(long)
+	 * @see org.fiteagle.xifi.api.dao.EndpointDAO#deleteEndpoint(long)
 	 */
 	@Override
 	public void deleteEndpoint(long endpointId) {
-		IEndpoint e = findEndpoint(endpointId);
+		Endpoint e = findEndpoint(endpointId);
 		em.remove(e);
 		
 	}
 
 	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#deleteEndpointsForRegion(long)
+	 * @see org.fiteagle.xifi.api.dao.EndpointDAO#deleteEndpointsForRegion(long)
 	 */
 	@Override
 	public void deleteEndpointsForRegion(long regionid) {
@@ -138,7 +137,7 @@ public class EndpointDAO implements IEndpointDAO {
 	}
 
 	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IEndpointDAO#deleteEndpointForServiceId(long)
+	 * @see org.fiteagle.xifi.api.dao.EndpointDAO#deleteEndpointForServiceId(long)
 	 */
 	@Override
 	public void deleteEndpointForServiceId(long serviceid) {

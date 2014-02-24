@@ -15,9 +15,8 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.fiteagle.api.IEndpointDAO;
-import org.fiteagle.api.IService;
 import org.fiteagle.api.IServiceDAO;
-import org.fiteagle.regionManagement.dao.model.Service;
+import org.fiteagle.api.Service;
 
 @Stateless(name="ServiceDAO", mappedName="IServiceDAO")
 @Remote(IServiceDAO.class)
@@ -31,7 +30,7 @@ public class ServiceDAO implements IServiceDAO {
 	 * @see org.fiteagle.xifi.api.dao.IServiceDAO#createService(org.fiteagle.api.IService)
 	 */
 	@Override
-	public IService createService(IService service){
+	public Service createService(Service service){
 		em.persist(service);
 		return service;
 	}
@@ -40,7 +39,7 @@ public class ServiceDAO implements IServiceDAO {
 	 * @see org.fiteagle.xifi.api.dao.IServiceDAO#findServices(java.lang.String)
 	 */
 	@Override
-	public List<? extends IService> findServices(String type) {
+	public List<? extends Service> findServices(String type) {
 		CriteriaBuilder ctb = em.getCriteriaBuilder();
 		CriteriaQuery<Service> query = ctb.createQuery(Service.class);
 		Root<Service> root = query.from(Service.class);
@@ -67,7 +66,7 @@ public class ServiceDAO implements IServiceDAO {
 	 * @see org.fiteagle.xifi.api.dao.IServiceDAO#findService(long)
 	 */
 	@Override
-	public IService findService(long serviceid) {
+	public Service findService(long serviceid) {
 		return em.find(Service.class, serviceid);
 	}
 
@@ -75,7 +74,7 @@ public class ServiceDAO implements IServiceDAO {
 	 * @see org.fiteagle.xifi.api.dao.IServiceDAO#updateService(org.fiteagle.xifi.api.model.Service)
 	 */
 	@Override
-	public IService updateService(IService service) {
+	public Service updateService(Service service) {
 		return em.merge(service);
 	}
 
@@ -84,7 +83,7 @@ public class ServiceDAO implements IServiceDAO {
 	 */
 	@Override
 	public void deleteService(long serviceid) {
-		IService s = em.getReference(Service.class, serviceid);
+		Service s = em.getReference(Service.class, serviceid);
 		if(s!= null){
 			try{
 				em.remove(s);

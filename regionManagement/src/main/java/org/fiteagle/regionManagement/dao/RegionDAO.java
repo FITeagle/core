@@ -15,32 +15,33 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import org.fiteagle.api.IContactInformation;
+import org.fiteagle.api.ContactInformation;
 import org.fiteagle.api.IEndpointDAO;
-import org.fiteagle.api.IRegion;
 import org.fiteagle.api.IRegionDAO;
-import org.fiteagle.api.IRegionStatus;
-import org.fiteagle.regionManagement.dao.model.ContactInformation;
-import org.fiteagle.regionManagement.dao.model.Region;
-import org.fiteagle.regionManagement.dao.model.RegionStatus;
+import org.fiteagle.api.Region;
+import org.fiteagle.api.RegionStatus;
 
-@Stateless(name="RegionDAO", mappedName="IRegionDAO")
+@Stateless(name = "RegionDAO", mappedName = "IRegionDAO")
 @Remote(IRegionDAO.class)
 public class RegionDAO implements IRegionDAO {
-	
+
 	@PersistenceContext(unitName = "registryDB")
 	EntityManager em;
 
 	@EJB
 	IEndpointDAO endpointDao;
-	
-	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#createRegion(org.fiteagle.xifi.api.model.Region)
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.fiteagle.xifi.api.dao.IRegionDAO#createRegion(org.fiteagle.xifi.api
+	 * .model.Region)
 	 */
 	@Override
-	public IRegion createRegion(IRegion region) {
+	public Region createRegion(Region region) {
 
-		IRegionStatus status = new RegionStatus();
+		RegionStatus status = new RegionStatus();
 
 		em.persist(region);
 		status.setRegion(region.getId());
@@ -51,21 +52,25 @@ public class RegionDAO implements IRegionDAO {
 		return region;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#findRegion(long)
 	 */
 	@Override
-	public IRegion findRegion(long regionid) {
-		IRegion r = em.find(Region.class, regionid);
+	public Region findRegion(long regionid) {
+		Region r = em.find(Region.class, regionid);
 		return r;
 
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#findRegions(java.lang.String)
 	 */
 	@Override
-	public List<? extends IRegion> findRegions(String country) {
+	public List<? extends Region> findRegions(String country) {
 		CriteriaBuilder ctb = em.getCriteriaBuilder();
 		CriteriaQuery<Region> query = ctb.createQuery(Region.class);
 		Root<Region> root = query.from(Region.class);
@@ -86,11 +91,15 @@ public class RegionDAO implements IRegionDAO {
 		return em.createQuery(query).getResultList();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#updateRegion(org.fiteagle.api.IRegion)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.fiteagle.xifi.api.dao.IRegionDAO#updateRegion(org.fiteagle.api.IRegion
+	 * )
 	 */
 	@Override
-	public IRegion updateRegion(IRegion r) {
+	public Region updateRegion(Region r) {
 		Region former = em.find(Region.class, r.getId());
 		if (former != null) {
 			if (r.getAdminUsername() != null) {
@@ -114,70 +123,84 @@ public class RegionDAO implements IRegionDAO {
 		return former;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#deleteRegion(long)
 	 */
 	@Override
 	public void deleteRegion(long regionid) {
-		IRegion r = em.getReference(Region.class, regionid);
-		if(r != null)
-			try{
+		Region r = em.getReference(Region.class, regionid);
+		if (r != null)
+			try {
 				em.remove(r);
 				endpointDao.deleteEndpointsForRegion(regionid);
-			}catch(EntityNotFoundException e){
-				
+			} catch (EntityNotFoundException e) {
+
 			}
-		
-		
+
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#findRegionStatusForId(long)
 	 */
 	@Override
-	public IRegionStatus findRegionStatusForId(long regionid) {
-		IRegionStatus regionStatus = em.find(RegionStatus.class, regionid);
+	public RegionStatus findRegionStatusForId(long regionid) {
+		RegionStatus regionStatus = em.find(RegionStatus.class, regionid);
 		return regionStatus;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#updateRegionStatus(org.fiteagle.xifi.api.model.RegionStatus)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.fiteagle.xifi.api.dao.IRegionDAO#updateRegionStatus(org.fiteagle.
+	 * xifi.api.model.RegionStatus)
 	 */
 	@Override
-	public IRegionStatus updateRegionStatus(IRegionStatus status) {
-		IRegion r = em.find(Region.class, status.getRegion());
-		IRegionStatus updated = null;
-		if(r != null){
-			
-		 updated = em.merge(status);
+	public RegionStatus updateRegionStatus(RegionStatus status) {
+		Region r = em.find(Region.class, status.getRegion());
+		RegionStatus updated = null;
+		if (r != null) {
+
+			updated = em.merge(status);
 		}
 		return updated;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#addContactInforamtion(long, org.fiteagle.xifi.api.model.ContactInformation)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#addContactInforamtion(long,
+	 * org.fiteagle.xifi.api.model.ContactInformation)
 	 */
 	@Override
-	public IContactInformation addContactInforamtion(long regionid,
-			IContactInformation contactInfo) {
+	public ContactInformation addContactInforamtion(long regionid,
+			ContactInformation contactInfo) {
 		Region r = em.find(Region.class, regionid);
 		r.addContact(contactInfo);
-		IContactInformation created = null;
+		ContactInformation created = null;
 		em.merge(r);
-		List<IContactInformation> contacts = r.getContacts();
-		for (IContactInformation c : contacts) {
+		List<ContactInformation> contacts = r.getContacts();
+		for (ContactInformation c : contacts) {
 			if (c.equals(contactInfo))
 				created = c;
 		}
 		return created;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#getContacts(long, java.lang.String)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#getContacts(long,
+	 * java.lang.String)
 	 */
 	@Override
-	public List<? extends IContactInformation> getContacts(long regionid, String type) {
+	public List<? extends ContactInformation> getContacts(long regionid,
+			String type) {
 		CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
 
 		CriteriaQuery<ContactInformation> query = criteriaBuilder
@@ -203,20 +226,25 @@ public class RegionDAO implements IRegionDAO {
 		return em.createQuery(query).getResultList();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#getContactInfo(long)
 	 */
 	@Override
-	public IContactInformation getContactInfo(long contactId) {
+	public ContactInformation getContactInfo(long contactId) {
 		return em.find(ContactInformation.class, contactId);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#updateContactInformation(long, org.fiteagle.api.IContactInformation)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#updateContactInformation(long,
+	 * org.fiteagle.api.IContactInformation)
 	 */
 	@Override
-	public IContactInformation updateContactInformation(long contactId,
-			IContactInformation updated) {
+	public ContactInformation updateContactInformation(long contactId,
+			ContactInformation updated) {
 		ContactInformation former = em
 				.find(ContactInformation.class, contactId);
 		if (updated.getAddress() != null) {
@@ -245,12 +273,14 @@ public class RegionDAO implements IRegionDAO {
 		return former;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.fiteagle.xifi.api.dao.IRegionDAO#deleteContact(long)
 	 */
 	@Override
 	public void deleteContact(long contactId) {
-		IContactInformation c = em.getReference(ContactInformation.class,
+		ContactInformation c = em.getReference(ContactInformation.class,
 				contactId);
 		em.remove(c);
 
