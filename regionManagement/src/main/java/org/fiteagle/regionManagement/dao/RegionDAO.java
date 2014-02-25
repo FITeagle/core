@@ -21,7 +21,7 @@ import org.fiteagle.api.IRegionDAO;
 import org.fiteagle.api.Region;
 import org.fiteagle.api.RegionStatus;
 
-@Stateless(name = "RegionDAO", mappedName = "IRegionDAO")
+@Stateless(mappedName = "IRegionDAO")
 @Remote(IRegionDAO.class)
 public class RegionDAO implements IRegionDAO {
 
@@ -280,8 +280,11 @@ public class RegionDAO implements IRegionDAO {
 	 */
 	@Override
 	public void deleteContact(long contactId) {
-		ContactInformation c = em.getReference(ContactInformation.class,
-				contactId);
+//		ContactInformation c = em.getReference(ContactInformation.class,
+//				contactId);
+		
+		ContactInformation c = em.find(ContactInformation.class, contactId);
+		c.setRegion(null);
 		em.remove(c);
 
 	}
