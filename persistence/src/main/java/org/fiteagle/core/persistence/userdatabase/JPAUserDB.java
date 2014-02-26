@@ -1,6 +1,7 @@
 package org.fiteagle.core.persistence.userdatabase;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Remote;
@@ -13,28 +14,27 @@ import javax.persistence.Query;
 
 import org.fiteagle.api.User;
 import org.fiteagle.api.User.Role;
+import org.fiteagle.api.FiteagleUser;
+import org.fiteagle.api.FiteagleUserPublicKey;
 import org.fiteagle.api.UserDB;
 import org.fiteagle.api.UserPublicKey;
 import org.hibernate.exception.ConstraintViolationException;
 
-@Stateless
+@Stateless //(name = "JPAUserDB", mappedName="UserDB")
 @Remote(UserDB.class)
 public class JPAUserDB implements UserDB{
   
-  private final String PERSISTENCE_TYPE;  
-  private EntityManagerFactory factory;
+//  private final String PERSISTENCE_TYPE;  
   
 //  private static final String DEFAULT_DATABASE_PATH = System.getProperty("user.home")+"/.fiteagle/db/";
 //  private static FiteaglePreferences preferences = new FiteaglePreferencesXML(JPAUserDB.class);
   
-//  private static final String PERSISTENCE_UNIT_NAME_DERBY = "Users_Derby";
   private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";
   
 //  private static JPAUserDB derbyInstance;
   private static UserDB inMemoryInstance;
   
-  private JPAUserDB(String persistenceUnitName) {
-    PERSISTENCE_TYPE = persistenceUnitName;
+  public JPAUserDB(){
   }
 	
   @PersistenceContext(unitName="usersDB")
@@ -42,11 +42,11 @@ public class JPAUserDB implements UserDB{
   
   public static UserDB getInMemoryInstance(){
     if(inMemoryInstance == null){
-      inMemoryInstance = new JPAUserDB(PERSISTENCE_UNIT_NAME_INMEMORY);
+      inMemoryInstance = new JPAUserDB();
     }
     return inMemoryInstance;
   }
-//  
+  
 //  public static JPAUserDB getDerbyInstance(){
 //    if(derbyInstance == null){
 //      derbyInstance = new JPAUserDB(PERSISTENCE_UNIT_NAME_DERBY);
@@ -73,7 +73,7 @@ public class JPAUserDB implements UserDB{
   
   private synchronized EntityManager getEntityManager() {
     if (entityManager == null){
-      factory = Persistence.createEntityManagerFactory(PERSISTENCE_TYPE);
+      EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME_INMEMORY);
       entityManager = factory.createEntityManager();
     }
     return entityManager;
@@ -85,10 +85,15 @@ public class JPAUserDB implements UserDB{
     if(em.contains(user)){
       throw new DuplicateUsernameException();
     }
+//    List<User> users = getAllUsers();
+//    for(User u : users){
+//      if(u.getEmail().equals(user.getEmail()))
+//        throw new DuplicateEmailException();
+//    }
     try{
-      em.getTransaction().begin();
+//      em.getTransaction().begin();
       em.persist(user);
-      em.getTransaction().commit();
+//      em.getTransaction().commit();
     } catch(Exception e){
       if(e.getCause() != null && e.getCause().getCause() instanceof ConstraintViolationException){
         ConstraintViolationException ec = (ConstraintViolationException) e.getCause().getCause();
@@ -109,7 +114,7 @@ public class JPAUserDB implements UserDB{
   }
   
   @Override
-  public FiteagleUser get(String username) throws UserNotFoundException{
+  public User get(String username) throws UserNotFoundException{
     EntityManager em = getEntityManager();
     try{
       FiteagleUser user = em.find(FiteagleUser.class, username);
@@ -245,38 +250,6 @@ public class JPAUserDB implements UserDB{
       return resultList;
     }finally{
 //      em.close();
-    }
-  }
-  
-  public static class UserNotFoundException extends RuntimeException {    
-    private static final long serialVersionUID = 2315125279537534064L;
-    
-    public UserNotFoundException(){
-      super("no user with this username could be found in the database");
-    }
-  }
-  
-  public static class DuplicateUsernameException extends RuntimeException {
-    private static final long serialVersionUID = -7242105025265481986L;   
-    
-    public DuplicateUsernameException(){
-      super("another user with the same username already exists in the database");
-    }
-  }
-  
-  public static class DuplicateEmailException extends RuntimeException {
-    private static final long serialVersionUID = 5986984055945876422L;
-    
-    public DuplicateEmailException(){
-      super("another user with the same email already exists in the database");
-    }
-  }
-  
-  public static class DuplicatePublicKeyException extends RuntimeException {
-    private static final long serialVersionUID = -8863826365649086008L; 
-    
-    public DuplicatePublicKeyException(){
-      super("either this public key already exists or another public key with the same description already exists for this user");
     }
   }
   

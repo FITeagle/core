@@ -49,11 +49,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>net.iharder</groupId>
-			<artifactId>base64</artifactId>
-			<version>2.3.8</version>
-		</dependency>
-		<dependency>
 			<groupId>com.sun.jersey</groupId>
 			<artifactId>jersey-json</artifactId>
 			<version>1.17</version>
@@ -87,6 +82,32 @@
 					<filename>${project.build.finalName}.war</filename>
 				</configuration>
 			</plugin>
+			
+			<plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+            <execution>
+                <phase>compile</phase>
+                <goals>
+                    <goal>unpack</goal>
+                </goals>
+                <configuration>
+                    <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                    <silent>false</silent>
+                    <artifactItems>
+                        <artifactItem>
+                            <groupId>org.fiteagle</groupId>
+                            <artifactId>api</artifactId>
+                            <version>0.1-SNAPSHOT</version>
+                            <type>jar</type>
+                        </artifactItem>
+                    </artifactItems>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
 		</plugins>
 	</build>
 
