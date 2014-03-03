@@ -19,8 +19,25 @@ Build and Deploy
 
         mvn clean package wildfly:deploy
 
-4. This will deploy `target/xxx.war` to the running instance of the server.
+4. This will deploy `target/core-resourcerepository.war` to the running instance of the server.
 
+Test
+----
+
+1. Get resources in turtle serialization
+
+    curl http://localhost:8080/native/repo/resources.ttl
+
+2. Get resources in xml+rdf serialization
+
+    curl http://localhost:8080/native/repo/resources.rdf
+    
+Tipps
+-----
+
+1. Use http://librdf.org/raptor/rapper.html to validate and convert between formats
+2. Use https://github.com/AKSW/Xturtle to edit RDF files in Eclipe
+3. Use http://protege.stanford.edu to work with RDF files
 
 Undeploy
 --------
@@ -54,10 +71,10 @@ If you are interested in more details, check ``target/surefire-reports`` directo
 You can check console output to verify that Arquillian has really used the real application server. 
 Search for lines similar to the following ones in the server output log:
 
-    [timestamp] INFO  [org.jboss.as.server.deployment] (MSC service thread 1-7) JBAS015876: Starting deployment of "xxxxx.war"
+    [timestamp] INFO  [org.jboss.as.server.deployment] (MSC service thread 1-7) JBAS015876: Starting deployment of "core-resourcerepository.war"
     ...
-    [timestamp] INFO  [org.jboss.as.server] (management-handler-thread - 7) JBAS018559: Deployed "xxxxx.war"
+    [timestamp] INFO  [org.jboss.as.server] (management-handler-thread - 7) JBAS018559: Deployed "core-resourcerepository.war"
     ...
-    [timestamp] INFO  [org.jboss.as.server.deployment] (MSC service thread 1-1) JBAS015877: Stopped deployment xxxxx.war in 51ms
+    [timestamp] INFO  [org.jboss.as.server.deployment] (MSC service thread 1-1) JBAS015877: Stopped deployment core-resourcerepository.war in 51ms
     ...
-    [timestamp] INFO  [org.jboss.as.server] (management-handler-thread - 5) JBAS018558: Undeployed "xxxxx.war"
+    [timestamp] INFO  [org.jboss.as.server] (management-handler-thread - 5) JBAS018558: Undeployed "core-resourcerepository.war"
