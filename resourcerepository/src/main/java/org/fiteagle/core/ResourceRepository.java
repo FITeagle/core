@@ -1,12 +1,6 @@
 package org.fiteagle.core;
 
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
+import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,38 +12,33 @@ import org.fiteagle.api.core.IResourceRepository;
 @Stateless
 @Remote(IResourceRepository.class)
 public class ResourceRepository implements IResourceRepository {
-
+	
+	
+	
 	private final static Logger LOGGER = Logger
 			.getLogger(ResourceRepository.class.toString());
 
-	public String listResources() {
-		final String filename = "dummy-answer.ttl";
-		Path file = getPath(filename);
-		String content = "";
-
-		try {
-			content = getContent(file);
-		} catch (IOException e) {
-			LOGGER.log(Level.WARNING, e.getLocalizedMessage());
+	public String listResources(Serialization type) {
+		String filename;
+		if (Serialization.XML.equals(type)) {
+			filename = "dummy-answer.xml";
+		} else {
+			filename = "dummy-answer.ttl";
 		}
-
-		return content;
+		
+		LOGGER.log(Level.INFO, "Dummy response from: " + filename);
+		return getContent(filename);
 	}
 
-	private String getContent(Path file) throws IOException {
-		String content = "";
-		List<String> contentList = Files.readAllLines(file,
-				Charset.forName("UTF-8"));
-		for (String line : contentList) {
-			content += line + "\n";
-		}
-		return content;
+	private String getContent(final String filename) {
+		InputStream is = this.getClass().getClassLoader()
+				.getResourceAsStream(filename);
+		return convertStreamToString(is);
 	}
 
-	private Path getPath(final String filename) {
-		URL url = this.getClass().getClassLoader().getResource(filename);
-		String path = url.getPath();
-		Path file = FileSystems.getDefault().getPath(path);
-		return file;
+	static String convertStreamToString(java.io.InputStream is) {
+		java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+		return s.hasNext() ? s.next() : "";
 	}
+
 }
