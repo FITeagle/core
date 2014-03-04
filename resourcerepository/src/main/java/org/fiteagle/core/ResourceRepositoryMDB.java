@@ -41,8 +41,13 @@ public class ResourceRepositoryMDB extends AbstractModuleMDB implements
 			final Destination sender = rcvMessage.getJMSReplyTo();
 			LOGGER.info("Received a message from: "
 					+ sender);
-			String result = this.repo.listResources(Serialization.XML);
-			this.sendMessage(result);
+			
+			if (rcvMessage.getStringProperty("method").equals("listResources")) {
+				String result = this.repo.listResources(Serialization.XML);
+				this.sendMessage(result);
+			} else {
+				LOGGER.log(Level.INFO, "not sure what to do");
+			}
 		} catch (JMSException e) {
 			LOGGER.log(Level.SEVERE, "Issue with JMS", e);
 		}
