@@ -1,4 +1,4 @@
-package org.fiteagle.core;
+package org.fiteagle.core.repository;
 
 import java.io.InputStream;
 import java.util.logging.Level;

@@ -8,6 +8,9 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.command.ActiveMQTopic;
 import org.fiteagle.api.core.IResourceRepository;
 import org.fiteagle.api.core.IResourceRepository.Serialization;
+import org.fiteagle.core.repository.ResourceRepository;
+import org.fiteagle.core.repository.dm.ResourceRepositoryEJB;
+import org.fiteagle.core.repository.dm.ResourceRepositoryMDB;
 import org.junit.Assert;
 import org.junit.Test;
 

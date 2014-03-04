@@ -1,4 +1,4 @@
-package org.fiteagle.core;
+package org.fiteagle.core.repository.dm;
 
 import java.util.logging.Logger;
 
@@ -6,6 +6,7 @@ import javax.ejb.Remote;
 import javax.ejb.Stateless;
 
 import org.fiteagle.api.core.IResourceRepository;
+import org.fiteagle.core.repository.ResourceRepository;
 
 @Stateless
 @Remote(IResourceRepository.class)

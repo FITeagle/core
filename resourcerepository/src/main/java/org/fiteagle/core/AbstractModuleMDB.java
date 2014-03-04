@@ -21,7 +21,7 @@ public abstract class AbstractModuleMDB {
 
 	@Resource
 	private ConnectionFactory connectionFactory;
-	@Resource(mappedName = "java:/topic/core")
+	@Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
 	private Topic topic;
 	protected JMSProducer messageProducer;
 	private final static Logger LOGGER = Logger
@@ -29,6 +29,7 @@ public abstract class AbstractModuleMDB {
 
 	public AbstractModuleMDB(final ConnectionFactory connectionFactory,
 			final Topic topic) throws JMSException {
+		//to be done
 	}
 
 	public AbstractModuleMDB() throws JMSException {
