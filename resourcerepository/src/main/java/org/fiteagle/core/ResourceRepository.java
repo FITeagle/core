@@ -4,17 +4,10 @@ import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.ejb.Remote;
-import javax.ejb.Stateless;
-
 import org.fiteagle.api.core.IResourceRepository;
 
-@Stateless
-@Remote(IResourceRepository.class)
 public class ResourceRepository implements IResourceRepository {
-	
-	
-	
+
 	private final static Logger LOGGER = Logger
 			.getLogger(ResourceRepository.class.toString());
 
@@ -25,7 +18,7 @@ public class ResourceRepository implements IResourceRepository {
 		} else {
 			filename = "dummy-answer.ttl";
 		}
-		
+
 		LOGGER.log(Level.INFO, "Dummy response from: " + filename);
 		return getContent(filename);
 	}
@@ -40,5 +33,4 @@ public class ResourceRepository implements IResourceRepository {
 		java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
 		return s.hasNext() ? s.next() : "";
 	}
-
 }

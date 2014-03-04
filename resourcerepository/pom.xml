@@ -14,15 +14,30 @@
   <packaging>war</packaging>
   <name>FITeagle :: Core :: Resource Repository</name>
   <dependencies>
-  	<dependency>
-  		<groupId>org.jboss.spec.javax.ejb</groupId>
-  		<artifactId>jboss-ejb-api_3.1_spec</artifactId>
-  		<scope>provided</scope>
-  	</dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.jms</groupId>
+            <artifactId>jboss-jms-api_1.1_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.ejb</groupId>
+            <artifactId>jboss-ejb-api_3.1_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
   	<dependency>
   		<groupId>org.fiteagle</groupId>
   		<artifactId>api</artifactId>
   		<version>0.1-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.apache.activemq</groupId>
+  		<artifactId>activemq-broker</artifactId>
+  		<version>5.8.0</version>
   	</dependency>
   </dependencies>
 
