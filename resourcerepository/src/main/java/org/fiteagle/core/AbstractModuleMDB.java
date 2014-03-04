@@ -1,6 +1,5 @@
 package org.fiteagle.core;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.Resource;
@@ -15,40 +14,45 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.Topic;
 
+import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.IResourceRepository;
+
 public abstract class AbstractModuleMDB {
 
-    @Resource
-    private ConnectionFactory connectionFactory;
+	@Resource
+	private ConnectionFactory connectionFactory;
 	@Resource(mappedName = "java:/topic/core")
 	private Topic topic;
 	protected JMSProducer messageProducer;
 	private final static Logger LOGGER = Logger
 			.getLogger(AbstractModuleMDB.class.toString());
 
-
-	public AbstractModuleMDB(ConnectionFactory connectionFactory, Topic topic)
-			throws JMSException {
+	public AbstractModuleMDB(final ConnectionFactory connectionFactory,
+			final Topic topic) throws JMSException {
 	}
 
 	public AbstractModuleMDB() throws JMSException {
 	}
 
-	public void sendMessage(Destination receiver, String text) throws JMSException {
-        Connection connection = connectionFactory.createConnection();
-        connection.start();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        MessageProducer producer = session.createProducer(receiver);
-        producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+	public void sendMessage(final Destination receiver, final String text)
+			throws JMSException {
+		final Connection connection = this.connectionFactory.createConnection();
+		connection.start();
+		final Session session = connection.createSession(false,
+				Session.AUTO_ACKNOWLEDGE);
+		final MessageProducer producer = session.createProducer(receiver);
+		producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 
-        Message message = session.createMessage();
-        message.setStringProperty("foo", "bar");
-        message.setStringProperty("result", text);
-        LOGGER.log(Level.INFO, "Sending: " + text);
-        producer.send(message);
+		final Message message = session.createMessage();
+		message.setStringProperty(IMessageBus.TYPE_RESPONSE,
+				IResourceRepository.LIST_RESOURCES);
+		message.setStringProperty(IMessageBus.TYPE_RESULT, text);
+
+		producer.send(message);
 	}
-	
-	protected void sendMessage(String result) throws JMSException {
-		sendMessage(topic, result);		
+
+	protected void sendMessage(final String result) throws JMSException {
+		this.sendMessage(this.topic, result);
 	}
 
 }

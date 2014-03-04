@@ -11,7 +11,7 @@ public class ResourceRepository implements IResourceRepository {
 	private final static Logger LOGGER = Logger
 			.getLogger(ResourceRepository.class.toString());
 
-	public String listResources(Serialization type) {
+	public String listResources(final Serialization type) {
 		String filename;
 		if (Serialization.XML.equals(type)) {
 			filename = "dummy-answer.xml";
@@ -19,18 +19,20 @@ public class ResourceRepository implements IResourceRepository {
 			filename = "dummy-answer.ttl";
 		}
 
-		LOGGER.log(Level.INFO, "Dummy response from: " + filename);
-		return getContent(filename);
+		ResourceRepository.LOGGER.log(Level.INFO, "Dummy response from: "
+				+ filename);
+		return this.getContent(filename);
 	}
 
 	private String getContent(final String filename) {
-		InputStream is = this.getClass().getClassLoader()
+		final InputStream is = this.getClass().getClassLoader()
 				.getResourceAsStream(filename);
-		return convertStreamToString(is);
+		return ResourceRepository.convertStreamToString(is);
 	}
 
-	static String convertStreamToString(java.io.InputStream is) {
-		java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+	static String convertStreamToString(final java.io.InputStream is) {
+		final java.util.Scanner s = new java.util.Scanner(is)
+				.useDelimiter("\\A");
 		return s.hasNext() ? s.next() : "";
 	}
 }
