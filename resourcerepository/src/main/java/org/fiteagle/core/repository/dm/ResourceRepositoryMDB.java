@@ -42,9 +42,7 @@ public class ResourceRepositoryMDB extends AbstractModuleMDB implements
 
 	public void onMessage(final Message rcvMessage) {
 		try {
-			final Destination sender = rcvMessage.getJMSReplyTo();
-			ResourceRepositoryMDB.LOGGER.info("Received a message from: "
-					+ sender);
+			ResourceRepositoryMDB.LOGGER.info("Received a message");
 			final Serialization serialization = getSerialization(rcvMessage);
 			final String result = this.repo.listResources(serialization);
 			this.sendMessage(result);
