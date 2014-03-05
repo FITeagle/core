@@ -56,7 +56,7 @@ public class ResourceRepositoryMDB extends AbstractModuleMDB implements
 	private Serialization getSerialization(final Message rcvMessage)
 			throws JMSException {
 		final Serialization serialization;
-		if (rcvMessage.getStringProperty(IResourceRepository.PROP_SERIALIZATION).equals(IResourceRepository.SERIALIZATION_XML)) {
+		if (IResourceRepository.SERIALIZATION_XML.equals(rcvMessage.getStringProperty(IResourceRepository.PROP_SERIALIZATION))) {
 			serialization = Serialization.XML;
 		} else {
 			serialization = Serialization.TTL;
