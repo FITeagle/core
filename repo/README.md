@@ -2,7 +2,7 @@ Deployment of the FITeagle Core module: Resource Repository
 ===========================================================
 - Author: Alexander Willner
 - Level: Demo
-- Technologies: EJB, WAR
+- Technologies: EJB, JMS, MDB, REST, WAR, RDF
 - Target Project: FITeagle
 
 What is it?
@@ -26,11 +26,15 @@ Test
 
 1. Get resources in turtle serialization
 
-    curl http://localhost:8080/native/repo/resources.ttl
+    1. Via native calls: curl http://localhost:8080/repo/api/resources.ttl
+    2. Via EJB calls: curl http://localhost:8080/repo/api/ejb/resources.ttl
+    3. Via MDB calls: curl http://localhost:8080/repo/api/mdb/resources.ttl
 
 2. Get resources in xml+rdf serialization
 
-    curl http://localhost:8080/native/repo/resources.rdf
+    1. Via native calls: curl http://localhost:8080/repo/api/resources.rdf
+    2. Via EJB calls: curl http://localhost:8080/repo/api/ejb/resources.rdf
+    3. Via MDB calls: curl http://localhost:8080/repo/api/mdb/resources.rdf
     
 Tipps
 -----
