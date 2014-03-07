@@ -1,6 +1,7 @@
 package org.fiteagle.core.bus.dm;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +37,7 @@ public class MessageBusCommanderWS {
 		
 		final Message message = senderBean.createMessage();
 		message.setStringProperty(IMessageBus.TYPE_REQUEST, command);
+		message.setJMSCorrelationID(UUID.randomUUID().toString());
 
 		senderBean.sendMessage(message);
 		return "";
