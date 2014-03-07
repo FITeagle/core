@@ -9,8 +9,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Date;
 
-import org.fiteagle.api.FiteagleUser;
-import org.fiteagle.api.FiteagleUserPublicKey;
+import org.fiteagle.api.UserPublicKey;
 import org.fiteagle.api.User;
 import org.fiteagle.api.User.PublicKeyNotFoundException;
 import org.fiteagle.api.User.Role;
@@ -32,11 +31,9 @@ public class JPAUserDBTest {
   private final static String key2String = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCOHoq0DYsW793kyhbW1sj6aNm5OWeRn3HQ6nZxU9ax3FnDmtJsxvq2u0RwtPQki5JEMG58aqJPs3s4Go6LrTyw4jqnodKyOfcFupUYHTbQYnzxudLwyU59RfBmH01cLiyu26ECdVNXX+Y1mgofRUx72thBTtY6vyuM5nR1l7UNTw==";
   private final static String key3String = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDKpQJGxnReKal3p7d/95G5d3RQb002gso1QJrjxFKED+1cD157FsT2bCPcWpTYdLeTFRWBDUQa91yUPdkjkvoMsL2e3ah7nugRD6QfrFki0Po9oENrbujzaExPV8SAvXSuqcCG4/pidqEqjXJlAMXrphJcoFdKSzXLJtjUwfxyEw==";
   private final static String key4String = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==";
-//  private final static String key5String = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==";
-//  private final static String key6String = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==";
       
-  protected static ArrayList<FiteagleUserPublicKey> KEYS1;
-  protected static ArrayList<FiteagleUserPublicKey> KEYS2; 
+  protected static ArrayList<UserPublicKey> KEYS1;
+  protected static ArrayList<UserPublicKey> KEYS2; 
   protected static User USER1;
   protected static User USER2;
   protected static User USER3;
@@ -45,32 +42,32 @@ public class JPAUserDBTest {
   private static UserDB manager;
   
   private void createUser1() {
-    KEYS1 = new ArrayList<FiteagleUserPublicKey>();
+    KEYS1 = new ArrayList<UserPublicKey>();
     try {
-      KEYS1.add(new FiteagleUserPublicKey(KeyManagement.getInstance().decodePublicKey(key1String), "key1", key1String));
-      KEYS1.add(new FiteagleUserPublicKey(KeyManagement.getInstance().decodePublicKey(key2String), "key2", key2String));
-    } catch (FiteagleUser.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
+      KEYS1.add(new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key1String), "key1", key1String));
+      KEYS1.add(new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key2String), "key2", key2String));
+    } catch (User.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
       e.printStackTrace();
     }
-    USER1 = new FiteagleUser("test1", "mitja", "nikolaus", "test1@test.org", "mitjasAffiliation", "mitjasPassword", KEYS1);
+    USER1 = new User("test1", "mitja", "nikolaus", "test1@test.org", "mitjasAffiliation", "mitjasPassword", KEYS1);
   }
   
   private void createUser2() {
-    KEYS2 = new ArrayList<FiteagleUserPublicKey>(); 
+    KEYS2 = new ArrayList<UserPublicKey>(); 
     try {
-      KEYS2.add(new FiteagleUserPublicKey(KeyManagement.getInstance().decodePublicKey(key3String), "key3", key3String));
-    } catch (FiteagleUser.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
+      KEYS2.add(new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key3String), "key3", key3String));
+    } catch (User.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
       e.printStackTrace();
     }
-    USER2 = new FiteagleUser("test2", "hans", "schmidt", "hschmidt@test.org", "hansAffiliation", "hansPassword", KEYS2);
+    USER2 = new User("test2", "hans", "schmidt", "hschmidt@test.org", "hansAffiliation", "hansPassword", KEYS2);
   }
   
   private void createUser3() {
-     USER3 = new FiteagleUser("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<FiteagleUserPublicKey>());    
+     USER3 = new User("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());    
   }
   
   private void createUser4() {
-     USER4 = new FiteagleUser("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<FiteagleUserPublicKey>());
+     USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());
   }
   
   
@@ -149,8 +146,8 @@ public class JPAUserDBTest {
   public void testAddKey() throws UserNotFoundException, InvalidKeySpecException, NoSuchAlgorithmException, IOException{
     createUser1();
     manager.add(USER1);    
-    manager.addKey(USER1.getUsername(), new FiteagleUserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key4", key4String));
-    assertTrue(manager.get(USER1).getPublicKeys().contains(new FiteagleUserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key4", key4String)));
+    manager.addKey(USER1.getUsername(), new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key4", key4String));
+    assertTrue(manager.get(USER1).getPublicKeys().contains(new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key4", key4String)));
   }
     
   @Test(expected = DuplicatePublicKeyException.class)
@@ -164,8 +161,8 @@ public class JPAUserDBTest {
   public void testAddDuplicateKeysWithDifferentDescription() throws UserNotFoundException, DuplicatePublicKeyException, InvalidKeySpecException, NoSuchAlgorithmException, IOException{
     createUser1();
     manager.add(USER1);  
-    manager.addKey(USER1.getUsername(), new FiteagleUserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key5", key4String));
-    manager.addKey(USER1.getUsername(), new FiteagleUserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key6", key4String));
+    manager.addKey(USER1.getUsername(), new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key5", key4String));
+    manager.addKey(USER1.getUsername(), new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key6", key4String));
   }
 
   @Test
