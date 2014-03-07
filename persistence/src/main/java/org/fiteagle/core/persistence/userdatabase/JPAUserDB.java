@@ -1,7 +1,6 @@
 package org.fiteagle.core.persistence.userdatabase;
 
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Remote;
@@ -14,8 +13,6 @@ import javax.persistence.Query;
 
 import org.fiteagle.api.User;
 import org.fiteagle.api.User.Role;
-import org.fiteagle.api.FiteagleUser;
-import org.fiteagle.api.FiteagleUserPublicKey;
 import org.fiteagle.api.UserDB;
 import org.fiteagle.api.UserPublicKey;
 import org.hibernate.exception.ConstraintViolationException;
@@ -117,7 +114,7 @@ public class JPAUserDB implements UserDB{
   public User get(String username) throws UserNotFoundException{
     EntityManager em = getEntityManager();
     try{
-      FiteagleUser user = em.find(FiteagleUser.class, username);
+      User user = em.find(User.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
@@ -148,7 +145,7 @@ public class JPAUserDB implements UserDB{
   public void update(String username, String firstName, String lastName, String email, String affiliation, String password, List<UserPublicKey> publicKeys) {
     EntityManager em = getEntityManager();
     try{
-      User user = em.find(FiteagleUser.class, username);
+      User user = em.find(User.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
@@ -173,7 +170,7 @@ public class JPAUserDB implements UserDB{
   public void setRole(String username, Role role) {
     EntityManager em = getEntityManager();
     try{
-      User user = em.find(FiteagleUser.class, username);
+      User user = em.find(User.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
@@ -190,7 +187,7 @@ public class JPAUserDB implements UserDB{
   public void addKey(String username, UserPublicKey publicKey){
     EntityManager em = getEntityManager();
     try{
-      User user = em.find(FiteagleUser.class, username);
+      User user = em.find(User.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
@@ -209,7 +206,7 @@ public class JPAUserDB implements UserDB{
   public void deleteKey(String username, String description){
     EntityManager em = getEntityManager();
     try{
-      User user = em.find(FiteagleUser.class, username);
+      User user = em.find(User.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
@@ -225,7 +222,7 @@ public class JPAUserDB implements UserDB{
   public void renameKey(String username, String description, String newDescription){
     EntityManager em = getEntityManager();
     try{
-      User user = em.find(FiteagleUser.class, username);
+      User user = em.find(User.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
