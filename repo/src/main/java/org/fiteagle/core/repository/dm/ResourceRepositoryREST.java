@@ -18,8 +18,7 @@ import javax.ws.rs.Produces;
 
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.IResourceRepository;
-import org.fiteagle.api.core.IResourceRepository.Serialization;
-import org.fiteagle.core.repository.ResourceRepository;
+import org.fiteagle.core.repo.ResourceRepository;
 
 @Path("/")
 public class ResourceRepositoryREST {
@@ -47,7 +46,7 @@ public class ResourceRepositoryREST {
 	@Produces("application/rdf+xml")
 	public String listResourcesXMLviaEJB() {
 		LOGGER.log(Level.INFO, "Getting resources as RDF via EJB...");
-		return repoEJB.listResources(Serialization.XML);
+		return repoEJB.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
 	}
 
 	@GET
@@ -55,7 +54,7 @@ public class ResourceRepositoryREST {
 	@Produces("text/turtle")
 	public String listResourcesTTLviaEJB() {
 		LOGGER.log(Level.INFO, "Getting resources as TTL via EJB...");
-		return repoEJB.listResources(Serialization.TTL);
+		return repoEJB.listResources(IResourceRepository.SERIALIZATION_TURTLE);
 	}
 
 	@GET
@@ -63,7 +62,7 @@ public class ResourceRepositoryREST {
 	@Produces("application/rdf+xml")
 	public String listResourcesXMLviaNative() {
 		LOGGER.log(Level.INFO, "Getting resources as RDF...");
-		return repo.listResources(Serialization.XML);
+		return repo.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
 	}
 
 	@GET
@@ -71,7 +70,7 @@ public class ResourceRepositoryREST {
 	@Produces("text/turtle")
 	public String listResourcesTTL() {
 		LOGGER.log(Level.INFO, "Getting resources as TTL...");
-		return repo.listResources(Serialization.TTL);
+		return repo.listResources(IResourceRepository.SERIALIZATION_TURTLE);
 	}
 
 	@GET
@@ -79,7 +78,7 @@ public class ResourceRepositoryREST {
 	@Produces("application/rdf+xml")
 	public String listResourcesXMLviaMDB() throws JMSException,
 			InterruptedException {
-		return mdbListResources(IResourceRepository.SERIALIZATION_XML);
+		return mdbListResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
 	}
 
 	@GET
@@ -87,12 +86,20 @@ public class ResourceRepositoryREST {
 	@Produces("text/turtle")
 	public String listResourcesTTLviaMDB() throws JMSException,
 			InterruptedException {
-		return mdbListResources(IResourceRepository.SERIALIZATION_TTL);
+		return mdbListResources(IResourceRepository.SERIALIZATION_TURTLE);
+	}
+
+	@GET
+	@Path("/mdb/resources.jsonld")
+	@Produces("application/ld+json")
+	public String listResourcesLDviaMDB() throws JMSException,
+			InterruptedException {
+		return mdbListResources(IResourceRepository.SERIALIZATION_JSONLD);
 	}
 
 	private String mdbListResources(final String serialization)
 			throws JMSException {
-		String result = "unkown";
+		String result = "timeout";
 		
 		Message message = context.createMessage();
 		message.setStringProperty(IMessageBus.TYPE_REQUEST,

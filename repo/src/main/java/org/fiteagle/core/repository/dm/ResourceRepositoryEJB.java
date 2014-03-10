@@ -4,7 +4,7 @@ import javax.ejb.Remote;
 import javax.ejb.Stateless;
 
 import org.fiteagle.api.core.IResourceRepository;
-import org.fiteagle.core.repository.ResourceRepository;
+import org.fiteagle.core.repo.ResourceRepository;
 
 @Stateless
 @Remote(IResourceRepository.class)
@@ -15,7 +15,7 @@ public class ResourceRepositoryEJB implements IResourceRepository {
 		this.repo = new ResourceRepository();
 	}
 
-	public String listResources(final Serialization type) {
+	public String listResources(final String type) {
 		return this.repo.listResources(type);
 	}
 }

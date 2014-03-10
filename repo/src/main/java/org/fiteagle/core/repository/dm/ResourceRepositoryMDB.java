@@ -15,8 +15,7 @@ import javax.jms.Topic;
 
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.IResourceRepository;
-import org.fiteagle.api.core.IResourceRepository.Serialization;
-import org.fiteagle.core.repository.ResourceRepository;
+import org.fiteagle.core.repo.ResourceRepository;
 
 @MessageDriven(name = "ResourceRepositoryMDB", activationConfig = {
 		@ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -41,7 +40,7 @@ public class ResourceRepositoryMDB implements MessageListener {
 	public void onMessage(final Message rcvMessage) {
 		try {
 			ResourceRepositoryMDB.LOGGER.info("Received a message");
-			final Serialization serialization = getSerialization(rcvMessage);
+			final String serialization = rcvMessage.getStringProperty(IResourceRepository.PROP_SERIALIZATION);
 			final String result = this.repo.listResources(serialization);
 			final String id = rcvMessage.getJMSCorrelationID();					
 			final Message message = this.context.createMessage();
@@ -56,16 +55,5 @@ public class ResourceRepositoryMDB implements MessageListener {
 		} catch (final JMSException e) {
 			ResourceRepositoryMDB.LOGGER.log(Level.SEVERE, "Issue with JMS", e);
 		}
-	}
-
-	private Serialization getSerialization(final Message rcvMessage)
-			throws JMSException {
-		final Serialization serialization;
-		if (IResourceRepository.SERIALIZATION_XML.equals(rcvMessage.getStringProperty(IResourceRepository.PROP_SERIALIZATION))) {
-			serialization = Serialization.XML;
-		} else {
-			serialization = Serialization.TTL;
-		}
-		return serialization;
 	}
 }
