@@ -36,7 +36,7 @@ Test
     2. Via EJB calls: curl http://localhost:8080/repo/api/ejb/resources.rdf
     3. Via MDB calls: curl http://localhost:8080/repo/api/mdb/resources.rdf
 
-3. Get resources in turtle serialization    
+3. Get resources in JSON-LD serialization    
 
     1. Via MDB calls: curl http://localhost:8080/repo/api/mdb/resources.jsonld
 
