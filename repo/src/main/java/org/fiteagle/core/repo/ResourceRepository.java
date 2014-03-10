@@ -1,33 +1,93 @@
 package org.fiteagle.core.repo;
 
-import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFFormat;
 import org.fiteagle.api.core.IResourceRepository;
 
+import com.hp.hpl.jena.query.Dataset;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.ReadWrite;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.tdb.TDBFactory;
 
 public class ResourceRepository implements IResourceRepository {
 
+	private static final String DEFAULT_SELECT = "SELECT * {?s ?p ?o} LIMIT 100";
+	private static final String DUMMY_DATA = "dummy-answer.xml";
+	private static final String REPODB_DIR = "repodb";
 	private final static Logger LOGGER = Logger
 			.getLogger(ResourceRepository.class.toString());
+	private Dataset dataset;
+
+	public ResourceRepository() {
+		this.dataset = TDBFactory.createDataset(ResourceRepository.REPODB_DIR);
+		// DatasetFactory.createMem();
+
+		addDummyData();
+	}
+
+	private void addDummyData() {
+		ResourceRepository.LOGGER.log(Level.INFO, "Loading dummy data from: "
+				+ ResourceRepository.DUMMY_DATA);
+		Model dummyModel = RDFDataMgr.loadModel(ResourceRepository.DUMMY_DATA,
+				Lang.RDFXML);
+		addModel(dummyModel);
+	}
+
+	private void addModel(Model dummyModel) {
+		dataset.begin(ReadWrite.WRITE);
+		Model model = dataset.getDefaultModel();
+		try {
+			if (model.isEmpty()) {
+				model.add(dummyModel);
+				dataset.commit();
+			}
+		} finally {
+			dataset.end();
+		}
+	}
+
+	public String listResources(final String query, final String type) {
+		Model model = ModelFactory.createDefaultModel();
+		dataset.begin(ReadWrite.READ);
+		try {
+			QueryExecution qExec = QueryExecutionFactory.create(query, dataset);
+			ResultSet rs = qExec.execSelect();
+			try {
+				model = rs.getResourceModel();
+			} finally {
+				qExec.close();
+			}
+		} finally {
+			dataset.end();
+		}
+
+		StringWriter result = new StringWriter();
+		model.write(result, type);
+
+		return result.toString();
+	}
 
 	public String listResources(final String type) {
-		final String inputFilename = "dummy-answer.xml";
-		InputStream inputStream = this.getClass().getClassLoader()
-		.getResourceAsStream(inputFilename);
-		StringWriter result = new StringWriter();
+		ResourceRepository.LOGGER
+				.log(Level.INFO, "Response to format: " + type);
 
-		ResourceRepository.LOGGER.log(Level.INFO, "Dummy response from: "
-				+ inputFilename + " to format: " + type);
-		Model model = RDFDataMgr.loadModel(inputFilename, Lang.RDFXML);
-		model.read(inputStream, IResourceRepository.SERIALIZATION_RDFXML_PLAIN);
-		model.write(result, type);
-		
-		return result.toString();
+		return this.listResources(ResourceRepository.DEFAULT_SELECT, type);
+	}
+
+	public String listResources() {
+		ResourceRepository.LOGGER
+				.log(Level.INFO, "Response to default format.");
+		return this
+				.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
 	}
 }

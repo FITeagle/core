@@ -12,10 +12,14 @@ public class ResourceRepositoryTest {
 	@Test
 	public void testListResources() {
 		final IResourceRepository repo = new ResourceRepository();
-		String result = repo.listResources(IResourceRepository.SERIALIZATION_TURTLE);
-		Assert.assertTrue(result.contains("@prefix"));
+		String result;
+		
+		result = repo.listResources();
+		Assert.assertTrue(result.contains("<rdf"));
 		result = repo.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
 		Assert.assertTrue(result.contains("<rdf"));
+		result = repo.listResources(IResourceRepository.SERIALIZATION_TURTLE);
+		Assert.assertTrue(result.contains("<http"));
 		result = repo.listResources(IResourceRepository.SERIALIZATION_RDFJSON);
 		Assert.assertTrue(result.contains("value"));
 		result = repo.listResources(IResourceRepository.SERIALIZATION_JSONLD);
