@@ -6,7 +6,6 @@ import java.util.logging.Logger;
 
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFFormat;
 import org.fiteagle.api.core.IResourceRepository;
 
 import com.hp.hpl.jena.query.Dataset;
@@ -14,7 +13,6 @@ import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.ReadWrite;
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.tdb.TDBFactory;
@@ -40,10 +38,10 @@ public class ResourceRepository implements IResourceRepository {
 				+ ResourceRepository.DUMMY_DATA);
 		Model dummyModel = RDFDataMgr.loadModel(ResourceRepository.DUMMY_DATA,
 				Lang.RDFXML);
-		addModel(dummyModel);
+		addData(dummyModel);
 	}
 
-	private void addModel(Model dummyModel) {
+	private void addData(Model dummyModel) {
 		dataset.begin(ReadWrite.WRITE);
 		Model model = dataset.getDefaultModel();
 		try {
@@ -56,7 +54,8 @@ public class ResourceRepository implements IResourceRepository {
 		}
 	}
 
-	public String listResources(final String query, final String type) {
+	public String queryDatabse(final String query, final String serialization) {
+		ResourceRepository.LOGGER.log(Level.INFO, "Querying database...");
 		Model model = ModelFactory.createDefaultModel();
 		dataset.begin(ReadWrite.READ);
 		try {
@@ -72,16 +71,16 @@ public class ResourceRepository implements IResourceRepository {
 		}
 
 		StringWriter result = new StringWriter();
-		model.write(result, type);
+		model.write(result, serialization);
 
 		return result.toString();
 	}
 
-	public String listResources(final String type) {
+	public String listResources(final String serialization) {
 		ResourceRepository.LOGGER
-				.log(Level.INFO, "Response to format: " + type);
+				.log(Level.INFO, "Response to format: " + serialization);
 
-		return this.listResources(ResourceRepository.DEFAULT_SELECT, type);
+		return this.queryDatabse(ResourceRepository.DEFAULT_SELECT, serialization);
 	}
 
 	public String listResources() {
