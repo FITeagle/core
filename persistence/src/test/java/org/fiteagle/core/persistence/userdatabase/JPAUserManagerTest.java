@@ -9,15 +9,15 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Date;
 
-import org.fiteagle.api.UserPublicKey;
-import org.fiteagle.api.User;
-import org.fiteagle.api.User.PublicKeyNotFoundException;
-import org.fiteagle.api.User.Role;
-import org.fiteagle.api.UserDB;
-import org.fiteagle.api.UserDB.DuplicateEmailException;
-import org.fiteagle.api.UserDB.DuplicatePublicKeyException;
-import org.fiteagle.api.UserDB.DuplicateUsernameException;
-import org.fiteagle.api.UserDB.UserNotFoundException;
+import org.fiteagle.api.usermanagement.User;
+import org.fiteagle.api.usermanagement.UserManager;
+import org.fiteagle.api.usermanagement.UserPublicKey;
+import org.fiteagle.api.usermanagement.User.PublicKeyNotFoundException;
+import org.fiteagle.api.usermanagement.User.Role;
+import org.fiteagle.api.usermanagement.UserManager.DuplicateEmailException;
+import org.fiteagle.api.usermanagement.UserManager.DuplicatePublicKeyException;
+import org.fiteagle.api.usermanagement.UserManager.DuplicateUsernameException;
+import org.fiteagle.api.usermanagement.UserManager.UserNotFoundException;
 import org.fiteagle.core.aaa.authentication.KeyManagement;
 import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
 import org.junit.After;
@@ -25,7 +25,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class JPAUserDBTest {
+public class JPAUserManagerTest {
   
   private final static String key1String = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCarsTCyAf8gYXwei8rhJnLTqYI6P88weRaY5dW9j3DT4mvfQPna79Bjq+uH4drmjbTD2n3s3ytqupFfNko1F0+McstA2EEkO8pAo5NEPcreygUcB2d49So032GKGPETB8chRkDsaBCm/KKL2vXdQoicofli8JJRPK2kXfUW34qww==";
   private final static String key2String = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCOHoq0DYsW793kyhbW1sj6aNm5OWeRn3HQ6nZxU9ax3FnDmtJsxvq2u0RwtPQki5JEMG58aqJPs3s4Go6LrTyw4jqnodKyOfcFupUYHTbQYnzxudLwyU59RfBmH01cLiyu26ECdVNXX+Y1mgofRUx72thBTtY6vyuM5nR1l7UNTw==";
@@ -39,7 +39,7 @@ public class JPAUserDBTest {
   protected static User USER3;
   protected static User USER4;
   
-  private static UserDB manager;
+  private static UserManager manager;
   
   private void createUser1() {
     KEYS1 = new ArrayList<UserPublicKey>();
@@ -73,16 +73,16 @@ public class JPAUserDBTest {
   
   @BeforeClass
   public static void setUp(){
-    manager = JPAUserDB.getInMemoryInstance();
+    manager = JPAUserManager.getInMemoryInstance();
   }
   
-//  @Test
-//  public void testGet(){   
-//    createUser1();
-//    manager.add(USER1);    
-//    assertTrue(USER1.equals(manager.get(USER1)));  
-//    assertTrue(manager.getAllUsers().size() > 0); 
-//  }
+  @Test
+  public void testGet(){   
+    createUser1();
+    manager.add(USER1);    
+    assertTrue(USER1.equals(manager.get(USER1)));  
+    assertTrue(manager.getAllUsers().size() > 0); 
+  }
   
   @Test(expected=DuplicateUsernameException.class)
   public void testAddFails() {
@@ -90,7 +90,7 @@ public class JPAUserDBTest {
     createUser2();
     manager.add(USER2);
     USER1.setUsername(USER2.getUsername());
-    manager.add(USER2);
+    manager.add(USER1);
   }
 
   @Test
@@ -108,7 +108,7 @@ public class JPAUserDBTest {
     manager.get(USER2);
   }
   
-  @Test(expected=JPAUserDB.UserNotFoundException.class)
+  @Test(expected=JPAUserManager.UserNotFoundException.class)
   public void testDelete(){
     createUser1();
     manager.add(USER1);    
@@ -196,13 +196,13 @@ public class JPAUserDBTest {
     manager.renameKey(USER1.getUsername(), "key5", "my new description");
   }
   
-//  @Test(expected = DuplicateEmailException.class)
-//  public void testDuplicateEmailExeptionWhenAdd(){
-//    createUser3();
-//    createUser4();
-//    manager.add(USER3);
-//    manager.add(USER4);
-//  }
+  @Test(expected = DuplicateEmailException.class)
+  public void testDuplicateEmailExeptionWhenAdd(){
+    createUser3();
+    createUser4();
+    manager.add(USER3);
+    manager.add(USER4);
+  }
 
   @Test(expected = DuplicateEmailException.class)
   public void testDuplicateEmailExeptionWhenUpdate(){
