@@ -13,7 +13,6 @@
         <module>persistence</module>
         <module>config</module>
         <module>aaa</module>
-        <module>usermanagement</module>
         <module>repo</module>
         <module>bus</module>
 	</modules>
@@ -149,6 +148,7 @@
 			<groupId>javax</groupId>
 			<artifactId>javaee-api</artifactId>
 			<version>7.0</version>
+			<scope>provided</scope>
 		</dependency>
 
 	</dependencies>
