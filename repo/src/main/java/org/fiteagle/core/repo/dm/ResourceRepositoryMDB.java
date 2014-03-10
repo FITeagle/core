@@ -1,4 +1,4 @@
-package org.fiteagle.core.repository.dm;
+package org.fiteagle.core.repo.dm;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

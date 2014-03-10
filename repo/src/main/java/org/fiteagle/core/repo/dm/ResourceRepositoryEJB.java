@@ -1,4 +1,4 @@
-package org.fiteagle.core.repository.dm;
+package org.fiteagle.core.repo.dm;
 
 import javax.ejb.Remote;
 import javax.ejb.Stateless;
@@ -17,5 +17,14 @@ public class ResourceRepositoryEJB implements IResourceRepository {
 
 	public String listResources(final String type) {
 		return this.repo.listResources(type);
+	}
+
+	public String listResources() {
+		return this.repo.listResources();
+	}
+
+	public String queryDatabse(String query, String type) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
