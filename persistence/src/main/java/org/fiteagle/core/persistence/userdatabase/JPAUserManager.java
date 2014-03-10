@@ -1,6 +1,20 @@
 package org.fiteagle.core.persistence.userdatabase;
 
 
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyStoreException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.ejb.Remote;
@@ -11,10 +25,19 @@ import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import net.iharder.Base64;
+
 import org.fiteagle.api.usermanagement.User;
+import org.fiteagle.api.usermanagement.User.PublicKeyNotFoundException;
+import org.fiteagle.api.usermanagement.User.Role;
 import org.fiteagle.api.usermanagement.UserManager;
 import org.fiteagle.api.usermanagement.UserPublicKey;
-import org.fiteagle.api.usermanagement.User.Role;
+import org.fiteagle.core.aaa.authentication.AuthenticationHandler;
+import org.fiteagle.core.aaa.authentication.CertificateAuthority;
+import org.fiteagle.core.aaa.authentication.KeyManagement;
+import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
+import org.fiteagle.core.aaa.authentication.x509.X509Util;
+import org.fiteagle.core.config.preferences.InterfaceConfiguration;
 
 @Stateless
 @Remote(UserManager.class)
@@ -211,6 +234,131 @@ public class JPAUserManager implements UserManager{
     } finally {
       commitTransaction(em);
     }    
+  }
+  
+  public User getUserFromCert(X509Certificate userCert) {
+    try {
+      String username = "";
+      username = X509Util.getUserNameFromX509Certificate(userCert);
+  
+      User identifiedUser = get(username);
+      return identifiedUser;
+    } catch (CertificateParsingException e1) {
+      throw new RuntimeException(e1);
+    }
+  }
+  
+  public X509Certificate createCertificate(X509Certificate xCert)
+      throws Exception {
+    User User = getUserFromCert(xCert);
+    PublicKey pubkey = xCert.getPublicKey();
+    return CertificateAuthority.getInstance().createCertificate(User,
+        pubkey);
+  }
+  
+  public boolean verifyPassword(String password, String passwordHash,
+      String passwordSalt) throws IOException, NoSuchAlgorithmException {
+    byte[] passwordHashBytes = Base64.decode(passwordHash);
+    byte[] passwordSaltBytes = Base64.decode(passwordSalt);
+    byte[] proposedDigest = createHash(passwordSaltBytes, password);
+    return Arrays.equals(passwordHashBytes, proposedDigest);
+  }
+  
+  public boolean verifyCredentials(String username, String password)
+      throws NoSuchAlgorithmException, IOException,
+      UserNotFoundException {
+    username = addDomain(username);
+    User User = get(username);
+    return verifyPassword(password, User.hash(), User.salt());
+  }
+  
+  private String createUserCertificate(String username, PublicKey publicKey)
+      throws Exception {
+    User u = get(username);
+    CertificateAuthority ca = CertificateAuthority.getInstance();
+    X509Certificate cert = ca.createCertificate(u, publicKey);
+    return X509Util.getCertficateEncoded(cert);
+  }
+  
+  private byte[] createHash(byte[] salt, String password)
+      throws NoSuchAlgorithmException {
+    MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    digest.reset();
+    digest.update(salt);
+    return digest.digest(password.getBytes());
+  }
+  
+  public String createUserCertificate(String username, String passphrase, KeyPair keyPair) throws Exception {
+    username = addDomain(username);
+    String pubKeyEncoded = KeyManagement.getInstance().encodePublicKey(keyPair.getPublic());
+    addKey(username, new UserPublicKey(keyPair.getPublic(), "created at " + System.currentTimeMillis(), pubKeyEncoded));
+    String userCertString = createUserCertificate(username, keyPair.getPublic());
+    String privateKeyEncoded = KeyManagement.getInstance().encryptPrivateKey(keyPair.getPrivate(), passphrase);
+    return privateKeyEncoded + "\n" + userCertString;
+  }
+  
+  public String createUserKeyPairAndCertificate(String username, String passphrase) throws Exception{
+    return createUserCertificate(username, passphrase, KeyManagement.getInstance().generateKeyPair());
+  }
+  
+  public String createUserCertificateForPublicKey(String username, String description) throws Exception, PublicKeyNotFoundException {
+    username = addDomain(username);
+    PublicKey publicKey = get(username).getPublicKey(description).publicKey();
+    return createUserCertificate(username, publicKey);
+  }
+  
+  public boolean areAuthenticatedCertificates(X509Certificate[] certificates) throws KeyStoreException,
+    NoSuchAlgorithmException, CertificateException, IOException, InvalidAlgorithmParameterException,
+    CertPathValidatorException, SQLException, InvalidKeySpecException, CouldNotParse {
+  
+  X509Certificate cert = certificates[0];
+  try{
+  if (cert.getSubjectX500Principal().equals(cert.getIssuerX500Principal())) {
+    
+    User identifiedUser = getUserFromCert(cert);
+    return verifyUserSignedCertificate(identifiedUser, cert);
+    
+  } else {
+    
+    if(AuthenticationHandler.getInstance().isValid(0, certificates, certificates[0].getSubjectX500Principal())){
+  //    if(userIsUnknown(cert))
+  //      storeNewUser(cert);
+      return true;
+    }
+  
+  }
+  }catch(RuntimeException e){
+    return false;
+  }
+  return false;
+  
+  }
+  
+  private boolean verifyUserSignedCertificate(User identifiedUser, X509Certificate certificate) throws IOException, InvalidKeySpecException, NoSuchAlgorithmException, CouldNotParse {
+      boolean verified = false;
+      KeyManagement keydecoder = KeyManagement.getInstance();
+      if (identifiedUser.getPublicKeys() == null || identifiedUser.getPublicKeys().size() == 0) {
+        identifiedUser.addPublicKey(new UserPublicKey(certificate.getPublicKey(), "created at " + System.currentTimeMillis(), keydecoder.encodePublicKey(certificate.getPublicKey())));
+        addKey(identifiedUser.getUsername(), identifiedUser.getPublicKeys().get(0));
+      }
+      for (UserPublicKey oldUserPublicKey : identifiedUser.getPublicKeys()) {      
+        PublicKey pubKey = oldUserPublicKey.publicKey();
+        
+        verified = AuthenticationHandler.getInstance().verifyCertificateWithPublicKey(certificate, pubKey);
+        if (verified) {
+          return true;
+        }
+      }
+      throw new AuthenticationHandler.KeyDoesNotMatchException();
+    }
+  
+  private String addDomain(String username) {
+    InterfaceConfiguration configuration = null;
+    if (!username.contains("@")) {
+      configuration = InterfaceConfiguration.getInstance();
+      username = username + "@" + configuration.getDomain();
+    }
+    return username;
   }
   
   @Override
