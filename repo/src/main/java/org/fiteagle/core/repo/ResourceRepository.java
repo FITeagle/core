@@ -76,11 +76,11 @@ public class ResourceRepository implements IResourceRepository {
 		return result.toString();
 	}
 
-	public String listResources(final String type) {
+	public String listResources(final String serialization) {
 		ResourceRepository.LOGGER
-				.log(Level.INFO, "Response to format: " + type);
+				.log(Level.INFO, "Response to format: " + serialization);
 
-		return this.queryDatabse(ResourceRepository.DEFAULT_SELECT, type);
+		return this.queryDatabse(ResourceRepository.DEFAULT_SELECT, serialization);
 	}
 
 	public String listResources() {
