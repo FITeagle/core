@@ -9,15 +9,15 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Date;
 
-import org.fiteagle.api.UserPublicKey;
-import org.fiteagle.api.User;
-import org.fiteagle.api.User.PublicKeyNotFoundException;
-import org.fiteagle.api.User.Role;
-import org.fiteagle.api.UserDB;
-import org.fiteagle.api.UserDB.DuplicateEmailException;
-import org.fiteagle.api.UserDB.DuplicatePublicKeyException;
-import org.fiteagle.api.UserDB.DuplicateUsernameException;
-import org.fiteagle.api.UserDB.UserNotFoundException;
+import org.fiteagle.api.usermanagement.User;
+import org.fiteagle.api.usermanagement.UserManager;
+import org.fiteagle.api.usermanagement.UserPublicKey;
+import org.fiteagle.api.usermanagement.User.PublicKeyNotFoundException;
+import org.fiteagle.api.usermanagement.User.Role;
+import org.fiteagle.api.usermanagement.UserManager.DuplicateEmailException;
+import org.fiteagle.api.usermanagement.UserManager.DuplicatePublicKeyException;
+import org.fiteagle.api.usermanagement.UserManager.DuplicateUsernameException;
+import org.fiteagle.api.usermanagement.UserManager.UserNotFoundException;
 import org.fiteagle.core.aaa.authentication.KeyManagement;
 import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
 import org.junit.After;
@@ -39,7 +39,7 @@ public class JPAUserDBTest {
   protected static User USER3;
   protected static User USER4;
   
-  private static UserDB manager;
+  private static UserManager manager;
   
   private void createUser1() {
     KEYS1 = new ArrayList<UserPublicKey>();
@@ -73,7 +73,7 @@ public class JPAUserDBTest {
   
   @BeforeClass
   public static void setUp(){
-    manager = JPAUserDB.getInMemoryInstance();
+    manager = JPAUserManager.getInMemoryInstance();
   }
   
   @Test
@@ -108,7 +108,7 @@ public class JPAUserDBTest {
     manager.get(USER2);
   }
   
-  @Test(expected=JPAUserDB.UserNotFoundException.class)
+  @Test(expected=JPAUserManager.UserNotFoundException.class)
   public void testDelete(){
     createUser1();
     manager.add(USER1);    

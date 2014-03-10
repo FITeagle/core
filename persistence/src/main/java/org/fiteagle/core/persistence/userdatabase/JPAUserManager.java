@@ -11,28 +11,28 @@ import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
-import org.fiteagle.api.User;
-import org.fiteagle.api.User.Role;
-import org.fiteagle.api.UserDB;
-import org.fiteagle.api.UserPublicKey;
+import org.fiteagle.api.usermanagement.User;
+import org.fiteagle.api.usermanagement.UserManager;
+import org.fiteagle.api.usermanagement.UserPublicKey;
+import org.fiteagle.api.usermanagement.User.Role;
 
 @Stateless
-@Remote(UserDB.class)
-public class JPAUserDB implements UserDB{
+@Remote(UserManager.class)
+public class JPAUserManager implements UserManager{
   
   private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";
   
-  private static UserDB inMemoryInstance;
+  private static UserManager inMemoryInstance;
   
-  public JPAUserDB(){
+  public JPAUserManager(){
   }
 	
   @PersistenceContext(unitName="usersDB")
   EntityManager entityManager;
   
-  public static UserDB getInMemoryInstance(){
+  public static UserManager getInMemoryInstance(){
     if(inMemoryInstance == null){
-      inMemoryInstance = new JPAUserDB();
+      inMemoryInstance = new JPAUserManager();
     }
     return inMemoryInstance;
   }
