@@ -76,13 +76,13 @@ public class JPAUserDBTest {
     manager = JPAUserDB.getInMemoryInstance();
   }
   
-//  @Test
-//  public void testGet(){   
-//    createUser1();
-//    manager.add(USER1);    
-//    assertTrue(USER1.equals(manager.get(USER1)));  
-//    assertTrue(manager.getAllUsers().size() > 0); 
-//  }
+  @Test
+  public void testGet(){   
+    createUser1();
+    manager.add(USER1);    
+    assertTrue(USER1.equals(manager.get(USER1)));  
+    assertTrue(manager.getAllUsers().size() > 0); 
+  }
   
   @Test(expected=DuplicateUsernameException.class)
   public void testAddFails() {
@@ -90,7 +90,7 @@ public class JPAUserDBTest {
     createUser2();
     manager.add(USER2);
     USER1.setUsername(USER2.getUsername());
-    manager.add(USER2);
+    manager.add(USER1);
   }
 
   @Test
@@ -196,13 +196,13 @@ public class JPAUserDBTest {
     manager.renameKey(USER1.getUsername(), "key5", "my new description");
   }
   
-//  @Test(expected = DuplicateEmailException.class)
-//  public void testDuplicateEmailExeptionWhenAdd(){
-//    createUser3();
-//    createUser4();
-//    manager.add(USER3);
-//    manager.add(USER4);
-//  }
+  @Test(expected = DuplicateEmailException.class)
+  public void testDuplicateEmailExeptionWhenAdd(){
+    createUser3();
+    createUser4();
+    manager.add(USER3);
+    manager.add(USER4);
+  }
 
   @Test(expected = DuplicateEmailException.class)
   public void testDuplicateEmailExeptionWhenUpdate(){

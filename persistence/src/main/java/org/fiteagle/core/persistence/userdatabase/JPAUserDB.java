@@ -15,20 +15,13 @@ import org.fiteagle.api.User;
 import org.fiteagle.api.User.Role;
 import org.fiteagle.api.UserDB;
 import org.fiteagle.api.UserPublicKey;
-import org.hibernate.exception.ConstraintViolationException;
 
-@Stateless //(name = "JPAUserDB", mappedName="UserDB")
+@Stateless
 @Remote(UserDB.class)
 public class JPAUserDB implements UserDB{
   
-//  private final String PERSISTENCE_TYPE;  
-  
-//  private static final String DEFAULT_DATABASE_PATH = System.getProperty("user.home")+"/.fiteagle/db/";
-//  private static FiteaglePreferences preferences = new FiteaglePreferencesXML(JPAUserDB.class);
-  
   private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";
   
-//  private static JPAUserDB derbyInstance;
   private static UserDB inMemoryInstance;
   
   public JPAUserDB(){
@@ -43,21 +36,6 @@ public class JPAUserDB implements UserDB{
     }
     return inMemoryInstance;
   }
-  
-//  public static JPAUserDB getDerbyInstance(){
-//    if(derbyInstance == null){
-//      derbyInstance = new JPAUserDB(PERSISTENCE_UNIT_NAME_DERBY);
-//    }
-//    return derbyInstance;
-//  }
-  
-//  private static String getDatabasePath() {
-//    if(preferences.get("databasePath") == null){
-//      preferences.put("databasePath", DEFAULT_DATABASE_PATH);
-//    }
-//    return preferences.get("databasePath");
-//  }
-  
   
   static{
     try {
@@ -76,33 +54,46 @@ public class JPAUserDB implements UserDB{
     return entityManager;
   }
   
+  private void beginTransaction(EntityManager em){
+    if(this == inMemoryInstance){
+      em.getTransaction().begin();
+    }
+  }
+  
+  private void commitTransaction(EntityManager em){
+    if(this == inMemoryInstance){
+      em.getTransaction().commit();
+    }
+  }
+  
   @Override
   public void add(User user){
     EntityManager em = getEntityManager();
-    if(em.contains(user)){
-      throw new DuplicateUsernameException();
-    }
-//    List<User> users = getAllUsers();
-//    for(User u : users){
-//      if(u.getEmail().equals(user.getEmail()))
-//        throw new DuplicateEmailException();
-//    }
-    try{
-//      em.getTransaction().begin();
-      em.persist(user);
-//      em.getTransaction().commit();
-    } catch(Exception e){
-      if(e.getCause() != null && e.getCause().getCause() instanceof ConstraintViolationException){
-        ConstraintViolationException ec = (ConstraintViolationException) e.getCause().getCause();
-        if(ec.getConstraintName().contains("EMAIL_INDEX_4 ON PUBLIC.USERS(EMAIL) VALUES")){
-          em.clear();
-          throw new DuplicateEmailException();
-        }
+    
+    List<User> users = getAllUsers();
+    for(User u : users){
+      if(u.getEmail().equals(user.getEmail())){
+        throw new DuplicateEmailException();
       }
-      throw e;
-    }finally{
-//      em.close();
+      if(u.getUsername().equals(user.getUsername())){
+        throw new DuplicateUsernameException();
+      }
     }
+    
+//    try{
+    beginTransaction(em);
+    em.persist(user);
+    commitTransaction(em);
+//    } catch(Exception e){
+//      if(e.getCause() != null && e.getCause().getCause() instanceof ConstraintViolationException){
+//        ConstraintViolationException ec = (ConstraintViolationException) e.getCause().getCause();
+//        if(ec.getConstraintName().contains("EMAIL_INDEX_4 ON PUBLIC.USERS(EMAIL) VALUES")){
+//          em.clear();
+//          throw new DuplicateEmailException();
+//        }
+//      }
+//      throw e;
+//    }
   }
   
   @Override
@@ -113,27 +104,19 @@ public class JPAUserDB implements UserDB{
   @Override
   public User get(String username) throws UserNotFoundException{
     EntityManager em = getEntityManager();
-    try{
-      User user = em.find(User.class, username);
-      if(user == null){
-        throw new UserNotFoundException();
-      }
-      return user;
-    }finally{
-//      em.close();
+    User user = em.find(User.class, username);
+    if(user == null){
+      throw new UserNotFoundException();
     }
+    return user;
   }
   
   @Override
   public void delete(User user){
     EntityManager em = getEntityManager();
-    try{
-      em.getTransaction().begin();
-      em.remove(em.merge(user));
-      em.getTransaction().commit();
-    }finally{
-//      em.close();
-    }
+    beginTransaction(em);
+    em.remove(em.merge(user));
+    commitTransaction(em);
   }
   
   @Override
@@ -144,110 +127,98 @@ public class JPAUserDB implements UserDB{
   @Override
   public void update(String username, String firstName, String lastName, String email, String affiliation, String password, List<UserPublicKey> publicKeys) {
     EntityManager em = getEntityManager();
-    try{
+//    try{
       User user = em.find(User.class, username);
       if(user == null){
         throw new UserNotFoundException();
       }
-      em.getTransaction().begin();
-      user.updateAttributes(firstName, lastName, email, affiliation, password, publicKeys);
-      em.getTransaction().commit();
-    }catch(Exception e){
-      if(e.getCause() != null && e.getCause().getCause() instanceof ConstraintViolationException){
-        ConstraintViolationException ec = (ConstraintViolationException) e.getCause().getCause();
-        if(ec.getConstraintName().contains("EMAIL_INDEX_4 ON PUBLIC.USERS(EMAIL) VALUES")){
-          em.clear();
+      
+      List<User> users = getAllUsers();
+      for(User u : users){
+        if(u.getEmail().equals(email) && !u.getUsername().equals(username)){
           throw new DuplicateEmailException();
         }
       }
-      throw e;
-    }finally{
-//      em.close();
-    }
+      
+      beginTransaction(em);
+      user.updateAttributes(firstName, lastName, email, affiliation, password, publicKeys);
+      commitTransaction(em);
+//    }catch(Exception e){
+//      if(e.getCause() != null && e.getCause().getCause() instanceof ConstraintViolationException){
+//        ConstraintViolationException ec = (ConstraintViolationException) e.getCause().getCause();
+//        if(ec.getConstraintName().contains("EMAIL_INDEX_4 ON PUBLIC.USERS(EMAIL) VALUES")){
+//          em.clear();
+//          throw new DuplicateEmailException();
+//        }
+//      }
+//      throw e;
+//    }
   }
 
   @Override
   public void setRole(String username, Role role) {
     EntityManager em = getEntityManager();
-    try{
-      User user = em.find(User.class, username);
-      if(user == null){
-        throw new UserNotFoundException();
-      }
-      em.getTransaction().begin();
-      user.setRole(role);
-      em.getTransaction().commit();
-    }finally{
-//      em.close();
+    User user = em.find(User.class, username);
+    if(user == null){
+      throw new UserNotFoundException();
     }
+    beginTransaction(em);
+    user.setRole(role);
+    commitTransaction(em);
   }
 
   
   @Override
   public void addKey(String username, UserPublicKey publicKey){
     EntityManager em = getEntityManager();
-    try{
-      User user = em.find(User.class, username);
-      if(user == null){
-        throw new UserNotFoundException();
-      }
-      if(user.getPublicKeys().contains(publicKey)){
-        throw new DuplicatePublicKeyException();
-      }
-      em.getTransaction().begin();
-      user.addPublicKey(publicKey);
-      em.getTransaction().commit();
-    }finally{
-//      em.close();
+    User user = em.find(User.class, username);
+    if(user == null){
+      throw new UserNotFoundException();
     }
+    if(user.getPublicKeys().contains(publicKey)){
+      throw new DuplicatePublicKeyException();
+    }
+    beginTransaction(em);
+    user.addPublicKey(publicKey);
+    commitTransaction(em);
   }
   
   @Override
   public void deleteKey(String username, String description){
     EntityManager em = getEntityManager();
-    try{
-      User user = em.find(User.class, username);
-      if(user == null){
-        throw new UserNotFoundException();
-      }
-      em.getTransaction().begin();
-      user.deletePublicKey(description);
-      em.getTransaction().commit();
-    }finally{
-//      em.close();
+    User user = em.find(User.class, username);
+    if(user == null){
+      throw new UserNotFoundException();
     }
+    beginTransaction(em);
+    user.deletePublicKey(description);
+    commitTransaction(em);
   }
   
   @Override
   public void renameKey(String username, String description, String newDescription){
     EntityManager em = getEntityManager();
-    try{
-      User user = em.find(User.class, username);
-      if(user == null){
-        throw new UserNotFoundException();
-      }
-      if(user.hasKeyWithDescription(newDescription)){
-        throw new DuplicatePublicKeyException();
-      }
-//      em.getTransaction().begin();
-      user.renamePublicKey(description, newDescription);
-//      em.getTransaction().commit();
-    }finally{
-//      em.close();
+    User user = em.find(User.class, username);
+    if(user == null){
+      throw new UserNotFoundException();
     }
+    if(user.hasKeyWithDescription(newDescription)){
+      throw new DuplicatePublicKeyException();
+    }
+    beginTransaction(em);
+    try{
+      user.renamePublicKey(description, newDescription);
+    } finally {
+      commitTransaction(em);
+    }    
   }
   
   @Override
   public List<User> getAllUsers(){
     EntityManager em = getEntityManager();
-    try{
-      Query query = em.createQuery("SELECT u FROM FiteagleUser u");
-      @SuppressWarnings("unchecked")
-      List<User> resultList = (List<User>) query.getResultList();
-      return resultList;
-    }finally{
-//      em.close();
-    }
+    Query query = em.createQuery("SELECT u FROM User u");
+    @SuppressWarnings("unchecked")
+    List<User> resultList = (List<User>) query.getResultList();
+    return resultList;
   }
-  
 }
