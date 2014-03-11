@@ -4,7 +4,6 @@ package org.fiteagle.core.aaa.authentication;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.KeyPair;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -52,13 +51,6 @@ public class CertificateAuthority {
 
 	private KeyStoreManagement keyStoreManagement = KeyStoreManagement
 			.getInstance();
-	
-//	public X509Certificate createCertificate(X509Certificate xCert)
-//			throws Exception {
-//		User User = getUserFromCert(xCert);
-//		PublicKey pubkey = xCert.getPublicKey();
-//		return createCertificate(User, pubkey);
-//	}
 
 	public X509Certificate createCertificate(User newUser, PublicKey publicKey)
 			throws Exception {
