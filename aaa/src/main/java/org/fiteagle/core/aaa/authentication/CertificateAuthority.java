@@ -35,7 +35,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 //import org.fiteagle.core.groupmanagement.Group;
 //import org.fiteagle.core.userdatabase.User;
 //import org.fiteagle.core.userdatabase.UserDBManager;
-import org.fiteagle.api.User;
+import org.fiteagle.api.usermanagement.User;
 
 public class CertificateAuthority {
 
