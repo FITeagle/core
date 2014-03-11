@@ -1,5 +1,7 @@
 package org.fiteagle.core.aaa.authentication;
 
+import org.fiteagle.api.User;
+
 public class URN {
 
 	private String subject;
@@ -91,6 +93,12 @@ public class URN {
 			return subject + "@" + domain.replace(":", ".");
 		}
 		return subject + "@" + domain;
+	}
+
+	public static URN getURNFromUser(User u) {
+		String[] split = u.getUsername().split("@");
+		String returnString = prefix + "+" + split[1] + "+user+" + split[0];
+		return new URN(returnString);
 	}
 
 //	public static URN getURNFromGroup(Group g) {
