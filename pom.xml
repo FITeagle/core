@@ -13,8 +13,8 @@
         <module>persistence</module>
         <module>config</module>
         <module>aaa</module>
-        <module>usermanagement</module>
-        <module>resourcerepository</module>
+        <module>repo</module>
+        <module>bus</module>
 	</modules>
 
 	<description>
@@ -143,6 +143,12 @@
 			<version>8.0.0.Final</version>
 			<scope>provided</scope>
 			<type>pom</type>
+		</dependency>
+		<dependency>
+			<groupId>javax</groupId>
+			<artifactId>javaee-api</artifactId>
+			<version>7.0</version>
+			<scope>provided</scope>
 		</dependency>
 
 	</dependencies>
