@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.UnrecoverableEntryException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -28,6 +29,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 //import org.eclipse.persistence.exceptions.DatabaseException;
 //import org.fiteagle.core.config.InterfaceConfiguration;
@@ -52,8 +54,7 @@ public class CertificateAuthority {
 	private KeyStoreManagement keyStoreManagement = KeyStoreManagement
 			.getInstance();
 
-	public X509Certificate createCertificate(User newUser, PublicKey publicKey)
-			throws Exception {
+	public X509Certificate createCertificate(User newUser, PublicKey publicKey) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableEntryException, OperatorCreationException {
 		X509Certificate caCert = keyStoreManagement.getCACert();
 		X500Name issuer = new JcaX509CertificateHolder(caCert).getSubject();
 		PrivateKey caPrivateKey = keyStoreManagement.getCAPrivateKey();
@@ -98,7 +99,7 @@ public class CertificateAuthority {
 		}
 	}
 
-	private SubjectPublicKeyInfo getPublicKey(PublicKey key) throws Exception {
+	private SubjectPublicKeyInfo getPublicKey(PublicKey key) throws IOException {
 
 		SubjectPublicKeyInfo subPubInfo = new SubjectPublicKeyInfo(
 				(ASN1Sequence) ASN1Sequence.fromByteArray(key.getEncoded()));

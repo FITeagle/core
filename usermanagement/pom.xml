@@ -6,9 +6,9 @@
 		<artifactId>core</artifactId>
 		<version>0.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>persistence</artifactId>
+	<artifactId>usermanagement</artifactId>
 	<packaging>war</packaging>
-	<name>FITeagle :: Persistence</name>
+	<name>FITeagle :: Usermanagement</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -40,14 +40,12 @@
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<version>1.3.175</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-entitymanager</artifactId>
 			<version>4.3.1.Final</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>

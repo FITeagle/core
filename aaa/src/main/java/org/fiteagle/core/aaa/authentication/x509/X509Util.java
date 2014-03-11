@@ -2,7 +2,9 @@ package org.fiteagle.core.aaa.authentication.x509;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateParsingException;
@@ -99,7 +101,7 @@ public static String getUserNameFromX509Certificate(X509Certificate cert) throws
     return urn;
   }
   
-  public static String getCertficateEncoded(X509Certificate cert) throws Exception {
+  public static String getCertficateEncoded(X509Certificate cert) throws CertificateEncodingException, IOException {
     ByteArrayOutputStream bout = new ByteArrayOutputStream();
     
     bout.write(Base64.encodeBytesToBytes(cert.getEncoded(), 0, cert.getEncoded().length, Base64.NO_OPTIONS));

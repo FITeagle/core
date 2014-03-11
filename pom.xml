@@ -10,7 +10,7 @@
 	<url>https://github.com/fiteagle</url>
 
 	<modules>
-        <module>persistence</module>
+        <module>usermanagement</module>
         <module>config</module>
         <module>aaa</module>
         <module>repo</module>

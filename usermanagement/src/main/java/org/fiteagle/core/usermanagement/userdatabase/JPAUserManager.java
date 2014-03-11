@@ -1,13 +1,15 @@
-package org.fiteagle.core.persistence.userdatabase;
+package org.fiteagle.core.usermanagement.userdatabase;
 
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.UnrecoverableEntryException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
@@ -27,8 +29,8 @@ import javax.persistence.Query;
 
 import net.iharder.Base64;
 
+import org.bouncycastle.operator.OperatorCreationException;
 import org.fiteagle.api.usermanagement.User;
-import org.fiteagle.api.usermanagement.User.PublicKeyNotFoundException;
 import org.fiteagle.api.usermanagement.User.Role;
 import org.fiteagle.api.usermanagement.UserManager;
 import org.fiteagle.api.usermanagement.UserPublicKey;
@@ -95,11 +97,11 @@ public class JPAUserManager implements UserManager{
     
     List<User> users = getAllUsers();
     for(User u : users){
-      if(u.getEmail().equals(user.getEmail())){
-        throw new DuplicateEmailException();
-      }
       if(u.getUsername().equals(user.getUsername())){
         throw new DuplicateUsernameException();
+      }
+      if(u.getEmail().equals(user.getEmail())){
+        throw new DuplicateEmailException();
       }
     }
     
@@ -272,12 +274,20 @@ public class JPAUserManager implements UserManager{
     return verifyPassword(password, User.hash(), User.salt());
   }
   
-  private String createUserCertificate(String username, PublicKey publicKey)
-      throws Exception {
+  private String createUserCertificate(String username, PublicKey publicKey) {
     User u = get(username);
     CertificateAuthority ca = CertificateAuthority.getInstance();
-    X509Certificate cert = ca.createCertificate(u, publicKey);
-    return X509Util.getCertficateEncoded(cert);
+    X509Certificate cert;
+    String encoded = "";
+    try {
+      cert = ca.createCertificate(u, publicKey);
+      encoded = X509Util.getCertficateEncoded(cert);
+    } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | UnrecoverableEntryException
+        | OperatorCreationException | IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return encoded;
   }
   
   private byte[] createHash(byte[] salt, String password)
@@ -288,7 +298,7 @@ public class JPAUserManager implements UserManager{
     return digest.digest(password.getBytes());
   }
   
-  public String createUserCertificate(String username, String passphrase, KeyPair keyPair) throws Exception {
+  public String createUserCertificate(String username, String passphrase, KeyPair keyPair) throws IOException, GeneralSecurityException {
     username = addDomain(username);
     String pubKeyEncoded = KeyManagement.getInstance().encodePublicKey(keyPair.getPublic());
     addKey(username, new UserPublicKey(keyPair.getPublic(), "created at " + System.currentTimeMillis(), pubKeyEncoded));
@@ -297,11 +307,18 @@ public class JPAUserManager implements UserManager{
     return privateKeyEncoded + "\n" + userCertString;
   }
   
-  public String createUserKeyPairAndCertificate(String username, String passphrase) throws Exception{
-    return createUserCertificate(username, passphrase, KeyManagement.getInstance().generateKeyPair());
+  public String createUserKeyPairAndCertificate(String username, String passphrase) {
+    String cert = "";
+    try {
+      cert = createUserCertificate(username, passphrase, KeyManagement.getInstance().generateKeyPair()); 
+    } catch (IOException | GeneralSecurityException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return cert;
   }
   
-  public String createUserCertificateForPublicKey(String username, String description) throws Exception, PublicKeyNotFoundException {
+  public String createUserCertificateForPublicKey(String username, String description) {
     username = addDomain(username);
     PublicKey publicKey = get(username).getPublicKey(description).publicKey();
     return createUserCertificate(username, publicKey);

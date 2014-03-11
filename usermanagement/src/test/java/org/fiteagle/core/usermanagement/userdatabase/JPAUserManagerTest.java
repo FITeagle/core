@@ -1,4 +1,4 @@
-package org.fiteagle.core.persistence.userdatabase;
+package org.fiteagle.core.usermanagement.userdatabase;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -20,6 +20,7 @@ import org.fiteagle.api.usermanagement.UserManager.DuplicateUsernameException;
 import org.fiteagle.api.usermanagement.UserManager.UserNotFoundException;
 import org.fiteagle.core.aaa.authentication.KeyManagement;
 import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
+import org.fiteagle.core.usermanagement.userdatabase.JPAUserManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
