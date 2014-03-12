@@ -92,35 +92,24 @@ public class JPAUserManager implements UserManager{
   }
   
   @Override
-  public void add(User user){
+  public void add(User user) {
     EntityManager em = getEntityManager();
     
     List<User> users = getAllUsers();
-    for(User u : users){
-      if(u.getUsername().equals(user.getUsername())){
+    for (User u : users) {
+      if (u.getUsername().equals(user.getUsername())) {
         throw new DuplicateUsernameException();
       }
-      if(u.getEmail().equals(user.getEmail())){
+      if (u.getEmail().equals(user.getEmail())) {
         throw new DuplicateEmailException();
       }
     }
     
-//    try{
     beginTransaction(em);
     em.persist(user);
     commitTransaction(em);
-//    } catch(Exception e){
-//      if(e.getCause() != null && e.getCause().getCause() instanceof ConstraintViolationException){
-//        ConstraintViolationException ec = (ConstraintViolationException) e.getCause().getCause();
-//        if(ec.getConstraintName().contains("EMAIL_INDEX_4 ON PUBLIC.USERS(EMAIL) VALUES")){
-//          em.clear();
-//          throw new DuplicateEmailException();
-//        }
-//      }
-//      throw e;
-//    }
   }
-  
+
   @Override
   public User get(User user) throws UserNotFoundException{
     return get(user.getUsername());
@@ -150,34 +139,24 @@ public class JPAUserManager implements UserManager{
   }
  
   @Override
-  public void update(String username, String firstName, String lastName, String email, String affiliation, String password, List<UserPublicKey> publicKeys) {
+  public void update(String username, String firstName, String lastName, String email, String affiliation,
+      String password, List<UserPublicKey> publicKeys) {
     EntityManager em = getEntityManager();
-//    try{
-      User user = em.find(User.class, username);
-      if(user == null){
-        throw new UserNotFoundException();
+    User user = em.find(User.class, username);
+    if (user == null) {
+      throw new UserNotFoundException();
+    }
+    
+    List<User> users = getAllUsers();
+    for (User u : users) {
+      if (u.getEmail().equals(email) && !u.getUsername().equals(username)) {
+        throw new DuplicateEmailException();
       }
-      
-      List<User> users = getAllUsers();
-      for(User u : users){
-        if(u.getEmail().equals(email) && !u.getUsername().equals(username)){
-          throw new DuplicateEmailException();
-        }
-      }
-      
-      beginTransaction(em);
-      user.updateAttributes(firstName, lastName, email, affiliation, password, publicKeys);
-      commitTransaction(em);
-//    }catch(Exception e){
-//      if(e.getCause() != null && e.getCause().getCause() instanceof ConstraintViolationException){
-//        ConstraintViolationException ec = (ConstraintViolationException) e.getCause().getCause();
-//        if(ec.getConstraintName().contains("EMAIL_INDEX_4 ON PUBLIC.USERS(EMAIL) VALUES")){
-//          em.clear();
-//          throw new DuplicateEmailException();
-//        }
-//      }
-//      throw e;
-//    }
+    }
+    
+    beginTransaction(em);
+    user.updateAttributes(firstName, lastName, email, affiliation, password, publicKeys);
+    commitTransaction(em);
   }
 
   @Override
@@ -266,6 +245,7 @@ public class JPAUserManager implements UserManager{
     return Arrays.equals(passwordHashBytes, proposedDigest);
   }
   
+  @Override
   public boolean verifyCredentials(String username, String password)
       throws NoSuchAlgorithmException, IOException,
       UserNotFoundException {
