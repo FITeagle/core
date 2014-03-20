@@ -8,7 +8,7 @@ public class InterfaceConfiguration {
 private FiteaglePreferences preferences;
   
   private static InterfaceConfiguration interfaceConfig;
-  private Configurator configurator ;
+//  private Configurator configurator ;
   private String DEFAULT_URN_PREFIX = "urn:publicid:IDN";
   private String DEFAULT_DOMAIN = "localhost";
   private String DEFAULT_AM_URN = DEFAULT_URN_PREFIX+"+"+DEFAULT_DOMAIN+"+"+"authority+am";
@@ -40,6 +40,7 @@ private FiteaglePreferences preferences;
   private InterfaceConfiguration(){
     
    preferences = new FiteaglePreferencesXML(getClass());
+   System.out.println("here is hrn: "+preferences.get("hrn"));
     if(preferences.get("hrn")== null)
       preferences.put("hrn", DEFAULT_HRN);
       
@@ -96,8 +97,8 @@ private FiteaglePreferences preferences;
     	preferences.put("geni_allocate", DEFAULT_GENI_ALLOCATE);
 	}
     
-    
-   configurator = new Configurator();
+    //TODO: check this configurator, if it is needed!
+//   configurator = new Configurator();
   };
   
   
@@ -109,9 +110,9 @@ private FiteaglePreferences preferences;
   }
   
   
-  public String getCommitVersion(){
-    return configurator.getCommitVersion();
-  }
+//  public String getCommitVersion(){
+//    return configurator.getCommitVersion();
+//  }
   
   public String getAM_HRN(){
     return preferences.get("hrn");

@@ -10,10 +10,9 @@
 	<url>https://github.com/fiteagle</url>
 
 	<modules>
-        <module>persistence</module>
+        <module>usermanagement</module>
         <module>config</module>
         <module>aaa</module>
-        <module>usermanagement</module>
         <module>repo</module>
         <module>bus</module>
 	</modules>
@@ -149,6 +148,7 @@
 			<groupId>javax</groupId>
 			<artifactId>javaee-api</artifactId>
 			<version>7.0</version>
+			<scope>provided</scope>
 		</dependency>
 
 	</dependencies>
@@ -264,17 +264,11 @@
 				<configuration>
 					<message>Creating site for ${project.version}</message>
 					<server>github</server>
-				</configuration><!-- <executions> <execution> <goals> <goal>upload</goal> 
-					</goals> <phase>site</phase> </execution> </executions> -->
+				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>2.14</version>
-				<configuration>
-          <systemPropertyVariables>
-            <org.fiteagle.core.userdatabase.UserDBManager.skipCreateFirstAdminUser>true</org.fiteagle.core.userdatabase.UserDBManager.skipCreateFirstAdminUser>
-          </systemPropertyVariables>
-        </configuration>
 				<executions>
 					<execution>
 						<goals>

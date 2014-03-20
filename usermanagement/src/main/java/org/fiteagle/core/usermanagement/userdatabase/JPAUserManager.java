@@ -1,13 +1,14 @@
-package org.fiteagle.core.persistence.userdatabase;
-
+package org.fiteagle.core.usermanagement.userdatabase;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.UnrecoverableEntryException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
@@ -27,8 +28,8 @@ import javax.persistence.Query;
 
 import net.iharder.Base64;
 
+import org.bouncycastle.operator.OperatorCreationException;
 import org.fiteagle.api.usermanagement.User;
-import org.fiteagle.api.usermanagement.User.PublicKeyNotFoundException;
 import org.fiteagle.api.usermanagement.User.Role;
 import org.fiteagle.api.usermanagement.UserManager;
 import org.fiteagle.api.usermanagement.UserPublicKey;
@@ -41,26 +42,26 @@ import org.fiteagle.core.config.preferences.InterfaceConfiguration;
 
 @Stateless
 @Remote(UserManager.class)
-public class JPAUserManager implements UserManager{
+public class JPAUserManager implements UserManager {
   
   private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";
   
   private static UserManager inMemoryInstance;
   
-  public JPAUserManager(){
+  public JPAUserManager() {
   }
-	
-  @PersistenceContext(unitName="usersDB")
+  
+  @PersistenceContext(unitName = "usersDB")
   EntityManager entityManager;
   
-  public static UserManager getInMemoryInstance(){
-    if(inMemoryInstance == null){
+  public static UserManager getInMemoryInstance() {
+    if (inMemoryInstance == null) {
       inMemoryInstance = new JPAUserManager();
     }
     return inMemoryInstance;
   }
   
-  static{
+  static {
     try {
       Class.forName("org.h2.Driver");
     } catch (ClassNotFoundException e) {
@@ -70,135 +71,117 @@ public class JPAUserManager implements UserManager{
   }
   
   private synchronized EntityManager getEntityManager() {
-    if (entityManager == null){
+    if (entityManager == null) {
       EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME_INMEMORY);
       entityManager = factory.createEntityManager();
     }
     return entityManager;
   }
   
-  private void beginTransaction(EntityManager em){
-    if(this == inMemoryInstance){
+  private void beginTransaction(EntityManager em) {
+    if (this == inMemoryInstance) {
       em.getTransaction().begin();
     }
   }
   
-  private void commitTransaction(EntityManager em){
-    if(this == inMemoryInstance){
+  private void commitTransaction(EntityManager em) {
+    if (this == inMemoryInstance) {
       em.getTransaction().commit();
     }
   }
   
   @Override
-  public void add(User user){
+  public void add(User user) {
     EntityManager em = getEntityManager();
     
+    user.setUsername(addDomain(user.getUsername()));
+    
     List<User> users = getAllUsers();
-    for(User u : users){
-      if(u.getEmail().equals(user.getEmail())){
-        throw new DuplicateEmailException();
-      }
-      if(u.getUsername().equals(user.getUsername())){
+    for (User u : users) {
+      if (u.getUsername().equals(user.getUsername())) {
         throw new DuplicateUsernameException();
+      }
+      if (u.getEmail().equals(user.getEmail())) {
+        throw new DuplicateEmailException();
       }
     }
     
-//    try{
     beginTransaction(em);
     em.persist(user);
     commitTransaction(em);
-//    } catch(Exception e){
-//      if(e.getCause() != null && e.getCause().getCause() instanceof ConstraintViolationException){
-//        ConstraintViolationException ec = (ConstraintViolationException) e.getCause().getCause();
-//        if(ec.getConstraintName().contains("EMAIL_INDEX_4 ON PUBLIC.USERS(EMAIL) VALUES")){
-//          em.clear();
-//          throw new DuplicateEmailException();
-//        }
-//      }
-//      throw e;
-//    }
   }
   
   @Override
-  public User get(User user) throws UserNotFoundException{
+  public User get(User user) throws UserNotFoundException {
     return get(user.getUsername());
   }
   
   @Override
-  public User get(String username) throws UserNotFoundException{
+  public User get(String username) throws UserNotFoundException {
     EntityManager em = getEntityManager();
-    User user = em.find(User.class, username);
-    if(user == null){
+    User user = em.find(User.class, addDomain(username));
+    if (user == null) {
       throw new UserNotFoundException();
     }
     return user;
   }
   
   @Override
-  public void delete(User user){
+  public void delete(User user) {
     EntityManager em = getEntityManager();
+    user.setUsername(addDomain(user.getUsername()));
     beginTransaction(em);
     em.remove(em.merge(user));
     commitTransaction(em);
   }
   
   @Override
-  public void delete(String username){
+  public void delete(String username) {
     delete(get(username));
   }
- 
+  
   @Override
-  public void update(String username, String firstName, String lastName, String email, String affiliation, String password, List<UserPublicKey> publicKeys) {
+  public void update(String username, String firstName, String lastName, String email, String affiliation,
+      String password, List<UserPublicKey> publicKeys) {
     EntityManager em = getEntityManager();
-//    try{
-      User user = em.find(User.class, username);
-      if(user == null){
-        throw new UserNotFoundException();
+    
+    User user = em.find(User.class, addDomain(username));
+    if (user == null) {
+      throw new UserNotFoundException();
+    }
+    
+    List<User> users = getAllUsers();
+    for (User u : users) {
+      if (u.getEmail().equals(email) && !u.getUsername().equals(addDomain(username))) {
+        throw new DuplicateEmailException();
       }
-      
-      List<User> users = getAllUsers();
-      for(User u : users){
-        if(u.getEmail().equals(email) && !u.getUsername().equals(username)){
-          throw new DuplicateEmailException();
-        }
-      }
-      
-      beginTransaction(em);
-      user.updateAttributes(firstName, lastName, email, affiliation, password, publicKeys);
-      commitTransaction(em);
-//    }catch(Exception e){
-//      if(e.getCause() != null && e.getCause().getCause() instanceof ConstraintViolationException){
-//        ConstraintViolationException ec = (ConstraintViolationException) e.getCause().getCause();
-//        if(ec.getConstraintName().contains("EMAIL_INDEX_4 ON PUBLIC.USERS(EMAIL) VALUES")){
-//          em.clear();
-//          throw new DuplicateEmailException();
-//        }
-//      }
-//      throw e;
-//    }
+    }
+    
+    beginTransaction(em);
+    user.updateAttributes(firstName, lastName, email, affiliation, password, publicKeys);
+    commitTransaction(em);
   }
-
+  
   @Override
   public void setRole(String username, Role role) {
     EntityManager em = getEntityManager();
-    User user = em.find(User.class, username);
-    if(user == null){
+    User user = em.find(User.class, addDomain(username));
+    if (user == null) {
       throw new UserNotFoundException();
     }
     beginTransaction(em);
     user.setRole(role);
     commitTransaction(em);
   }
-
   
   @Override
-  public void addKey(String username, UserPublicKey publicKey){
+  public void addKey(String username, UserPublicKey publicKey) {
     EntityManager em = getEntityManager();
-    User user = em.find(User.class, username);
-    if(user == null){
+    User user = em.find(User.class, addDomain(username));
+    if (user == null) {
       throw new UserNotFoundException();
     }
-    if(user.getPublicKeys().contains(publicKey)){
+    if (user.getPublicKeys().contains(publicKey)) {
       throw new DuplicatePublicKeyException();
     }
     beginTransaction(em);
@@ -207,10 +190,10 @@ public class JPAUserManager implements UserManager{
   }
   
   @Override
-  public void deleteKey(String username, String description){
+  public void deleteKey(String username, String description) {
     EntityManager em = getEntityManager();
-    User user = em.find(User.class, username);
-    if(user == null){
+    User user = em.find(User.class, addDomain(username));
+    if (user == null) {
       throw new UserNotFoundException();
     }
     beginTransaction(em);
@@ -219,28 +202,28 @@ public class JPAUserManager implements UserManager{
   }
   
   @Override
-  public void renameKey(String username, String description, String newDescription){
+  public void renameKey(String username, String description, String newDescription) {
     EntityManager em = getEntityManager();
-    User user = em.find(User.class, username);
-    if(user == null){
+    User user = em.find(User.class, addDomain(username));
+    if (user == null) {
       throw new UserNotFoundException();
     }
-    if(user.hasKeyWithDescription(newDescription)){
+    if (user.hasKeyWithDescription(newDescription)) {
       throw new DuplicatePublicKeyException();
     }
     beginTransaction(em);
-    try{
+    try {
       user.renamePublicKey(description, newDescription);
     } finally {
       commitTransaction(em);
-    }    
+    }
   }
   
   public User getUserFromCert(X509Certificate userCert) {
     try {
       String username = "";
       username = X509Util.getUserNameFromX509Certificate(userCert);
-  
+      
       User identifiedUser = get(username);
       return identifiedUser;
     } catch (CertificateParsingException e1) {
@@ -248,47 +231,53 @@ public class JPAUserManager implements UserManager{
     }
   }
   
-  public X509Certificate createCertificate(X509Certificate xCert)
-      throws Exception {
+  public X509Certificate createCertificate(X509Certificate xCert) throws Exception {
     User User = getUserFromCert(xCert);
     PublicKey pubkey = xCert.getPublicKey();
-    return CertificateAuthority.getInstance().createCertificate(User,
-        pubkey);
+    return CertificateAuthority.getInstance().createCertificate(User, pubkey);
   }
   
-  public boolean verifyPassword(String password, String passwordHash,
-      String passwordSalt) throws IOException, NoSuchAlgorithmException {
+  public boolean verifyPassword(String password, String passwordHash, String passwordSalt) throws IOException,
+      NoSuchAlgorithmException {
     byte[] passwordHashBytes = Base64.decode(passwordHash);
     byte[] passwordSaltBytes = Base64.decode(passwordSalt);
     byte[] proposedDigest = createHash(passwordSaltBytes, password);
     return Arrays.equals(passwordHashBytes, proposedDigest);
   }
   
-  public boolean verifyCredentials(String username, String password)
-      throws NoSuchAlgorithmException, IOException,
+  @Override
+  public boolean verifyCredentials(String username, String password) throws NoSuchAlgorithmException, IOException,
       UserNotFoundException {
     username = addDomain(username);
     User User = get(username);
     return verifyPassword(password, User.hash(), User.salt());
   }
   
-  private String createUserCertificate(String username, PublicKey publicKey)
-      throws Exception {
+  private String createUserCertificate(String username, PublicKey publicKey) {
     User u = get(username);
     CertificateAuthority ca = CertificateAuthority.getInstance();
-    X509Certificate cert = ca.createCertificate(u, publicKey);
-    return X509Util.getCertficateEncoded(cert);
+    X509Certificate cert;
+    String encoded = "";
+    try {
+      cert = ca.createCertificate(u, publicKey);
+      encoded = X509Util.getCertficateEncoded(cert);
+    } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | UnrecoverableEntryException
+        | OperatorCreationException | IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return encoded;
   }
   
-  private byte[] createHash(byte[] salt, String password)
-      throws NoSuchAlgorithmException {
+  private byte[] createHash(byte[] salt, String password) throws NoSuchAlgorithmException {
     MessageDigest digest = MessageDigest.getInstance("SHA-256");
     digest.reset();
     digest.update(salt);
     return digest.digest(password.getBytes());
   }
   
-  public String createUserCertificate(String username, String passphrase, KeyPair keyPair) throws Exception {
+  public String createUserCertificate(String username, String passphrase, KeyPair keyPair) throws IOException,
+      GeneralSecurityException {
     username = addDomain(username);
     String pubKeyEncoded = KeyManagement.getInstance().encodePublicKey(keyPair.getPublic());
     addKey(username, new UserPublicKey(keyPair.getPublic(), "created at " + System.currentTimeMillis(), pubKeyEncoded));
@@ -297,60 +286,69 @@ public class JPAUserManager implements UserManager{
     return privateKeyEncoded + "\n" + userCertString;
   }
   
-  public String createUserKeyPairAndCertificate(String username, String passphrase) throws Exception{
-    return createUserCertificate(username, passphrase, KeyManagement.getInstance().generateKeyPair());
+  public String createUserKeyPairAndCertificate(String username, String passphrase) {
+    String cert = "";
+    try {
+      cert = createUserCertificate(addDomain(username), passphrase, KeyManagement.getInstance().generateKeyPair());
+    } catch (IOException | GeneralSecurityException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return cert;
   }
   
-  public String createUserCertificateForPublicKey(String username, String description) throws Exception, PublicKeyNotFoundException {
+  public String createUserCertificateForPublicKey(String username, String description) {
     username = addDomain(username);
     PublicKey publicKey = get(username).getPublicKey(description).publicKey();
     return createUserCertificate(username, publicKey);
   }
   
   public boolean areAuthenticatedCertificates(X509Certificate[] certificates) throws KeyStoreException,
-    NoSuchAlgorithmException, CertificateException, IOException, InvalidAlgorithmParameterException,
-    CertPathValidatorException, SQLException, InvalidKeySpecException, CouldNotParse {
-  
-  X509Certificate cert = certificates[0];
-  try{
-  if (cert.getSubjectX500Principal().equals(cert.getIssuerX500Principal())) {
+      NoSuchAlgorithmException, CertificateException, IOException, InvalidAlgorithmParameterException,
+      CertPathValidatorException, SQLException, InvalidKeySpecException, CouldNotParse {
     
-    User identifiedUser = getUserFromCert(cert);
-    return verifyUserSignedCertificate(identifiedUser, cert);
-    
-  } else {
-    
-    if(AuthenticationHandler.getInstance().isValid(0, certificates, certificates[0].getSubjectX500Principal())){
-  //    if(userIsUnknown(cert))
-  //      storeNewUser(cert);
-      return true;
-    }
-  
-  }
-  }catch(RuntimeException e){
-    return false;
-  }
-  return false;
-  
-  }
-  
-  private boolean verifyUserSignedCertificate(User identifiedUser, X509Certificate certificate) throws IOException, InvalidKeySpecException, NoSuchAlgorithmException, CouldNotParse {
-      boolean verified = false;
-      KeyManagement keydecoder = KeyManagement.getInstance();
-      if (identifiedUser.getPublicKeys() == null || identifiedUser.getPublicKeys().size() == 0) {
-        identifiedUser.addPublicKey(new UserPublicKey(certificate.getPublicKey(), "created at " + System.currentTimeMillis(), keydecoder.encodePublicKey(certificate.getPublicKey())));
-        addKey(identifiedUser.getUsername(), identifiedUser.getPublicKeys().get(0));
-      }
-      for (UserPublicKey oldUserPublicKey : identifiedUser.getPublicKeys()) {      
-        PublicKey pubKey = oldUserPublicKey.publicKey();
+    X509Certificate cert = certificates[0];
+    try {
+      if (cert.getSubjectX500Principal().equals(cert.getIssuerX500Principal())) {
         
-        verified = AuthenticationHandler.getInstance().verifyCertificateWithPublicKey(certificate, pubKey);
-        if (verified) {
+        User identifiedUser = getUserFromCert(cert);
+        return verifyUserSignedCertificate(identifiedUser, cert);
+        
+      } else {
+        
+        if (AuthenticationHandler.getInstance().isValid(0, certificates, certificates[0].getSubjectX500Principal())) {
+          // if(userIsUnknown(cert))
+          // storeNewUser(cert);
           return true;
         }
+        
       }
-      throw new AuthenticationHandler.KeyDoesNotMatchException();
+    } catch (RuntimeException e) {
+      return false;
     }
+    return false;
+    
+  }
+  
+  private boolean verifyUserSignedCertificate(User identifiedUser, X509Certificate certificate) throws IOException,
+      InvalidKeySpecException, NoSuchAlgorithmException, CouldNotParse {
+    boolean verified = false;
+    KeyManagement keydecoder = KeyManagement.getInstance();
+    if (identifiedUser.getPublicKeys() == null || identifiedUser.getPublicKeys().size() == 0) {
+      identifiedUser.addPublicKey(new UserPublicKey(certificate.getPublicKey(), "created at "
+          + System.currentTimeMillis(), keydecoder.encodePublicKey(certificate.getPublicKey())));
+      addKey(identifiedUser.getUsername(), identifiedUser.getPublicKeys().get(0));
+    }
+    for (UserPublicKey oldUserPublicKey : identifiedUser.getPublicKeys()) {
+      PublicKey pubKey = oldUserPublicKey.publicKey();
+      
+      verified = AuthenticationHandler.getInstance().verifyCertificateWithPublicKey(certificate, pubKey);
+      if (verified) {
+        return true;
+      }
+    }
+    throw new AuthenticationHandler.KeyDoesNotMatchException();
+  }
   
   private String addDomain(String username) {
     InterfaceConfiguration configuration = null;
@@ -362,7 +360,7 @@ public class JPAUserManager implements UserManager{
   }
   
   @Override
-  public List<User> getAllUsers(){
+  public List<User> getAllUsers() {
     EntityManager em = getEntityManager();
     Query query = em.createQuery("SELECT u FROM User u");
     @SuppressWarnings("unchecked")

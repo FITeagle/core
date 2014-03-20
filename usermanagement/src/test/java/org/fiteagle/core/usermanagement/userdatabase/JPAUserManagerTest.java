@@ -1,4 +1,4 @@
-package org.fiteagle.core.persistence.userdatabase;
+package org.fiteagle.core.usermanagement.userdatabase;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -10,14 +10,14 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import org.fiteagle.api.usermanagement.User;
-import org.fiteagle.api.usermanagement.UserManager;
-import org.fiteagle.api.usermanagement.UserPublicKey;
 import org.fiteagle.api.usermanagement.User.PublicKeyNotFoundException;
 import org.fiteagle.api.usermanagement.User.Role;
+import org.fiteagle.api.usermanagement.UserManager;
 import org.fiteagle.api.usermanagement.UserManager.DuplicateEmailException;
 import org.fiteagle.api.usermanagement.UserManager.DuplicatePublicKeyException;
 import org.fiteagle.api.usermanagement.UserManager.DuplicateUsernameException;
 import org.fiteagle.api.usermanagement.UserManager.UserNotFoundException;
+import org.fiteagle.api.usermanagement.UserPublicKey;
 import org.fiteagle.core.aaa.authentication.KeyManagement;
 import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
 import org.junit.After;

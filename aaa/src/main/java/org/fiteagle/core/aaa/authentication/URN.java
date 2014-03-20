@@ -95,6 +95,12 @@ public class URN {
 		return subject + "@" + domain;
 	}
 
+//	public static URN getURNFromUser(User u) {
+//		String[] split = u.getUsername().split("@");
+//		String returnString = prefix + "+" + split[1] + "+user+" + split[0];
+//		return new URN(returnString);
+//	}
+
 //	public static URN getURNFromGroup(Group g) {
 //		String[] split = g.getGroupId().split("@");
 //		String returnString = prefix + "+" + split[1] + "+slice+" + split[0];
