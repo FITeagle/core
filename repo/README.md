@@ -39,6 +39,13 @@ Test
 3. Get resources in JSON-LD serialization    
 
     1. Via MDB calls: curl http://localhost:8080/repo/api/mdb/resources.jsonld
+    
+4. Query resources via SPARQL endpoint
+
+    curl \
+      -G -H 'Accept: text/turtle' \
+      --data-urlencode "query=SELECT ?s ?o WHERE {?s <http://fiteagle.org/ontology#isInstantiatedBy> ?o} LIMIT 1" \
+      http://localhost:8080/repo/api/sparql
 
 Tipps
 -----

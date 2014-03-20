@@ -54,4 +54,19 @@
   <rdf:Description rdf:about="http://fiteagle.org/resource#vm332">
     <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2013-06-18T17:30:22-07:00</dct:created>
   </rdf:Description>
+  <rdf:Description rdf:about="http://fiteagle.org/resource#vm333">
+    <rdf:type rdf:resource="http://fiteagle.org/ontology#vm"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://fiteagle.org/resource#vm333">
+    <rdfs:comment xml:lang="en">I am an other Virtual Machine</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://fiteagle.org/resource#vm333">
+    <rdfs:label>vm333</rdfs:label>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://fiteagle.org/resource#vm333">
+    <isInstantiatedBy rdf:resource="http://fiteagle.org/resource#vmserver123"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://fiteagle.org/resource#vm333">
+    <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2014-01-18T17:30:22-07:00</dct:created>
+  </rdf:Description>
 </rdf:RDF>

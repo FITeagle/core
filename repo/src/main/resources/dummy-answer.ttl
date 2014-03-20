@@ -29,3 +29,11 @@ resource:vm332
     :isInstantiatedBy resource:vmserver123 ;
     dct:created "2013-06-18T17:30:22-07:00"^^xsd:dateTime ;
 .
+
+resource:vm333
+    rdf:type :vm ;
+    rdfs:comment "I am an other Virtual Machine"@en ;
+    rdfs:label "vm333" ;
+    :isInstantiatedBy resource:vmserver123 ;
+    dct:created "2014-01-18T17:30:22-07:00"^^xsd:dateTime ;
+.

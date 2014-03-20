@@ -13,14 +13,13 @@ import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.ReadWrite;
 import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.tdb.TDBFactory;
 
 public class ResourceRepository implements IResourceRepository {
 
 	private static final String DEFAULT_SELECT = "SELECT * {?s ?p ?o} LIMIT 100";
-	private static final String DUMMY_DATA = "dummy-answer.xml";
 	private static final String REPODB_DIR = "repodb";
 	private final static Logger LOGGER = Logger
 			.getLogger(ResourceRepository.class.toString());
@@ -28,25 +27,27 @@ public class ResourceRepository implements IResourceRepository {
 
 	public ResourceRepository() {
 		this.dataset = TDBFactory.createDataset(ResourceRepository.REPODB_DIR);
-		// DatasetFactory.createMem();
-
-		addDummyData();
 	}
 
-	private void addDummyData() {
-		ResourceRepository.LOGGER.log(Level.INFO, "Loading dummy data from: "
-				+ ResourceRepository.DUMMY_DATA);
-		Model dummyModel = RDFDataMgr.loadModel(ResourceRepository.DUMMY_DATA,
+	public ResourceRepository(String filename) {
+		this();
+		addDummyData(filename);
+	}
+
+	private void addDummyData(String filename) {
+		ResourceRepository.LOGGER.log(Level.INFO, "Loading data from: "
+				+ filename);
+		Model dataModel = RDFDataMgr.loadModel(filename,
 				Lang.RDFXML);
-		addData(dummyModel);
+		addData(dataModel);
 	}
 
-	private void addData(Model dummyModel) {
+	private void addData(Model dataModel) {
 		dataset.begin(ReadWrite.WRITE);
-		Model model = dataset.getDefaultModel();
+		Model defaultModel = dataset.getDefaultModel();
 		try {
-			if (model.isEmpty()) {
-				model.add(dummyModel);
+			if (defaultModel.isEmpty()) {
+				defaultModel.add(dataModel);
 				dataset.commit();
 			}
 		} finally {
@@ -54,15 +55,25 @@ public class ResourceRepository implements IResourceRepository {
 		}
 	}
 
+	public String queryDatabase(final String query) {
+		return queryDatabse(query,
+				IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
+	}
+
 	public String queryDatabse(final String query, final String serialization) {
-		ResourceRepository.LOGGER.log(Level.INFO, "Querying database...");
-		Model model = ModelFactory.createDefaultModel();
+		ResourceRepository.LOGGER.log(Level.INFO, "Querying database '" + query
+				+ "'...");
+		Model model;// = ModelFactory.createDefaultModel();
+		
 		dataset.begin(ReadWrite.READ);
 		try {
 			QueryExecution qExec = QueryExecutionFactory.create(query, dataset);
-			ResultSet rs = qExec.execSelect();
+			
 			try {
-				model = rs.getResourceModel();
+				//model = qExec.execConstruct();
+				ResultSet rs = qExec.execSelect();
+				model = ResultSetFormatter.toModel(rs);
+				//model = rs.getResourceModel();
 			} finally {
 				qExec.close();
 			}
@@ -77,10 +88,11 @@ public class ResourceRepository implements IResourceRepository {
 	}
 
 	public String listResources(final String serialization) {
-		ResourceRepository.LOGGER
-				.log(Level.INFO, "Response to format: " + serialization);
+		ResourceRepository.LOGGER.log(Level.INFO, "Response to format: "
+				+ serialization);
 
-		return this.queryDatabse(ResourceRepository.DEFAULT_SELECT, serialization);
+		return this.queryDatabse(ResourceRepository.DEFAULT_SELECT,
+				serialization);
 	}
 
 	public String listResources() {

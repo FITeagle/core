@@ -23,8 +23,7 @@ public class ResourceRepositoryEJB implements IResourceRepository {
 		return this.repo.listResources();
 	}
 
-	public String queryDatabse(String query, String type) {
-		// TODO Auto-generated method stub
-		return null;
+	public String queryDatabse(String query, String serialization) {
+		return this.repo.queryDatabse(query, serialization);
 	}
 }

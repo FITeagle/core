@@ -15,10 +15,13 @@ import javax.naming.NamingException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.IResourceRepository;
 import org.fiteagle.core.repo.ResourceRepository;
+
+import com.hp.hpl.jena.query.QueryParseException;
 
 @Path("/")
 public class ResourceRepositoryREST {
@@ -27,9 +30,9 @@ public class ResourceRepositoryREST {
 	private JMSContext context;
 	@Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
 	private Topic topic;
-	
+
 	private static final String EJB_NAME = "java:global/repo/ResourceRepositoryEJB";
-	
+
 	private static Logger LOGGER = Logger
 			.getLogger(ResourceRepositoryREST.class.toString());
 	private IResourceRepository repoEJB;
@@ -46,7 +49,8 @@ public class ResourceRepositoryREST {
 	@Produces("application/rdf+xml")
 	public String listResourcesXMLviaEJB() {
 		LOGGER.log(Level.INFO, "Getting resources as RDF via EJB...");
-		return repoEJB.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
+		return repoEJB
+				.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
 	}
 
 	@GET
@@ -62,7 +66,8 @@ public class ResourceRepositoryREST {
 	@Produces("application/rdf+xml")
 	public String listResourcesXMLviaNative() {
 		LOGGER.log(Level.INFO, "Getting resources as RDF...");
-		return repo.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
+		return repo
+				.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
 	}
 
 	@GET
@@ -97,26 +102,43 @@ public class ResourceRepositoryREST {
 		return mdbListResources(IResourceRepository.SERIALIZATION_JSONLD);
 	}
 
+	@GET
+	@Path("/sparql")
+	@Produces("text/turtle")
+	public String sparql(@QueryParam("query") String query)
+			throws JMSException, InterruptedException {
+		String result = "unkown";
+		try {
+			result = this.repo.queryDatabse(query,
+					IResourceRepository.SERIALIZATION_JSONLD);
+		} catch (QueryParseException | IllegalArgumentException e) {
+			result = e.getMessage();
+		}
+		return result;
+	}
+
 	private String mdbListResources(final String serialization)
 			throws JMSException {
 		String result = "timeout";
-		
+
 		Message message = context.createMessage();
 		message.setStringProperty(IMessageBus.TYPE_REQUEST,
 				IResourceRepository.LIST_RESOURCES);
 		message.setStringProperty(IResourceRepository.PROP_SERIALIZATION,
 				serialization);
 		message.setJMSCorrelationID(UUID.randomUUID().toString());
-		final String filter = "JMSCorrelationID='" + message.getJMSCorrelationID() + "'";
-		
+		final String filter = "JMSCorrelationID='"
+				+ message.getJMSCorrelationID() + "'";
+
 		LOGGER.log(Level.INFO, "Getting resources via MDB...");
 		this.context.createProducer().send(topic, message);
-		Message rcvMessage = context.createConsumer(topic, filter).receive(2000);
+		Message rcvMessage = context.createConsumer(topic, filter)
+				.receive(2000);
 		LOGGER.log(Level.INFO, "Received resources via MDB...");
 
 		if (null != rcvMessage)
 			result = rcvMessage.getStringProperty(IMessageBus.TYPE_RESULT);
-		
+
 		return result;
 	}
 }
