@@ -246,6 +246,28 @@ public class JPAUserManagerTest {
     assertEquals(manager.get(USER1).getCourses().get(0),COURSE1);
   }
   
+  @Test
+  public void testDeleteCourseWithParticipant(){
+    createCourse1();
+    createUser1();
+    manager.add(USER1);
+    manager.add(COURSE1);
+    manager.addParticipant(COURSE1, USER1);
+    manager.delete(COURSE1);
+    assertTrue(manager.get(USER1).getCourses().isEmpty());
+  }
+  
+  @Test
+  public void testDeleteUserWithCourse(){
+    createCourse1();
+    createUser1();
+    manager.add(USER1);
+    manager.add(COURSE1);
+    manager.addParticipant(COURSE1, USER1);
+    manager.delete(USER1);
+    assertTrue(manager.get(COURSE1).getParticipants().isEmpty());
+  }
+  
   @After
   public void deleteUsers() {
     try{
