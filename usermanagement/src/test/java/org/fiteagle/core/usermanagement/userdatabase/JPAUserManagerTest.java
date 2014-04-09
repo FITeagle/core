@@ -9,6 +9,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.fiteagle.api.usermanagement.Course;
 import org.fiteagle.api.usermanagement.User;
 import org.fiteagle.api.usermanagement.User.PublicKeyNotFoundException;
 import org.fiteagle.api.usermanagement.User.Role;
@@ -38,6 +39,8 @@ public class JPAUserManagerTest {
   protected static User USER2;
   protected static User USER3;
   protected static User USER4;
+  
+  protected static Course COURSE1;
   
   private static UserManager manager;
   
@@ -70,6 +73,9 @@ public class JPAUserManagerTest {
      USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());
   }
   
+  private void createCourse1(){
+    COURSE1 = new Course("course1", "my first description");
+  }
   
   @BeforeClass
   public static void setUp(){
@@ -213,6 +219,33 @@ public class JPAUserManagerTest {
     manager.update(USER4.getUsername(), "mitja", "nikolaus", "test1@test.org", "mitjaAffiliation", "mitjasPassword", null);
   }
   
+  @Test
+  public void testGetCourse(){
+    createCourse1();
+    manager.add(COURSE1);    
+    assertTrue(COURSE1.equals(manager.get(COURSE1)));
+    assertTrue(manager.getAllCourses().size() > 0); 
+  }
+  
+  @Test(expected=UserManager.CourseNotFoundException.class)
+  public void testDeleteCourse(){
+    createCourse1();
+    manager.add(COURSE1);    
+    manager.delete(COURSE1);   
+    manager.get(COURSE1);
+  }
+  
+  @Test
+  public void testAddParticipant(){
+    createCourse1();
+    createUser1();
+    manager.add(USER1);
+    manager.add(COURSE1);
+    manager.addParticipant(COURSE1, USER1);
+    assertEquals(manager.get(COURSE1).getParticipants().get(0),USER1);
+    assertEquals(manager.get(USER1).getCourses().get(0),COURSE1);
+  }
+  
   @After
   public void deleteUsers() {
     try{
@@ -227,6 +260,7 @@ public class JPAUserManagerTest {
     try{
       manager.delete("test4");
     }catch (UserNotFoundException e){}
-  }   
+    manager.deleteAllEntries();
+  }
   
 }

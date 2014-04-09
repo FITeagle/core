@@ -29,6 +29,7 @@ import javax.persistence.Query;
 import net.iharder.Base64;
 
 import org.bouncycastle.operator.OperatorCreationException;
+import org.fiteagle.api.usermanagement.Course;
 import org.fiteagle.api.usermanagement.User;
 import org.fiteagle.api.usermanagement.User.Role;
 import org.fiteagle.api.usermanagement.UserManager;
@@ -366,5 +367,78 @@ public class JPAUserManager implements UserManager {
     @SuppressWarnings("unchecked")
     List<User> resultList = (List<User>) query.getResultList();
     return resultList;
+  }
+  
+  @Override
+  public void add(Course course) {
+    EntityManager em = getEntityManager();
+    
+    beginTransaction(em);
+    em.persist(course);
+    commitTransaction(em);
+  }
+  
+  @Override
+  public Course get(Course course) {
+    return get(course.getId());
+  }
+  
+  @Override
+  public Course get(long id) {
+    EntityManager em = getEntityManager();
+    Course course = em.find(Course.class, id);
+    if (course == null) {
+      throw new CourseNotFoundException();
+    }
+    return course;
+  }
+  
+  @Override
+  public void delete(Course course) {
+    EntityManager em = getEntityManager();
+    beginTransaction(em);
+    em.remove(em.merge(course));
+    commitTransaction(em);
+  }
+  
+  @Override
+  public void delete(long id) {
+    delete(get(id));
+  }
+  
+  @Override
+  public void addParticipant(Course course, User user){
+    User participant = get(user);
+    EntityManager em = getEntityManager();
+    Course targetCourse = em.find(Course.class, course.getId());
+    beginTransaction(em);
+    targetCourse.addParticipant(participant);
+    commitTransaction(em);
+  }
+  
+  @Override
+  public List<Course> getAllCourses() {
+    EntityManager em = getEntityManager();
+    Query query = em.createQuery("SELECT c FROM Course c");
+    @SuppressWarnings("unchecked")
+    List<Course> resultList = (List<Course>) query.getResultList();
+    return resultList;
+  }
+  
+  @Override
+  public void deleteAllEntries(){
+    EntityManager em = getEntityManager();
+    beginTransaction(em);
+    try{
+      Query query = em.createQuery("DELETE FROM Course");
+      query.executeUpdate();
+      query = em.createQuery("DELETE FROM UserPublicKey");
+      query.executeUpdate();
+      query = em.createQuery("DELETE FROM User");
+      query.executeUpdate();
+      commitTransaction(em);
+    } catch(Exception e){
+      System.out.println(e.getMessage());
+    }
   }
 }
