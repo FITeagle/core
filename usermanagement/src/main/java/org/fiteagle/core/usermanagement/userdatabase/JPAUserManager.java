@@ -405,12 +405,15 @@ public class JPAUserManager implements UserManager {
   public void delete(long id) {
     delete(get(id));
   }
-  
+
   @Override
-  public void addParticipant(Course course, User user){
-    User participant = get(user);
+  public void addParticipant(long id, String username){
+    User participant = get(username);
     EntityManager em = getEntityManager();
-    Course targetCourse = em.find(Course.class, course.getId());
+    Course targetCourse = em.find(Course.class, id);
+    if(targetCourse == null){
+      throw new CourseNotFoundException();
+    }
     beginTransaction(em);
     targetCourse.addParticipant(participant);
     commitTransaction(em);

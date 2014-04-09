@@ -241,9 +241,9 @@ public class JPAUserManagerTest {
     createUser1();
     manager.add(USER1);
     manager.add(COURSE1);
-    manager.addParticipant(COURSE1, USER1);
+    manager.addParticipant(COURSE1.getId(), USER1.getUsername());
     assertEquals(manager.get(COURSE1).getParticipants().get(0),USER1);
-    assertEquals(manager.get(USER1).getCourses().get(0),COURSE1);
+    assertEquals(manager.get(USER1).joinedCourses().get(0),COURSE1);
   }
   
   @Test
@@ -252,9 +252,9 @@ public class JPAUserManagerTest {
     createUser1();
     manager.add(USER1);
     manager.add(COURSE1);
-    manager.addParticipant(COURSE1, USER1);
+    manager.addParticipant(COURSE1.getId(), USER1.getUsername());
     manager.delete(COURSE1);
-    assertTrue(manager.get(USER1).getCourses().isEmpty());
+    assertTrue(manager.get(USER1).joinedCourses().isEmpty());
   }
   
   @Test
@@ -263,7 +263,7 @@ public class JPAUserManagerTest {
     createUser1();
     manager.add(USER1);
     manager.add(COURSE1);
-    manager.addParticipant(COURSE1, USER1);
+    manager.addParticipant(COURSE1.getId(), USER1.getUsername());
     manager.delete(USER1);
     assertTrue(manager.get(COURSE1).getParticipants().isEmpty());
   }
