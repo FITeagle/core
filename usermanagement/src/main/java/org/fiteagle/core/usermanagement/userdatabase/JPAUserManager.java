@@ -370,12 +370,13 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public void add(Course course) {
+  public Course add(Course course) {
     EntityManager em = getEntityManager();
     
     beginTransaction(em);
     em.persist(course);
     commitTransaction(em);
+    return course;
   }
   
   @Override
