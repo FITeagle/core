@@ -101,4 +101,10 @@ public class ResourceRepository implements IResourceRepository {
 		return this
 				.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
 	}
+
+  @Override
+  public String listResources(String query, String type) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

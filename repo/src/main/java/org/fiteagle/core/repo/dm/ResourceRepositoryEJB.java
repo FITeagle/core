@@ -26,4 +26,10 @@ public class ResourceRepositoryEJB implements IResourceRepository {
 	public String queryDatabse(String query, String serialization) {
 		return this.repo.queryDatabse(query, serialization);
 	}
+
+  @Override
+  public String listResources(String query, String type) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }
