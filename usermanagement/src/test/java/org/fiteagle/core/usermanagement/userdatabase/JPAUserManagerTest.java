@@ -144,8 +144,8 @@ public class JPAUserManagerTest {
   public void testSetRole(){
     createUser1();
     manager.add(USER1);
-    manager.setRole(USER1.getUsername(), Role.ADMIN);
-    Assert.assertEquals(Role.ADMIN, manager.get(USER1).getRole());
+    manager.setRole(USER1.getUsername(), Role.FEDERATION_ADMIN);
+    Assert.assertEquals(Role.FEDERATION_ADMIN, manager.get(USER1).getRole());
   }
   
   @Test
