@@ -7,7 +7,7 @@
 		<jta-data-source>java:jboss/datasources/usersDS</jta-data-source>
 		<properties>
 			<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"></property>
-			<property name="hibernate.hbm2ddl.auto" value="create-drop" />
+			<property name="hibernate.hbm2ddl.auto" value="update" />
 			<property name="hibernate.connection.url"
 				value="jdbc:h2:~/.fiteagle/users;INIT=CREATE SCHEMA IF NOT EXISTS users" />
 
