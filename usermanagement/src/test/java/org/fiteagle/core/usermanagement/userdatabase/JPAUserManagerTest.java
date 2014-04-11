@@ -9,7 +9,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Date;
 
-import org.fiteagle.api.usermanagement.Course;
+import org.fiteagle.api.usermanagement.Class;
 import org.fiteagle.api.usermanagement.User;
 import org.fiteagle.api.usermanagement.User.PublicKeyNotFoundException;
 import org.fiteagle.api.usermanagement.User.Role;
@@ -40,7 +40,7 @@ public class JPAUserManagerTest {
   protected static User USER3;
   protected static User USER4;
   
-  protected static Course COURSE1;
+  protected static Class CLASS1;
   
   private static UserManager manager;
   
@@ -74,7 +74,7 @@ public class JPAUserManagerTest {
   }
   
   private void createCourse1(){
-    COURSE1 = new Course("course1", "my first description");
+    CLASS1 = new Class("class1", "my first description");
   }
   
   @BeforeClass
@@ -220,19 +220,19 @@ public class JPAUserManagerTest {
   }
   
   @Test
-  public void testGetCourse(){
+  public void testGetClass(){
     createCourse1();
-    manager.add(COURSE1);    
-    assertTrue(COURSE1.equals(manager.get(COURSE1)));
-    assertTrue(manager.getAllCourses().size() > 0); 
+    manager.add(CLASS1);    
+    assertTrue(CLASS1.equals(manager.get(CLASS1)));
+    assertTrue(manager.getAllClasses().size() > 0); 
   }
   
   @Test(expected=UserManager.CourseNotFoundException.class)
-  public void testDeleteCourse(){
+  public void testDeleteClass(){
     createCourse1();
-    manager.add(COURSE1);    
-    manager.delete(COURSE1);   
-    manager.get(COURSE1);
+    manager.add(CLASS1);    
+    manager.delete(CLASS1);   
+    manager.get(CLASS1);
   }
   
   @Test
@@ -240,10 +240,10 @@ public class JPAUserManagerTest {
     createCourse1();
     createUser1();
     manager.add(USER1);
-    manager.add(COURSE1);
-    manager.addParticipant(COURSE1.getId(), USER1.getUsername());
-    assertEquals(manager.get(COURSE1).getParticipants().get(0),USER1);
-    assertEquals(manager.get(USER1).joinedCourses().get(0),COURSE1);
+    manager.add(CLASS1);
+    manager.addParticipant(CLASS1.getId(), USER1.getUsername());
+    assertEquals(manager.get(CLASS1).getParticipants().get(0),USER1);
+    assertEquals(manager.get(USER1).joinedCourses().get(0),CLASS1);
   }
   
   @Test
@@ -251,9 +251,9 @@ public class JPAUserManagerTest {
     createCourse1();
     createUser1();
     manager.add(USER1);
-    manager.add(COURSE1);
-    manager.addParticipant(COURSE1.getId(), USER1.getUsername());
-    manager.delete(COURSE1);
+    manager.add(CLASS1);
+    manager.addParticipant(CLASS1.getId(), USER1.getUsername());
+    manager.delete(CLASS1);
     assertTrue(manager.get(USER1).joinedCourses().isEmpty());
   }
   
@@ -262,10 +262,10 @@ public class JPAUserManagerTest {
     createCourse1();
     createUser1();
     manager.add(USER1);
-    manager.add(COURSE1);
-    manager.addParticipant(COURSE1.getId(), USER1.getUsername());
+    manager.add(CLASS1);
+    manager.addParticipant(CLASS1.getId(), USER1.getUsername());
     manager.delete(USER1);
-    assertTrue(manager.get(COURSE1).getParticipants().isEmpty());
+    assertTrue(manager.get(CLASS1).getParticipants().isEmpty());
   }
   
   @After

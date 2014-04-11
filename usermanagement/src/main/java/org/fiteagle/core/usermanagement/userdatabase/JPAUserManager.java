@@ -29,7 +29,7 @@ import javax.persistence.Query;
 import net.iharder.Base64;
 
 import org.bouncycastle.operator.OperatorCreationException;
-import org.fiteagle.api.usermanagement.Course;
+import org.fiteagle.api.usermanagement.Class;
 import org.fiteagle.api.usermanagement.User;
 import org.fiteagle.api.usermanagement.User.Role;
 import org.fiteagle.api.usermanagement.UserManager;
@@ -64,7 +64,7 @@ public class JPAUserManager implements UserManager {
   
   static {
     try {
-      Class.forName("org.h2.Driver");
+      java.lang.Class.forName("org.h2.Driver");
     } catch (ClassNotFoundException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -370,35 +370,35 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public Course add(Course course) {
+  public Class add(Class targetClass) {
     EntityManager em = getEntityManager();
     
     beginTransaction(em);
-    em.persist(course);
+    em.persist(targetClass);
     commitTransaction(em);
-    return course;
+    return targetClass;
   }
   
   @Override
-  public Course get(Course course) {
-    return get(course.getId());
+  public Class get(Class targetClass) {
+    return get(targetClass.getId());
   }
   
   @Override
-  public Course get(long id) {
+  public Class get(long id) {
     EntityManager em = getEntityManager();
-    Course course = em.find(Course.class, id);
-    if (course == null) {
+    Class targetClass = em.find(Class.class, id);
+    if (targetClass == null) {
       throw new CourseNotFoundException();
     }
-    return course;
+    return targetClass;
   }
   
   @Override
-  public void delete(Course course) {
+  public void delete(Class targetClass) {
     EntityManager em = getEntityManager();
     beginTransaction(em);
-    em.remove(em.merge(course));
+    em.remove(em.merge(targetClass));
     commitTransaction(em);
   }
   
@@ -411,7 +411,7 @@ public class JPAUserManager implements UserManager {
   public void addParticipant(long id, String username){
     User participant = get(username);
     EntityManager em = getEntityManager();
-    Course targetCourse = em.find(Course.class, id);
+    Class targetCourse = em.find(Class.class, id);
     if(targetCourse == null){
       throw new CourseNotFoundException();
     }
@@ -421,11 +421,11 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public List<Course> getAllCourses() {
+  public List<Class> getAllClasses() {
     EntityManager em = getEntityManager();
-    Query query = em.createQuery("SELECT c FROM Course c");
+    Query query = em.createQuery("SELECT c FROM Class c");
     @SuppressWarnings("unchecked")
-    List<Course> resultList = (List<Course>) query.getResultList();
+    List<Class> resultList = (List<Class>) query.getResultList();
     return resultList;
   }
   
@@ -434,7 +434,7 @@ public class JPAUserManager implements UserManager {
     EntityManager em = getEntityManager();
     beginTransaction(em);
     try{
-      Query query = em.createQuery("DELETE FROM Course");
+      Query query = em.createQuery("DELETE FROM Class");
       query.executeUpdate();
       query = em.createQuery("DELETE FROM UserPublicKey");
       query.executeUpdate();
