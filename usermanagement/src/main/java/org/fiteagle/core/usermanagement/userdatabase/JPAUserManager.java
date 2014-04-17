@@ -421,6 +421,12 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
+  public List<Class> getAllClassesFromUser(String username) {
+    User u = get(username);
+    return u.joinedClasses();
+  }
+  
+  @Override
   public List<Class> getAllClasses() {
     EntityManager em = getEntityManager();
     Query query = em.createQuery("SELECT c FROM Class c");

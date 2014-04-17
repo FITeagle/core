@@ -243,7 +243,7 @@ public class JPAUserManagerTest {
     manager.add(CLASS1);
     manager.addParticipant(CLASS1.getId(), USER1.getUsername());
     assertEquals(manager.get(CLASS1).getParticipants().get(0),USER1);
-    assertEquals(manager.get(USER1).joinedCourses().get(0),CLASS1);
+    assertEquals(manager.get(USER1).joinedClasses().get(0),CLASS1);
   }
   
   @Test
@@ -254,7 +254,7 @@ public class JPAUserManagerTest {
     manager.add(CLASS1);
     manager.addParticipant(CLASS1.getId(), USER1.getUsername());
     manager.delete(CLASS1);
-    assertTrue(manager.get(USER1).joinedCourses().isEmpty());
+    assertTrue(manager.get(USER1).joinedClasses().isEmpty());
   }
   
   @Test
