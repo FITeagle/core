@@ -370,11 +370,17 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public Class add(Class targetClass) {
-    EntityManager em = getEntityManager();
-    
+  public Class addClass(String ownerUsername, Class targetClass) {
+	EntityManager em = getEntityManager();
+    User user = em.find(User.class, addDomain(ownerUsername));
+    if (user == null) {
+      throw new UserNotFoundException();
+    }
+    if (user.classesOwned().contains(targetClass)) {
+      throw new DuplicateClassException();
+    }
     beginTransaction(em);
-    em.persist(targetClass);
+    user.addOwnedClass(targetClass);
     commitTransaction(em);
     return targetClass;
   }
@@ -396,9 +402,13 @@ public class JPAUserManager implements UserManager {
   
   @Override
   public void delete(Class targetClass) {
-    EntityManager em = getEntityManager();
+	EntityManager em = getEntityManager();
+    User user = em.find(User.class, addDomain(targetClass.getOwner().getUsername()));
+    if (user == null) {
+      throw new UserNotFoundException();
+    }
     beginTransaction(em);
-    em.remove(em.merge(targetClass));
+    user.removeOwnedClass(targetClass);
     commitTransaction(em);
   }
   
@@ -424,6 +434,12 @@ public class JPAUserManager implements UserManager {
   public List<Class> getAllClassesFromUser(String username) {
     User u = get(username);
     return u.joinedClasses();
+  }
+  
+  @Override
+  public List<Class> getAllClassesOwnedByUser(String username) {
+    User u = get(username);
+    return u.classesOwned();
   }
   
   @Override

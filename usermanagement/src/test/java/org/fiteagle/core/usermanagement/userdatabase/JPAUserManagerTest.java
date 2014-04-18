@@ -73,8 +73,11 @@ public class JPAUserManagerTest {
      USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());
   }
   
-  private void createCourse1(){
+  private void createAndAddClass1WithUser1(){
+	createUser1();
+    manager.add(USER1);
     CLASS1 = new Class("class1", "my first description");
+    manager.addClass(USER1.getUsername(), CLASS1);   
   }
   
   @BeforeClass
@@ -219,52 +222,48 @@ public class JPAUserManagerTest {
     manager.update(USER4.getUsername(), "mitja", "nikolaus", "test1@test.org", "mitjaAffiliation", "mitjasPassword", null);
   }
   
+  
   @Test
   public void testGetClass(){
-    createCourse1();
-    manager.add(CLASS1);    
+	createAndAddClass1WithUser1();
     assertTrue(CLASS1.equals(manager.get(CLASS1)));
     assertTrue(manager.getAllClasses().size() > 0); 
   }
   
   @Test(expected=UserManager.CourseNotFoundException.class)
   public void testDeleteClass(){
-    createCourse1();
-    manager.add(CLASS1);    
-    manager.delete(CLASS1);   
+	createAndAddClass1WithUser1();
+    manager.delete(CLASS1);
     manager.get(CLASS1);
   }
   
   @Test
   public void testAddParticipant(){
-    createCourse1();
-    createUser1();
-    manager.add(USER1);
-    manager.add(CLASS1);
-    manager.addParticipant(CLASS1.getId(), USER1.getUsername());
-    assertEquals(manager.get(CLASS1).getParticipants().get(0),USER1);
-    assertEquals(manager.get(USER1).joinedClasses().get(0),CLASS1);
+	createAndAddClass1WithUser1();
+    createUser2();
+    manager.add(USER2);
+    manager.addParticipant(CLASS1.getId(), USER2.getUsername());
+    assertEquals(manager.get(CLASS1).getParticipants().get(0),USER2);
+    assertEquals(manager.get(USER2).joinedClasses().get(0),CLASS1);
   }
   
   @Test
   public void testDeleteCourseWithParticipant(){
-    createCourse1();
-    createUser1();
-    manager.add(USER1);
-    manager.add(CLASS1);
-    manager.addParticipant(CLASS1.getId(), USER1.getUsername());
+	createAndAddClass1WithUser1();
+    createUser2();
+    manager.add(USER2);
+    manager.addParticipant(CLASS1.getId(), USER2.getUsername());
     manager.delete(CLASS1);
-    assertTrue(manager.get(USER1).joinedClasses().isEmpty());
+    assertTrue(manager.get(USER2).joinedClasses().isEmpty());
   }
   
   @Test
   public void testDeleteUserWithCourse(){
-    createCourse1();
-    createUser1();
-    manager.add(USER1);
-    manager.add(CLASS1);
-    manager.addParticipant(CLASS1.getId(), USER1.getUsername());
-    manager.delete(USER1);
+	createAndAddClass1WithUser1();
+    createUser2();
+    manager.add(USER2);
+    manager.addParticipant(CLASS1.getId(), USER2.getUsername());
+    manager.delete(USER2);
     assertTrue(manager.get(CLASS1).getParticipants().isEmpty());
   }
   
