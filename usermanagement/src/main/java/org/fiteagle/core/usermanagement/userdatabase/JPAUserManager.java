@@ -431,6 +431,19 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
+  public void removeParticipant(long id, String username){
+    User participant = get(username);
+    EntityManager em = getEntityManager();
+    Class targetCourse = em.find(Class.class, id);
+    if(targetCourse == null){
+      throw new CourseNotFoundException();
+    }
+    beginTransaction(em);
+    targetCourse.removeParticipant(participant);
+    commitTransaction(em);
+  }
+  
+  @Override
   public List<Class> getAllClassesFromUser(String username) {
     User u = get(username);
     return u.joinedClasses();
