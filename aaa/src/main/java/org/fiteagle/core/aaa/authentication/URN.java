@@ -1,6 +1,6 @@
 package org.fiteagle.core.aaa.authentication;
 
-import org.fiteagle.api.usermanagement.User;
+import org.fiteagle.api.core.usermanagement.User;
 
 public class URN {
 

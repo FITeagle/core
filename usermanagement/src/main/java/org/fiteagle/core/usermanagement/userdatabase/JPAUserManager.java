@@ -29,11 +29,11 @@ import javax.persistence.Query;
 import net.iharder.Base64;
 
 import org.bouncycastle.operator.OperatorCreationException;
-import org.fiteagle.api.usermanagement.Class;
-import org.fiteagle.api.usermanagement.User;
-import org.fiteagle.api.usermanagement.User.Role;
-import org.fiteagle.api.usermanagement.UserManager;
-import org.fiteagle.api.usermanagement.UserPublicKey;
+import org.fiteagle.api.core.usermanagement.Class;
+import org.fiteagle.api.core.usermanagement.User;
+import org.fiteagle.api.core.usermanagement.UserManager;
+import org.fiteagle.api.core.usermanagement.UserPublicKey;
+import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.core.aaa.authentication.AuthenticationHandler;
 import org.fiteagle.core.aaa.authentication.CertificateAuthority;
 import org.fiteagle.core.aaa.authentication.KeyManagement;

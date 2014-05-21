@@ -8,7 +8,7 @@ import java.util.Set;
 import javax.ejb.Remote;
 import javax.ejb.Stateless;
 
-import org.fiteagle.api.usermanagement.PolicyEnforcementPoint;
+import org.fiteagle.api.core.usermanagement.PolicyEnforcementPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
