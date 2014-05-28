@@ -52,7 +52,7 @@ public class JPAUserManagerTest {
     } catch (User.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
       e.printStackTrace();
     }
-    USER1 = new User("test1", "mitja", "nikolaus", "test1@test.org", "mitjasAffiliation", "mitjasPassword", KEYS1);
+    USER1 = new User("test1", "mitja", "nikolaus", "test1@test.org", "mitjasAffiliation", "mitjasPasswordHash", "mitjasPasswordSalt", KEYS1);
   }
   
   private void createUser2() {
@@ -62,15 +62,15 @@ public class JPAUserManagerTest {
     } catch (User.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
       e.printStackTrace();
     }
-    USER2 = new User("test2", "hans", "schmidt", "hschmidt@test.org", "hansAffiliation", "hansPassword", KEYS2);
+    USER2 = new User("test2", "hans", "schmidt", "hschmidt@test.org", "hansAffiliation", "hansPasswordHash", "hansPasswordSalt", KEYS2);
   }
   
   private void createUser3() {
-     USER3 = new User("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());    
+     USER3 = new User("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPasswordHash", "mitjasPasswordSalt", new ArrayList<UserPublicKey>());    
   }
   
   private void createUser4() {
-     USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());
+     USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPasswordHash", "mitjasPasswordSalt", new ArrayList<UserPublicKey>());
   }
   
   private void createAndAddClass1WithUser1(){

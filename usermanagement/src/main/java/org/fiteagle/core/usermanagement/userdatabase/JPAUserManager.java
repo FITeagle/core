@@ -38,6 +38,7 @@ import org.fiteagle.core.aaa.authentication.AuthenticationHandler;
 import org.fiteagle.core.aaa.authentication.CertificateAuthority;
 import org.fiteagle.core.aaa.authentication.KeyManagement;
 import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
+import org.fiteagle.core.aaa.authentication.PasswordUtil;
 import org.fiteagle.core.aaa.authentication.x509.X509Util;
 import org.fiteagle.core.config.preferences.InterfaceConfiguration;
 
@@ -159,7 +160,8 @@ public class JPAUserManager implements UserManager {
     }
     
     beginTransaction(em);
-    user.updateAttributes(firstName, lastName, email, affiliation, password, publicKeys);
+    String[] passwordHashAndSalt = PasswordUtil.generatePasswordHashAndSalt(password);
+    user.updateAttributes(firstName, lastName, email, affiliation, passwordHashAndSalt[0], passwordHashAndSalt[1], publicKeys);
     commitTransaction(em);
   }
   
