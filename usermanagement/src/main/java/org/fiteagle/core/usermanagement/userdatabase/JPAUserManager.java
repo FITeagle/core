@@ -18,7 +18,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.ejb.Remote;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -31,9 +30,9 @@ import net.iharder.Base64;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.fiteagle.api.core.usermanagement.Class;
 import org.fiteagle.api.core.usermanagement.User;
+import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.api.core.usermanagement.UserManager;
 import org.fiteagle.api.core.usermanagement.UserPublicKey;
-import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.core.aaa.authentication.AuthenticationHandler;
 import org.fiteagle.core.aaa.authentication.CertificateAuthority;
 import org.fiteagle.core.aaa.authentication.KeyManagement;
@@ -43,24 +42,31 @@ import org.fiteagle.core.aaa.authentication.x509.X509Util;
 import org.fiteagle.core.config.preferences.InterfaceConfiguration;
 
 @Stateless
-@Remote(UserManager.class)
 public class JPAUserManager implements UserManager {
   
   private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";
   
   private static UserManager inMemoryInstance;
+  private static UserManager instance;
   
   public JPAUserManager() {
   }
   
   @PersistenceContext(unitName = "usersDB")
   EntityManager entityManager;
-  
+
   public static UserManager getInMemoryInstance() {
     if (inMemoryInstance == null) {
       inMemoryInstance = new JPAUserManager();
     }
     return inMemoryInstance;
+  }
+  
+  public static UserManager getInstance(){
+    if(instance == null){
+      instance = new JPAUserManager();
+    }
+    return instance;
   }
   
   static {
