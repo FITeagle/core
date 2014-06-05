@@ -32,16 +32,16 @@ import com.google.gson.GsonBuilder;
 
 @MessageDriven(name="UserManagerMDB", activationConfig = {
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
-    @ActivationConfigProperty(propertyName = "destination", propertyValue = IMessageBus.TOPIC_CORE),
-    @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = UserManager.MESSAGE_FILTER),
-    @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
+    @ActivationConfigProperty(propertyName = "destination", propertyValue = IMessageBus.TOPIC_USERMANAGEMENT),   
+    @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge")
+    })
 public class UserManagerMDB implements MessageListener {
 
   private final UserManager usermanager;
   
   @Inject
   private JMSContext context;
-  @Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
+  @Resource(mappedName = IMessageBus.TOPIC_USERMANAGEMENT_NAME)
   private Topic topic;
   
   private final static Logger logger = Logger.getLogger(UserManagerMDB.class.toString());
@@ -58,14 +58,19 @@ public class UserManagerMDB implements MessageListener {
       String methodName = rcvMessage.getStringProperty(IMessageBus.TYPE_REQUEST);
       logger.info("Received a message: "+methodName);
       Method method = null;
+      if(methodName == null){
+        return;
+      }
       try {
         method = usermanager.getClass().getMethod(methodName);
       } catch (SecurityException e) {
       } catch (NoSuchMethodException e) {        
       }
-      List<User> users = null;
+      Object toReturn = null;
+      
+      //List<User> users = null;
       try{
-        users = (List<User>) method.invoke(usermanager);
+        toReturn = method.invoke(usermanager);
       } catch (IllegalArgumentException e) {
       } catch (IllegalAccessException e) {
       } catch (InvocationTargetException e) {
@@ -85,7 +90,7 @@ public class UserManagerMDB implements MessageListener {
        }) 
       .create();
       
-      final String resultJSON = gson.toJson(users);
+      final String resultJSON = gson.toJson(toReturn);
       
       final Message message = this.context.createMessage();
       message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_USERS);

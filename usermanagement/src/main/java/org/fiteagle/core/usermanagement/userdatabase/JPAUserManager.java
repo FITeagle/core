@@ -120,7 +120,7 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public User get(User user) throws UserNotFoundException {
+  public User getUser(User user) throws UserNotFoundException {
     return get(user.getUsername());
   }
   
