@@ -121,11 +121,11 @@ public class JPAUserManager implements UserManager {
   
   @Override
   public User getUser(User user) throws UserNotFoundException {
-    return get(user.getUsername());
+    return getUser(user.getUsername());
   }
   
   @Override
-  public User get(String username) throws UserNotFoundException {
+  public User getUser(String username) throws UserNotFoundException {
     EntityManager em = getEntityManager();
     User user = em.find(User.class, addDomain(username));
     if (user == null) {
@@ -145,7 +145,7 @@ public class JPAUserManager implements UserManager {
   
   @Override
   public void delete(String username) {
-    delete(get(username));
+    delete(getUser(username));
   }
   
   @Override
@@ -233,7 +233,7 @@ public class JPAUserManager implements UserManager {
       String username = "";
       username = X509Util.getUserNameFromX509Certificate(userCert);
       
-      User identifiedUser = get(username);
+      User identifiedUser = getUser(username);
       return identifiedUser;
     } catch (CertificateParsingException e1) {
       throw new RuntimeException(e1);
@@ -258,12 +258,12 @@ public class JPAUserManager implements UserManager {
   public boolean verifyCredentials(String username, String password) throws NoSuchAlgorithmException, IOException,
       UserNotFoundException {
     username = addDomain(username);
-    User User = get(username);
+    User User = getUser(username);
     return verifyPassword(password, User.hash(), User.salt());
   }
   
   private String createUserCertificate(String username, PublicKey publicKey) {
-    User u = get(username);
+    User u = getUser(username);
     CertificateAuthority ca = CertificateAuthority.getInstance();
     X509Certificate cert;
     String encoded = "";
@@ -308,7 +308,7 @@ public class JPAUserManager implements UserManager {
   
   public String createUserCertificateForPublicKey(String username, String description) {
     username = addDomain(username);
-    PublicKey publicKey = get(username).getPublicKey(description).publicKey();
+    PublicKey publicKey = getUser(username).getPublicKey(description).publicKey();
     return createUserCertificate(username, publicKey);
   }
   
@@ -427,7 +427,7 @@ public class JPAUserManager implements UserManager {
 
   @Override
   public void addParticipant(long id, String username){
-    User participant = get(username);
+    User participant = getUser(username);
     EntityManager em = getEntityManager();
     Class targetCourse = em.find(Class.class, id);
     if(targetCourse == null){
@@ -440,7 +440,7 @@ public class JPAUserManager implements UserManager {
   
   @Override
   public void removeParticipant(long id, String username){
-    User participant = get(username);
+    User participant = getUser(username);
     EntityManager em = getEntityManager();
     Class targetCourse = em.find(Class.class, id);
     if(targetCourse == null){
@@ -453,13 +453,13 @@ public class JPAUserManager implements UserManager {
   
   @Override
   public List<Class> getAllClassesFromUser(String username) {
-    User u = get(username);
+    User u = getUser(username);
     return u.joinedClasses();
   }
   
   @Override
   public List<Class> getAllClassesOwnedByUser(String username) {
-    User u = get(username);
+    User u = getUser(username);
     return u.classesOwned();
   }
   

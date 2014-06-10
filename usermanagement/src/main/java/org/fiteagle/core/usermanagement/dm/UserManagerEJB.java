@@ -61,8 +61,8 @@ public class UserManagerEJB implements UserManager{
 	}
 
 	@Override
-	public User get(String username) {
-		return usermanager.get(username);
+	public User getUser(String username) {
+		return usermanager.getUser(username);
 	}
 
 	@Override
