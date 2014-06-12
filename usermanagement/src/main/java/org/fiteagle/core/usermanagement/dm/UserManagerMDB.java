@@ -1,5 +1,6 @@
 package org.fiteagle.core.usermanagement.dm;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,17 +64,34 @@ public class UserManagerMDB implements MessageListener {
     .create();
   }
   
+  private HashMap<String, Exception> exceptions = new HashMap<>();
+  
   @Override
   public void onMessage(final Message rcvMessage) {
     try {
+      if(rcvMessage.getJMSRedelivered()){
+        Thread.sleep(100);
+        final String id = rcvMessage.getJMSCorrelationID();
+        Exception e = exceptions.remove(id);
+        String exceptionName = e.getClass().getSimpleName();
+        final Message message = this.context.createMessage();
+        message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_USER);
+        message.setStringProperty(IMessageBus.TYPE_EXCEPTION, exceptionName+": "+e.getMessage());        
+        if(id != null){
+          message.setJMSCorrelationID(id);
+        }
+        this.context.createProducer().send(topic, message);
+        return;
+      }
+      
       String methodName = rcvMessage.getStringProperty(IMessageBus.TYPE_REQUEST);
       logger.info("Received a message: "+methodName);
 
       if(methodName == null){
         return;
       }
-      
       final Message message = this.context.createMessage();
+      final String id = rcvMessage.getJMSCorrelationID();
       
       switch(methodName){
         case "getAllUsers": 
@@ -89,27 +107,24 @@ public class UserManagerMDB implements MessageListener {
           User user = null;
           try{
             user = usermanager.getUser(username);
-          } catch(EJBException e){
-            String exceptionName = e.getCausedByException().getClass().getName();
-            message.setStringProperty(IMessageBus.TYPE_EXCEPTION, exceptionName+": "+e.getMessage());
-            break;
+          } catch(EJBException e){            
+            exceptions.put(id, e.getCausedByException());
+            return;
           }
           final String userJSON = gsonBuilder.toJson(user);
           message.setStringProperty(IMessageBus.TYPE_RESULT, userJSON);
-         
           break;
       }
-
-      final String id = rcvMessage.getJMSCorrelationID();
+      
       if(id != null){
         message.setJMSCorrelationID(id);
       }
       this.context.createProducer().send(topic, message);
-    } catch (final JMSException e) {      
+      
+    } catch (final JMSException | InterruptedException e) {      
         logger.log(Level.SEVERE, "Issue with JMS", e);
     }
   }
-
-
+  
 
 }
