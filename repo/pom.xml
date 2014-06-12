@@ -30,7 +30,7 @@
 			<groupId>org.apache.jena</groupId>
 			<artifactId>apache-jena-libs</artifactId>
 			<type>pom</type>
-			<version>2.11.2-SNAPSHOT</version>
+			<version>2.11.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.spec.javax.servlet</groupId>
