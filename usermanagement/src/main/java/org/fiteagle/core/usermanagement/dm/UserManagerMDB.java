@@ -94,14 +94,14 @@ public class UserManagerMDB implements MessageListener {
       final String id = rcvMessage.getJMSCorrelationID();
       
       switch(methodName){
-        case "getAllUsers": 
+        case UserManager.GET_ALL_USERS: 
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_USERS);
           List<User> users = usermanager.getAllUsers();
           final String usersJSON = gsonBuilder.toJson(users);
           message.setStringProperty(IMessageBus.TYPE_RESULT, usersJSON);
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_USERS);
           break;          
-        case "getUser":
+        case UserManager.GET_USER:
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_USER);
           String username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
           User user = null;
@@ -111,8 +111,17 @@ public class UserManagerMDB implements MessageListener {
             exceptions.put(id, e.getCausedByException());
             return;
           }
-          final String userJSON = gsonBuilder.toJson(user);
-          message.setStringProperty(IMessageBus.TYPE_RESULT, userJSON);
+          message.setStringProperty(IMessageBus.TYPE_RESULT, gsonBuilder.toJson(user));
+          break;
+        case UserManager.ADD_USER:
+          message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_USER);
+          String userJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USER_JSON);
+          try{
+            usermanager.add(gsonBuilder.fromJson(userJSON, User.class));
+          } catch(EJBException e){            
+            exceptions.put(id, e.getCausedByException());
+            return;
+          }
           break;
       }
       
