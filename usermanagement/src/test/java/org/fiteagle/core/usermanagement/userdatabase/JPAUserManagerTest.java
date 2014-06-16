@@ -230,7 +230,7 @@ public class JPAUserManagerTest {
     assertTrue(manager.getAllClasses().size() > 0); 
   }
   
-  @Test(expected=UserManager.CourseNotFoundException.class)
+  @Test(expected=UserManager.FiteagleClassNotFoundException.class)
   public void testDeleteClass(){
 	createAndAddClass1WithUser1();
     manager.delete(CLASS1);

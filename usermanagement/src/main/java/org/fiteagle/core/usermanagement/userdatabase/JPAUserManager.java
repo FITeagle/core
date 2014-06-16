@@ -403,7 +403,7 @@ public class JPAUserManager implements UserManager {
     EntityManager em = getEntityManager();
     Class targetClass = em.find(Class.class, id);
     if (targetClass == null) {
-      throw new CourseNotFoundException();
+      throw new FiteagleClassNotFoundException();
     }
     return targetClass;
   }
@@ -431,7 +431,7 @@ public class JPAUserManager implements UserManager {
     EntityManager em = getEntityManager();
     Class targetCourse = em.find(Class.class, id);
     if(targetCourse == null){
-      throw new CourseNotFoundException();
+      throw new FiteagleClassNotFoundException();
     }
     beginTransaction(em);
     targetCourse.addParticipant(participant);
@@ -444,7 +444,7 @@ public class JPAUserManager implements UserManager {
     EntityManager em = getEntityManager();
     Class targetCourse = em.find(Class.class, id);
     if(targetCourse == null){
-      throw new CourseNotFoundException();
+      throw new FiteagleClassNotFoundException();
     }
     beginTransaction(em);
     targetCourse.removeParticipant(participant);
