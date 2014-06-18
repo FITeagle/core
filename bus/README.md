@@ -26,4 +26,12 @@ Test
 
 1. Listen to the web socket at:
 
-    ws://localhost:8080/bus/api/logger
+    ws-client ws://localhost:8080/bus/api/logger
+
+2. Send to the web socket at:
+
+    ws-client ws://localhost:8080/bus/api/commander
+
+3. Send to the web socket at:
+
+    curl http://localhost:8080/bus/api/commander
