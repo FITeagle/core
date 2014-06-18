@@ -39,7 +39,8 @@ import com.google.gson.reflect.TypeToken;
 
 @MessageDriven(name="UserManagerMDB", activationConfig = {
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
-    @ActivationConfigProperty(propertyName = "destination", propertyValue = IMessageBus.TOPIC_USERMANAGEMENT),   
+    @ActivationConfigProperty(propertyName = "destination", propertyValue = IMessageBus.TOPIC_CORE),
+    @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = UserManager.MESSAGE_FILTER),
     @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge")
     })
 public class UserManagerMDB implements MessageListener {
@@ -49,7 +50,7 @@ public class UserManagerMDB implements MessageListener {
   
   @Inject
   private JMSContext context;
-  @Resource(mappedName = IMessageBus.TOPIC_USERMANAGEMENT_NAME)
+  @Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
   private Topic topic;
   
   private final static Logger logger = Logger.getLogger(UserManagerMDB.class.toString());
