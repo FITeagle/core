@@ -34,4 +34,5 @@ Test
 
 3. Send to the web socket at:
 
-    curl http://localhost:8080/bus/api/commander
+    curl -X PUT -d "listResources" --header "Content-Type: text/plain" http://localhost:8080/bus/api/commander
+
