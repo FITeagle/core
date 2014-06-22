@@ -29,6 +29,7 @@ import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.api.core.usermanagement.UserManager;
 import org.fiteagle.api.core.usermanagement.UserManager.UserNotFoundException;
 import org.fiteagle.api.core.usermanagement.UserPublicKey;
+import org.fiteagle.core.aaa.authentication.PasswordUtil;
 
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
@@ -59,6 +60,10 @@ public class UserManagerMDB implements MessageListener {
     Context context;
     context = new InitialContext();
     usermanager = (UserManager) context.lookup("java:global/usermanagement/JPAUserManager");
+    if(!databaseContainsAdminUser()){
+      createFirstAdminUser();
+    }
+    
     gsonBuilder = new GsonBuilder()
     .setExclusionStrategies(new ExclusionStrategy() {
         public boolean shouldSkipClass(Class<?> classToSkip) {
@@ -70,6 +75,23 @@ public class UserManagerMDB implements MessageListener {
         }
      }) 
     .create();
+  }
+  
+  private void createFirstAdminUser() {
+    logger.info("Creating First Admin User");
+    String[] passwordHashAndSalt = PasswordUtil.generatePasswordHashAndSalt("admin");
+    User admin = User.createAdminUser("admin", passwordHashAndSalt[0], passwordHashAndSalt[1]);
+    usermanager.add(admin);
+  }
+  
+  private boolean databaseContainsAdminUser() {
+    List<User> users = usermanager.getAllUsers();
+    for (User u : users) {
+      if (u.getRole().equals(Role.FEDERATION_ADMIN)) {
+        return true;
+      }
+    }
+    return false;
   }
   
   private HashMap<String, Exception> exceptions = new HashMap<>();

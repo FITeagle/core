@@ -7,7 +7,7 @@
   </parent>
   <artifactId>config</artifactId>
   <packaging>jar</packaging>
-  <name>FITeagle :: Config</name>
+  <name>FITeagle :: Core :: Config</name>
    
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

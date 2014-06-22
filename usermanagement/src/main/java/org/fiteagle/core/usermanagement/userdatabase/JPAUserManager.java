@@ -44,29 +44,17 @@ import org.fiteagle.core.config.preferences.InterfaceConfiguration;
 @Stateless
 public class JPAUserManager implements UserManager {
   
-  private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";
-  
-  private static UserManager inMemoryInstance;
-  private static UserManager instance;
-  
-  public JPAUserManager() {
-  }
-  
   @PersistenceContext(unitName = "usersDB")
   EntityManager entityManager;
-
+  
+  private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";  
+  private static UserManager inMemoryInstance;
+  
   public static UserManager getInMemoryInstance() {
     if (inMemoryInstance == null) {
       inMemoryInstance = new JPAUserManager();
     }
     return inMemoryInstance;
-  }
-  
-  public static UserManager getInstance(){
-    if(instance == null){
-      instance = new JPAUserManager();
-    }
-    return instance;
   }
   
   static {
@@ -79,7 +67,7 @@ public class JPAUserManager implements UserManager {
   }
   
   private synchronized EntityManager getEntityManager() {
-    if (entityManager == null) {
+    if(entityManager == null) {
       EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME_INMEMORY);
       entityManager = factory.createEntityManager();
     }

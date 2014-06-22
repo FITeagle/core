@@ -8,7 +8,7 @@
 	</parent>
 	<artifactId>aaa</artifactId>
 	<packaging>jar</packaging>
-	<name>FITeagle :: AAA</name>
+	<name>FITeagle :: Core :: AAA</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
