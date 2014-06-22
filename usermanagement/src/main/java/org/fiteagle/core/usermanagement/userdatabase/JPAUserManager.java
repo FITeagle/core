@@ -57,17 +57,14 @@ public class JPAUserManager implements UserManager {
     return inMemoryInstance;
   }
   
-  static {
-    try {
-      java.lang.Class.forName("org.h2.Driver");
-    } catch (ClassNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-  }
-  
   private synchronized EntityManager getEntityManager() {
     if(entityManager == null) {
+      try {
+        java.lang.Class.forName("org.h2.Driver");
+      } catch (ClassNotFoundException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
       EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME_INMEMORY);
       entityManager = factory.createEntityManager();
     }
