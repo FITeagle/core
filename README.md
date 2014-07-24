@@ -3,6 +3,11 @@ core
 
 Core System
 
+Requirements
+---
+
+  The 'api' module must be available
+
 
 FAQ
 ---
