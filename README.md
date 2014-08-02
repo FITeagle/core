@@ -1,5 +1,7 @@
-core
-====
+[![Build Status](https://travis-ci.org/FITeagle/core.svg?branch=master)](https://travis-ci.org/FITeagle/core)
+
+FITeagle Core Modules
+=====================
 
 Core System
 
