@@ -38,19 +38,19 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
   private static PolicyDecisionPoint policyDecisionPoint = PolicyDecisionPoint.getInstance();
   
   @Override
-  public boolean isRequestAuthorized(String subjectUsername, String resourceUsername, String action, String role, Boolean isAuthenticated, Boolean requiresAdminRights, Boolean requiresTBOwnerRights) {
-    RequestCtx request = createRequest(subjectUsername, resourceUsername, action , role, isAuthenticated, requiresAdminRights, requiresTBOwnerRights);
+  public boolean isRequestAuthorized(String subjectUsername, String resourceUsername, String action, String role, Boolean requiresAdminRights, Boolean requiresTBOwnerRights) {
+    RequestCtx request = createRequest(subjectUsername, resourceUsername, action , role, requiresAdminRights, requiresTBOwnerRights);
     return policyDecisionPoint.evaluateRequest(request);
   }
 
-  private RequestCtx createRequest(String subjectUsername, String resourceUsername, String action, String role, Boolean isAuthenticated, Boolean requiresAdminRights, Boolean requiresTBOwnerRights) {
+  private RequestCtx createRequest(String subjectUsername, String resourceUsername, String action, String role, Boolean requiresAdminRights, Boolean requiresTBOwnerRights) {
     RequestCtx request = null;
     try {
       request = new RequestCtx(
           setSubject(subjectUsername, role),
           setResource(resourceUsername),
           setAction(action),
-          setEnvironment(isAuthenticated, requiresAdminRights, requiresTBOwnerRights));
+          setEnvironment(requiresAdminRights, requiresTBOwnerRights));
     } catch (URISyntaxException e) {
       log.error(e.getMessage());
     }
@@ -85,10 +85,9 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
     return actionSet;
   }
   
-  private Set<Attribute> setEnvironment(Boolean isAuthenticated, Boolean requiresAdminRights, Boolean requiresTBOwnerRights) throws URISyntaxException {
+  private Set<Attribute> setEnvironment(Boolean requiresAdminRights, Boolean requiresTBOwnerRights) throws URISyntaxException {
     HashSet<Attribute> environmentSet = new HashSet<Attribute>();
 
-    environmentSet.add(new Attribute(new URI("isAuthenticated"), null, null, BooleanAttribute.getInstance(isAuthenticated)));
     environmentSet.add(new Attribute(new URI("requiresAdminRights"), null, null, BooleanAttribute.getInstance(requiresAdminRights)));
     environmentSet.add(new Attribute(new URI("requiresTBOwnerRights"), null, null, BooleanAttribute.getInstance(requiresTBOwnerRights)));
     
