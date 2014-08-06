@@ -2,6 +2,7 @@ package org.fiteagle.core.repo;
 
 import java.io.StringReader;
 
+import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.IResourceRepository;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,17 +36,17 @@ public class ResourceRepositoryTest {
 		Assert.assertTrue(result.contains("<rdf"));
 		result = repo.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
 		Assert.assertTrue(result.contains("<rdf"));
-		result = repo.listResources(IResourceRepository.SERIALIZATION_TURTLE);
+		result = repo.listResources(IMessageBus.SERIALIZATION_TURTLE);
 		Assert.assertTrue(result.contains("<http"));
 		result = repo.listResources(IResourceRepository.SERIALIZATION_RDFJSON);
 		Assert.assertTrue(result.contains("value"));
-		result = repo.listResources(IResourceRepository.SERIALIZATION_JSONLD);
+		result = repo.listResources(IMessageBus.SERIALIZATION_JSONLD);
 		Assert.assertTrue(result.contains("@id"));
 	}	
 	
 	@Test
 	public void testQuery() {
-		String type = IResourceRepository.SERIALIZATION_JSONLD;
+		String type = IMessageBus.SERIALIZATION_JSONLD;
 		String query = "SELECT ?resource WHERE {?resource <http://fiteagle.org/ontology#isInstantiatedBy> ?y}";
 		String result = repo.queryDatabse(query, type);
 		String expected = "http://fiteagle.org/resource#vm332";
