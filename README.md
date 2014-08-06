@@ -25,4 +25,5 @@ FAQ
 
   ```
     sudo /etc/init.d/rng-tools start
-  ```
+  
+```
