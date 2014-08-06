@@ -36,7 +36,14 @@ public class MessageBusCommanderWS {
 		LOGGER.log(Level.INFO, "Received WebSocket message: " + command);
 		
 		final Message message = senderBean.createMessage();
-		message.setStringProperty(IMessageBus.TYPE_REQUEST, command);
+
+		String[] properties = command.split(",,,");
+		for(String property : properties){
+			int separatorPosition = property.indexOf(":::");
+			message.setStringProperty(property.substring(0,separatorPosition),property.substring(separatorPosition+3));
+		}
+
+		//message.setStringProperty(IMessageBus.TYPE_REQUEST, command);
 		message.setJMSCorrelationID(UUID.randomUUID().toString());
 
 		senderBean.sendMessage(message);

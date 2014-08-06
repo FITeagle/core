@@ -1,25 +1,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
+	<name>FITeagle :: Core :: Usermanagement</name>
+	<artifactId>usermanagement</artifactId>
+	<packaging>war</packaging>
 	<parent>
 		<groupId>org.fiteagle</groupId>
 		<artifactId>core</artifactId>
 		<version>0.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>usermanagement</artifactId>
-	<packaging>war</packaging>
-	<name>FITeagle :: Usermanagement</name>
-
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.fiteagle</groupId>
-			<artifactId>api</artifactId>
-			<version>0.1-SNAPSHOT</version>
-		</dependency>
 		<dependency>
 			<groupId>org.fiteagle</groupId>
 			<artifactId>aaa</artifactId>
@@ -34,41 +26,32 @@
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<version>1.3.175</version>
+			<version>1.4.178</version>
+			<scope>provided</scope>
 		</dependency>
-
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.2.4</version>
+		</dependency>
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-entitymanager</artifactId>
-			<version>4.3.1.Final</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-json</artifactId>
-			<version>1.17</version>
+			<version>4.3.5.Final</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.jboss.spec.javax.ejb</groupId>
-			<artifactId>jboss-ejb-api_3.1_spec</artifactId>
-			<scope>provided</scope>
+			<groupId>xml-apis</groupId>
+			<artifactId>xml-apis</artifactId>
+			<version>1.4.01</version>
 		</dependency>
-
 		<dependency>
 			<groupId>sun-xacml</groupId>
 			<artifactId>sun-xacml</artifactId>
 			<version>2.0</version>
 		</dependency>
-
 	</dependencies>
 
-	<repositories>
-		<repository>
-			<id>thirdparty-releases</id>
-			<name>JBoss Thirdparty Releases</name>
-			<url>https://repository.jboss.org/nexus/content/repositories/thirdparty-releases</url>
-		</repository>
-	</repositories>
 
 	<build>
 		<finalName>${project.artifactId}</finalName>
@@ -76,13 +59,12 @@
 			<plugin>
 				<groupId>org.wildfly.plugins</groupId>
 				<artifactId>wildfly-maven-plugin</artifactId>
-				<version>1.0.1.Final</version>
+				<version>${wildfly.version}</version>
 				<configuration>
 					<skip>false</skip>
 					<filename>${project.build.finalName}.war</filename>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -146,5 +128,4 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-
 </project>

@@ -18,7 +18,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.ejb.Remote;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -31,29 +30,25 @@ import net.iharder.Base64;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.fiteagle.api.core.usermanagement.Class;
 import org.fiteagle.api.core.usermanagement.User;
+import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.api.core.usermanagement.UserManager;
 import org.fiteagle.api.core.usermanagement.UserPublicKey;
-import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.core.aaa.authentication.AuthenticationHandler;
 import org.fiteagle.core.aaa.authentication.CertificateAuthority;
 import org.fiteagle.core.aaa.authentication.KeyManagement;
 import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
+import org.fiteagle.core.aaa.authentication.PasswordUtil;
 import org.fiteagle.core.aaa.authentication.x509.X509Util;
 import org.fiteagle.core.config.preferences.InterfaceConfiguration;
 
 @Stateless
-@Remote(UserManager.class)
 public class JPAUserManager implements UserManager {
-  
-  private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";
-  
-  private static UserManager inMemoryInstance;
-  
-  public JPAUserManager() {
-  }
   
   @PersistenceContext(unitName = "usersDB")
   EntityManager entityManager;
+  
+  private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";  
+  private static UserManager inMemoryInstance;
   
   public static UserManager getInMemoryInstance() {
     if (inMemoryInstance == null) {
@@ -62,17 +57,14 @@ public class JPAUserManager implements UserManager {
     return inMemoryInstance;
   }
   
-  static {
-    try {
-      java.lang.Class.forName("org.h2.Driver");
-    } catch (ClassNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-  }
-  
   private synchronized EntityManager getEntityManager() {
-    if (entityManager == null) {
+    if(entityManager == null) {
+      try {
+        java.lang.Class.forName("org.h2.Driver");
+      } catch (ClassNotFoundException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
       EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME_INMEMORY);
       entityManager = factory.createEntityManager();
     }
@@ -113,12 +105,12 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public User get(User user) throws UserNotFoundException {
-    return get(user.getUsername());
+  public User getUser(User user) throws UserNotFoundException {
+    return getUser(user.getUsername());
   }
   
   @Override
-  public User get(String username) throws UserNotFoundException {
+  public User getUser(String username) throws UserNotFoundException {
     EntityManager em = getEntityManager();
     User user = em.find(User.class, addDomain(username));
     if (user == null) {
@@ -138,7 +130,7 @@ public class JPAUserManager implements UserManager {
   
   @Override
   public void delete(String username) {
-    delete(get(username));
+    delete(getUser(username));
   }
   
   @Override
@@ -159,7 +151,8 @@ public class JPAUserManager implements UserManager {
     }
     
     beginTransaction(em);
-    user.updateAttributes(firstName, lastName, email, affiliation, password, publicKeys);
+    String[] passwordHashAndSalt = PasswordUtil.generatePasswordHashAndSalt(password);
+    user.updateAttributes(firstName, lastName, email, affiliation, passwordHashAndSalt[0], passwordHashAndSalt[1], publicKeys);
     commitTransaction(em);
   }
   
@@ -225,7 +218,7 @@ public class JPAUserManager implements UserManager {
       String username = "";
       username = X509Util.getUserNameFromX509Certificate(userCert);
       
-      User identifiedUser = get(username);
+      User identifiedUser = getUser(username);
       return identifiedUser;
     } catch (CertificateParsingException e1) {
       throw new RuntimeException(e1);
@@ -250,12 +243,12 @@ public class JPAUserManager implements UserManager {
   public boolean verifyCredentials(String username, String password) throws NoSuchAlgorithmException, IOException,
       UserNotFoundException {
     username = addDomain(username);
-    User User = get(username);
+    User User = getUser(username);
     return verifyPassword(password, User.hash(), User.salt());
   }
   
   private String createUserCertificate(String username, PublicKey publicKey) {
-    User u = get(username);
+    User u = getUser(username);
     CertificateAuthority ca = CertificateAuthority.getInstance();
     X509Certificate cert;
     String encoded = "";
@@ -300,7 +293,7 @@ public class JPAUserManager implements UserManager {
   
   public String createUserCertificateForPublicKey(String username, String description) {
     username = addDomain(username);
-    PublicKey publicKey = get(username).getPublicKey(description).publicKey();
+    PublicKey publicKey = getUser(username).getPublicKey(description).publicKey();
     return createUserCertificate(username, publicKey);
   }
   
@@ -395,7 +388,7 @@ public class JPAUserManager implements UserManager {
     EntityManager em = getEntityManager();
     Class targetClass = em.find(Class.class, id);
     if (targetClass == null) {
-      throw new CourseNotFoundException();
+      throw new FiteagleClassNotFoundException();
     }
     return targetClass;
   }
@@ -419,11 +412,11 @@ public class JPAUserManager implements UserManager {
 
   @Override
   public void addParticipant(long id, String username){
-    User participant = get(username);
+    User participant = getUser(username);
     EntityManager em = getEntityManager();
     Class targetCourse = em.find(Class.class, id);
     if(targetCourse == null){
-      throw new CourseNotFoundException();
+      throw new FiteagleClassNotFoundException();
     }
     beginTransaction(em);
     targetCourse.addParticipant(participant);
@@ -432,11 +425,11 @@ public class JPAUserManager implements UserManager {
   
   @Override
   public void removeParticipant(long id, String username){
-    User participant = get(username);
+    User participant = getUser(username);
     EntityManager em = getEntityManager();
     Class targetCourse = em.find(Class.class, id);
     if(targetCourse == null){
-      throw new CourseNotFoundException();
+      throw new FiteagleClassNotFoundException();
     }
     beginTransaction(em);
     targetCourse.removeParticipant(participant);
@@ -445,13 +438,13 @@ public class JPAUserManager implements UserManager {
   
   @Override
   public List<Class> getAllClassesFromUser(String username) {
-    User u = get(username);
+    User u = getUser(username);
     return u.joinedClasses();
   }
   
   @Override
   public List<Class> getAllClassesOwnedByUser(String username) {
-    User u = get(username);
+    User u = getUser(username);
     return u.classesOwned();
   }
   

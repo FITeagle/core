@@ -5,9 +5,6 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.ejb.Remote;
-import javax.ejb.Stateless;
-
 import org.fiteagle.api.core.usermanagement.PolicyEnforcementPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +15,6 @@ import com.sun.xacml.ctx.Attribute;
 import com.sun.xacml.ctx.RequestCtx;
 import com.sun.xacml.ctx.Subject;
 
-@Stateless
-@Remote(PolicyEnforcementPoint.class)
 public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
   
   private static Logger log = LoggerFactory.getLogger(FiteaglePolicyEnforcementPoint.class);

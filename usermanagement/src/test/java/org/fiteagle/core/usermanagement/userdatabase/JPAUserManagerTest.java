@@ -52,7 +52,7 @@ public class JPAUserManagerTest {
     } catch (User.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
       e.printStackTrace();
     }
-    USER1 = new User("test1", "mitja", "nikolaus", "test1@test.org", "mitjasAffiliation", "mitjasPassword", KEYS1);
+    USER1 = new User("test1", "mitja", "nikolaus", "test1@test.org", "mitjasAffiliation", "mitjasPasswordHash", "mitjasPasswordSalt", KEYS1);
   }
   
   private void createUser2() {
@@ -62,15 +62,15 @@ public class JPAUserManagerTest {
     } catch (User.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
       e.printStackTrace();
     }
-    USER2 = new User("test2", "hans", "schmidt", "hschmidt@test.org", "hansAffiliation", "hansPassword", KEYS2);
+    USER2 = new User("test2", "hans", "schmidt", "hschmidt@test.org", "hansAffiliation", "hansPasswordHash", "hansPasswordSalt", KEYS2);
   }
   
   private void createUser3() {
-     USER3 = new User("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());    
+     USER3 = new User("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPasswordHash", "mitjasPasswordSalt", new ArrayList<UserPublicKey>());    
   }
   
   private void createUser4() {
-     USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPassword", new ArrayList<UserPublicKey>());
+     USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPasswordHash", "mitjasPasswordSalt", new ArrayList<UserPublicKey>());
   }
   
   private void createAndAddClass1WithUser1(){
@@ -89,7 +89,7 @@ public class JPAUserManagerTest {
   public void testGet(){   
     createUser1();
     manager.add(USER1);    
-    assertTrue(USER1.equals(manager.get(USER1)));  
+    assertTrue(USER1.equals(manager.getUser(USER1)));  
     assertTrue(manager.getAllUsers().size() > 0); 
   }
   
@@ -106,7 +106,7 @@ public class JPAUserManagerTest {
   public void testGetUserWhoHasNoKeys() throws DuplicateUsernameException, NoSuchAlgorithmException{
     createUser3();
     manager.add(USER3);
-    assertTrue(USER3.equals(manager.get(USER3)));
+    assertTrue(USER3.equals(manager.getUser(USER3)));
   }
   
   @Test(expected=UserNotFoundException.class)
@@ -114,7 +114,7 @@ public class JPAUserManagerTest {
     createUser1();
     createUser2();
     manager.add(USER1);
-    manager.get(USER2);
+    manager.getUser(USER2);
   }
   
   @Test(expected=JPAUserManager.UserNotFoundException.class)
@@ -122,7 +122,7 @@ public class JPAUserManagerTest {
     createUser1();
     manager.add(USER1);    
     manager.delete(USER1);   
-    manager.get(USER1);
+    manager.getUser(USER1);
   }
     
   @Test
@@ -131,7 +131,7 @@ public class JPAUserManagerTest {
     manager.add(USER2);
     Thread.sleep(1);
     manager.update(USER2.getUsername(), "herbert", null, null, null, null, null);
-    User updatedUser = manager.get(USER2);
+    User updatedUser = manager.getUser(USER2);
     assertTrue("herbert".equals(updatedUser.getFirstName()));
     Date created = updatedUser.getCreated();
     Date lastModified = updatedUser.getLastModified();
@@ -148,7 +148,7 @@ public class JPAUserManagerTest {
     createUser1();
     manager.add(USER1);
     manager.setRole(USER1.getUsername(), Role.FEDERATION_ADMIN);
-    Assert.assertEquals(Role.FEDERATION_ADMIN, manager.get(USER1).getRole());
+    Assert.assertEquals(Role.FEDERATION_ADMIN, manager.getUser(USER1).getRole());
   }
   
   @Test
@@ -156,7 +156,7 @@ public class JPAUserManagerTest {
     createUser1();
     manager.add(USER1);    
     manager.addKey(USER1.getUsername(), new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key4", key4String));
-    assertTrue(manager.get(USER1).getPublicKeys().contains(new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key4", key4String)));
+    assertTrue(manager.getUser(USER1).getPublicKeys().contains(new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key4", key4String)));
   }
     
   @Test(expected = DuplicatePublicKeyException.class)
@@ -180,7 +180,7 @@ public class JPAUserManagerTest {
     String key = KEYS2.get(0).getDescription();
     manager.add(USER2);
     manager.deleteKey(USER2.getUsername(), key);
-    assertTrue(!manager.get(USER2).getPublicKeys().contains(key));
+    assertTrue(!manager.getUser(USER2).getPublicKeys().contains(key));
   } 
   
   @Test
@@ -188,7 +188,7 @@ public class JPAUserManagerTest {
     createUser2();
     manager.add(USER2);
     manager.renameKey(USER2.getUsername(), "key3", "my new description");
-    assertEquals("my new description", manager.get(USER2).getPublicKeys().get(0).getDescription());
+    assertEquals("my new description", manager.getUser(USER2).getPublicKeys().get(0).getDescription());
   }
   
   @Test(expected = DuplicatePublicKeyException.class)
@@ -230,7 +230,7 @@ public class JPAUserManagerTest {
     assertTrue(manager.getAllClasses().size() > 0); 
   }
   
-  @Test(expected=UserManager.CourseNotFoundException.class)
+  @Test(expected=UserManager.FiteagleClassNotFoundException.class)
   public void testDeleteClass(){
 	createAndAddClass1WithUser1();
     manager.delete(CLASS1);
@@ -244,7 +244,7 @@ public class JPAUserManagerTest {
     manager.add(USER2);
     manager.addParticipant(CLASS1.getId(), USER2.getUsername());
     assertEquals(manager.get(CLASS1).getParticipants().get(0),USER2);
-    assertEquals(manager.get(USER2).joinedClasses().get(0),CLASS1);
+    assertEquals(manager.getUser(USER2).joinedClasses().get(0),CLASS1);
   }
   
   @Test
@@ -254,7 +254,7 @@ public class JPAUserManagerTest {
     manager.add(USER2);
     manager.addParticipant(CLASS1.getId(), USER2.getUsername());
     manager.delete(CLASS1);
-    assertTrue(manager.get(USER2).joinedClasses().isEmpty());
+    assertTrue(manager.getUser(USER2).joinedClasses().isEmpty());
   }
   
   @Test

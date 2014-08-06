@@ -40,7 +40,7 @@ private FiteaglePreferences preferences;
   private InterfaceConfiguration(){
     
    preferences = new FiteaglePreferencesXML(getClass());
-   System.out.println("here is hrn: "+preferences.get("hrn"));
+//   System.out.println("here is hrn: "+preferences.get("hrn"));
     if(preferences.get("hrn")== null)
       preferences.put("hrn", DEFAULT_HRN);
       
