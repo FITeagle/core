@@ -31,7 +31,7 @@ public class ResourceRepositoryMDB implements MessageListener {
 	private Topic topic;
 
 	public ResourceRepositoryMDB() throws JMSException {
-		this.repo = new ResourceRepository();
+		this.repo = new ResourceRepository("dummy-answer.xml");
 	}
 
 	private final static Logger LOGGER = Logger
@@ -40,14 +40,15 @@ public class ResourceRepositoryMDB implements MessageListener {
 	public void onMessage(final Message rcvMessage) {
 		try {
 			ResourceRepositoryMDB.LOGGER.info("Received a message");
-			final String serialization = rcvMessage.getStringProperty(IResourceRepository.PROP_SERIALIZATION);
-			final String result = this.repo.listResources(serialization);
+			final String serialization = rcvMessage.getStringProperty(IMessageBus.SERIALIZATION);
+			final String query = rcvMessage.getStringProperty(IMessageBus.QUERY);
+			final String result = this.repo.queryDatabse(query, serialization);
 			final String id = rcvMessage.getJMSCorrelationID();					
 			final Message message = this.context.createMessage();
 			
-			message.setStringProperty(IMessageBus.TYPE_RESPONSE,
-					IResourceRepository.LIST_RESOURCES);
-			message.setStringProperty(IMessageBus.TYPE_RESULT, result);
+			message.setStringProperty(IMessageBus.TYPE,
+					IMessageBus.RESPONSE);
+			message.setStringProperty(IMessageBus.RESULT, result);
 			if (null != id)
 				message.setJMSCorrelationID(id);
 

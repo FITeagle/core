@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.TemporaryTopic;
 import javax.jms.Topic;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -26,6 +27,7 @@ import com.hp.hpl.jena.query.QueryParseException;
 @Path("/")
 public class ResourceRepositoryREST {
 
+	private static final int TIMEOUT = 2000;
 	@Inject
 	private JMSContext context;
 	@Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
@@ -58,7 +60,7 @@ public class ResourceRepositoryREST {
 	@Produces("text/turtle")
 	public String listResourcesTTLviaEJB() {
 		LOGGER.log(Level.INFO, "Getting resources as TTL via EJB...");
-		return repoEJB.listResources(IResourceRepository.SERIALIZATION_TURTLE);
+		return repoEJB.listResources(IMessageBus.SERIALIZATION_TURTLE);
 	}
 
 	@GET
@@ -75,7 +77,7 @@ public class ResourceRepositoryREST {
 	@Produces("text/turtle")
 	public String listResourcesTTL() {
 		LOGGER.log(Level.INFO, "Getting resources as TTL...");
-		return repo.listResources(IResourceRepository.SERIALIZATION_TURTLE);
+		return repo.listResources(IMessageBus.SERIALIZATION_TURTLE);
 	}
 
 	@GET
@@ -83,7 +85,7 @@ public class ResourceRepositoryREST {
 	@Produces("application/rdf+xml")
 	public String listResourcesXMLviaMDB() throws JMSException,
 			InterruptedException {
-		return mdbListResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
+		return mdbListAllResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
 	}
 
 	@GET
@@ -91,7 +93,7 @@ public class ResourceRepositoryREST {
 	@Produces("text/turtle")
 	public String listResourcesTTLviaMDB() throws JMSException,
 			InterruptedException {
-		return mdbListResources(IResourceRepository.SERIALIZATION_TURTLE);
+		return mdbListAllResources(IMessageBus.SERIALIZATION_TURTLE);
 	}
 
 	@GET
@@ -99,7 +101,7 @@ public class ResourceRepositoryREST {
 	@Produces("application/ld+json")
 	public String listResourcesLDviaMDB() throws JMSException,
 			InterruptedException {
-		return mdbListResources(IResourceRepository.SERIALIZATION_JSONLD);
+		return mdbListAllResources(IMessageBus.SERIALIZATION_JSONLD);
 	}
 
 	@GET
@@ -110,22 +112,25 @@ public class ResourceRepositoryREST {
 		String result = "unkown";
 		try {
 			result = this.repo.queryDatabse(query,
-					IResourceRepository.SERIALIZATION_JSONLD);
+					IMessageBus.SERIALIZATION_JSONLD);
 		} catch (QueryParseException | IllegalArgumentException e) {
 			result = e.getMessage();
 		}
 		return result;
 	}
 
-	private String mdbListResources(final String serialization)
+	
+	private String mdbListAllResources(final String serialization)
 			throws JMSException {
-		String result = "timeout";
+		String result = "no answer - timeout";
 
 		Message message = context.createMessage();
-		message.setStringProperty(IMessageBus.TYPE_REQUEST,
-				IResourceRepository.LIST_RESOURCES);
-		message.setStringProperty(IResourceRepository.PROP_SERIALIZATION,
-				serialization);
+		
+		message.setStringProperty(IMessageBus.TYPE, IMessageBus.REQUEST);
+		message.setStringProperty(IMessageBus.TARGET, IResourceRepository.SERVICE_NAME);
+		message.setStringProperty(IMessageBus.QUERY, "CONSTRUCT ?s ?p ?o");
+		message.setStringProperty(IMessageBus.SERIALIZATION, "TTL");
+		
 		message.setJMSCorrelationID(UUID.randomUUID().toString());
 		final String filter = "JMSCorrelationID='"
 				+ message.getJMSCorrelationID() + "'";
@@ -133,11 +138,11 @@ public class ResourceRepositoryREST {
 		LOGGER.log(Level.INFO, "Getting resources via MDB...");
 		this.context.createProducer().send(topic, message);
 		Message rcvMessage = context.createConsumer(topic, filter)
-				.receive(2000);
+				.receive(TIMEOUT);
 		LOGGER.log(Level.INFO, "Received resources via MDB...");
 
 		if (null != rcvMessage)
-			result = rcvMessage.getStringProperty(IMessageBus.TYPE_RESULT);
+			result = rcvMessage.getStringProperty(IMessageBus.RESULT);
 
 		return result;
 	}

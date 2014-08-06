@@ -18,6 +18,14 @@
   <rdf:Description rdf:nodeID="genid3">
     <rdf:rest rdf:nodeID="genid2"/>
   </rdf:Description>
+  <rdf:Description rdf:about="http://mynamespace/testMe">
+    <rdf:type rdf:resource="http://fiteagle.org/ontology#resource"/>
+    <rdfs:label>test resource</rdfs:label>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://mynamespace/anotherTest">
+    <rdf:type rdf:resource="http://fiteagle.org/ontology#resource"/>
+    <rdfs:label>another test resource</rdfs:label>
+  </rdf:Description>
   <rdf:Description rdf:about="http://fiteagle.org/resource#vmserver123">
     <rdf:type rdf:resource="http://fiteagle.org/ontology#vmserver"/>
   </rdf:Description>

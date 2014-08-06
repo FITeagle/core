@@ -15,6 +15,7 @@ import com.hp.hpl.jena.query.ReadWrite;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.tdb.TDBFactory;
 
 public class ResourceRepository implements IResourceRepository {
@@ -37,8 +38,7 @@ public class ResourceRepository implements IResourceRepository {
 	private void addDummyData(String filename) {
 		ResourceRepository.LOGGER.log(Level.INFO, "Loading data from: "
 				+ filename);
-		Model dataModel = RDFDataMgr.loadModel(filename,
-				Lang.RDFXML);
+		Model dataModel = RDFDataMgr.loadModel(filename, Lang.RDFXML);
 		addData(dataModel);
 	}
 
@@ -46,10 +46,10 @@ public class ResourceRepository implements IResourceRepository {
 		dataset.begin(ReadWrite.WRITE);
 		Model defaultModel = dataset.getDefaultModel();
 		try {
-			if (defaultModel.isEmpty()) {
+			//if (defaultModel.isEmpty()) {
 				defaultModel.add(dataModel);
 				dataset.commit();
-			}
+			//}
 		} finally {
 			dataset.end();
 		}
@@ -63,17 +63,22 @@ public class ResourceRepository implements IResourceRepository {
 	public String queryDatabse(final String query, final String serialization) {
 		ResourceRepository.LOGGER.log(Level.INFO, "Querying database '" + query
 				+ "'...");
-		Model model;// = ModelFactory.createDefaultModel();
-		
+		Model model = ModelFactory.createDefaultModel();
+
 		dataset.begin(ReadWrite.READ);
 		try {
 			QueryExecution qExec = QueryExecutionFactory.create(query, dataset);
-			
+
 			try {
-				//model = qExec.execConstruct();
-				ResultSet rs = qExec.execSelect();
-				model = ResultSetFormatter.toModel(rs);
-				//model = rs.getResourceModel();
+				if (query.toLowerCase().startsWith("select")) {
+					ResultSet rs = qExec.execSelect();
+					model = ResultSetFormatter.toModel(rs);
+				} else if (query.toLowerCase().startsWith("construct")) {
+					model = qExec.execConstruct();
+				} else if (query.toLowerCase().startsWith("describe")) {
+					model = qExec.execDescribe();
+				}
+				// model = rs.getResourceModel();
 			} finally {
 				qExec.close();
 			}
@@ -101,10 +106,4 @@ public class ResourceRepository implements IResourceRepository {
 		return this
 				.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);
 	}
-
-  @Override
-  public String listResources(String query, String type) {
-    // TODO Auto-generated method stub
-    return null;
-  }
 }
