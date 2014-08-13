@@ -29,6 +29,7 @@ import net.iharder.Base64;
 
 import org.bouncycastle.operator.OperatorCreationException;
 import org.fiteagle.api.core.usermanagement.Class;
+import org.fiteagle.api.core.usermanagement.Node;
 import org.fiteagle.api.core.usermanagement.User;
 import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.api.core.usermanagement.UserManager;
@@ -98,9 +99,12 @@ public class JPAUserManager implements UserManager {
         throw new DuplicateEmailException();
       }
     }
-    
+    Node node = em.find(Node.class, user.node().getId());
+    if (node == null) {
+      throw new NodeNotFoundException();
+    }
     beginTransaction(em);
-    em.persist(user);
+    node.addUser(user);
     commitTransaction(em);
   }
   
@@ -458,6 +462,33 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
+  public void addNode(Node node) {
+    EntityManager em = getEntityManager();
+    beginTransaction(em);
+    em.persist(node);
+    commitTransaction(em);
+  }
+  
+  @Override
+  public Node getNode(long id) throws NodeNotFoundException {
+    EntityManager em = getEntityManager();
+    Node node = em.find(Node.class, id);
+    if(node == null) {
+      throw new NodeNotFoundException();
+    }
+    return node;
+  }
+  
+  @Override
+  public List<Node> getAllNodes() {
+    EntityManager em = getEntityManager();
+    Query query = em.createQuery("SELECT n FROM Node n");
+    @SuppressWarnings("unchecked")
+    List<Node> resultList = (List<Node>) query.getResultList();
+    return resultList;
+  }
+  
+  @Override
   public void deleteAllEntries(){
     EntityManager em = getEntityManager();
     beginTransaction(em);
@@ -467,6 +498,8 @@ public class JPAUserManager implements UserManager {
       query = em.createQuery("DELETE FROM UserPublicKey");
       query.executeUpdate();
       query = em.createQuery("DELETE FROM User");
+      query.executeUpdate();
+      query = em.createQuery("DELETE FROM Node");
       query.executeUpdate();
       commitTransaction(em);
     } catch(Exception e){

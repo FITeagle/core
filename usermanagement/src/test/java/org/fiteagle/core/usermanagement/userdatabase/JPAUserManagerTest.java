@@ -8,8 +8,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.fiteagle.api.core.usermanagement.Class;
+import org.fiteagle.api.core.usermanagement.Node;
 import org.fiteagle.api.core.usermanagement.User;
 import org.fiteagle.api.core.usermanagement.UserManager;
 import org.fiteagle.api.core.usermanagement.UserPublicKey;
@@ -23,6 +25,7 @@ import org.fiteagle.core.aaa.authentication.KeyManagement;
 import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -42,6 +45,8 @@ public class JPAUserManagerTest {
   
   protected static Class CLASS1;
   
+  private static Node defaultNode;
+  
   private static UserManager manager;
   
   private void createUser1() {
@@ -52,7 +57,7 @@ public class JPAUserManagerTest {
     } catch (User.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
       e.printStackTrace();
     }
-    USER1 = new User("test1", "mitja", "nikolaus", "test1@test.org", "mitjasAffiliation", "mitjasPasswordHash", "mitjasPasswordSalt", KEYS1);
+    USER1 = new User("test1", "mitja", "nikolaus", "test1@test.org", "mitjasAffiliation", defaultNode, "mitjasPasswordHash", "mitjasPasswordSalt", KEYS1);
   }
   
   private void createUser2() {
@@ -62,15 +67,15 @@ public class JPAUserManagerTest {
     } catch (User.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
       e.printStackTrace();
     }
-    USER2 = new User("test2", "hans", "schmidt", "hschmidt@test.org", "hansAffiliation", "hansPasswordHash", "hansPasswordSalt", KEYS2);
+    USER2 = new User("test2", "hans", "schmidt", "hschmidt@test.org", "hansAffiliation", defaultNode, "hansPasswordHash", "hansPasswordSalt", KEYS2);
   }
   
   private void createUser3() {
-     USER3 = new User("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPasswordHash", "mitjasPasswordSalt", new ArrayList<UserPublicKey>());    
+     USER3 = new User("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", defaultNode, "mitjasPasswordHash", "mitjasPasswordSalt", new ArrayList<UserPublicKey>());    
   }
   
   private void createUser4() {
-     USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", "mitjasPasswordHash", "mitjasPasswordSalt", new ArrayList<UserPublicKey>());
+     USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", defaultNode, "mitjasPasswordHash", "mitjasPasswordSalt", new ArrayList<UserPublicKey>());
   }
   
   private void createAndAddClass1WithUser1(){
@@ -83,6 +88,19 @@ public class JPAUserManagerTest {
   @BeforeClass
   public static void setUp(){
     manager = JPAUserManager.getInMemoryInstance();
+  }
+  
+  @Before
+  public void addNode(){
+    defaultNode = new Node("TU Berlin");
+    manager.addNode(defaultNode);
+  }
+  
+  @Test
+  public void testGetNode(){
+    List<Node> nodes = manager.getAllNodes();
+    assertTrue(nodes.size() > 0); 
+    manager.getNode(nodes.get(0).getId());
   }
   
   @Test
@@ -225,21 +243,21 @@ public class JPAUserManagerTest {
   
   @Test
   public void testGetClass(){
-	createAndAddClass1WithUser1();
+    createAndAddClass1WithUser1();
     assertTrue(CLASS1.equals(manager.get(CLASS1)));
     assertTrue(manager.getAllClasses().size() > 0); 
   }
   
   @Test(expected=UserManager.FiteagleClassNotFoundException.class)
   public void testDeleteClass(){
-	createAndAddClass1WithUser1();
+    createAndAddClass1WithUser1();
     manager.delete(CLASS1);
     manager.get(CLASS1);
   }
   
   @Test
   public void testAddParticipant(){
-	createAndAddClass1WithUser1();
+    createAndAddClass1WithUser1();
     createUser2();
     manager.add(USER2);
     manager.addParticipant(CLASS1.getId(), USER2.getUsername());
@@ -249,7 +267,7 @@ public class JPAUserManagerTest {
   
   @Test
   public void testDeleteCourseWithParticipant(){
-	createAndAddClass1WithUser1();
+    createAndAddClass1WithUser1();
     createUser2();
     manager.add(USER2);
     manager.addParticipant(CLASS1.getId(), USER2.getUsername());
@@ -259,7 +277,7 @@ public class JPAUserManagerTest {
   
   @Test
   public void testDeleteUserWithCourse(){
-	createAndAddClass1WithUser1();
+    createAndAddClass1WithUser1();
     createUser2();
     manager.add(USER2);
     manager.addParticipant(CLASS1.getId(), USER2.getUsername());

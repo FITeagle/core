@@ -24,6 +24,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.usermanagement.Node;
 import org.fiteagle.api.core.usermanagement.User;
 import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.api.core.usermanagement.UserManager;
@@ -46,8 +47,25 @@ import com.google.gson.reflect.TypeToken;
     })
 public class UserManagerMDB implements MessageListener {
 
-  private final UserManager usermanager;
-  private final Gson gsonBuilder;
+  private static UserManager usermanager;
+  private static Gson gsonBuilder;
+  
+  private static boolean connectionEstablished = false;
+  
+  static {
+    gsonBuilder = new GsonBuilder()
+    .setExclusionStrategies(new ExclusionStrategy() {
+        public boolean shouldSkipClass(Class<?> classToSkip) {
+           return false;
+        }
+        public boolean shouldSkipField(FieldAttributes f) {
+          return ((f.getDeclaringClass() == UserPublicKey.class && (f.getName().equals("owner") || f.getName().equals("publicKey"))) ||
+              (f.getDeclaringClass() == User.class && (f.getName().equals("classes") || f.getName().equals("classesOwned")) ||
+              (f.getDeclaringClass() == User.class && f.getName().equals("node"))));
+        }
+     })
+    .create();
+  }
   
   @Inject
   private JMSContext context;
@@ -56,35 +74,51 @@ public class UserManagerMDB implements MessageListener {
   
   private final static Logger logger = Logger.getLogger(UserManagerMDB.class.toString());
   
-  public UserManagerMDB() throws NamingException{
-    Context context;
-    context = new InitialContext();
-    usermanager = (UserManager) context.lookup("java:global/usermanagement/JPAUserManager");
+  public UserManagerMDB() {
+    if(connectionEstablished == false){
+      setupConnection();
+      connectionEstablished = true;
+    }
+  }
+  
+  private void setupConnection(){
+    Context context = null;
+    try {
+      context = new InitialContext();
+      usermanager = (UserManager) context.lookup("java:global/usermanagement/JPAUserManager");
+    } catch (NamingException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    
+    createDefaultNodeIfNecessary();
     if(!databaseContainsAdminUser()){
       createFirstAdminUser();
     }
-    
-    gsonBuilder = new GsonBuilder()
-    .setExclusionStrategies(new ExclusionStrategy() {
-        public boolean shouldSkipClass(Class<?> classToSkip) {
-           return false;
-        }
-        public boolean shouldSkipField(FieldAttributes f) {
-          return ((f.getDeclaringClass() == UserPublicKey.class && (f.getName().equals("owner") || f.getName().equals("publicKey"))) ||
-              (f.getDeclaringClass() == User.class && (f.getName().equals("classes") || f.getName().equals("classesOwned"))));
-        }
-     }) 
-    .create();
   }
   
-  private void createFirstAdminUser() {
+  private static void createDefaultNodeIfNecessary() {
+    List<Node> nodes = usermanager.getAllNodes();
+    if(nodes.size() > 0){
+      Node defaultNode = nodes.get(0);
+      logger.info("Setting default node: \""+ defaultNode.getName() + "\" with ID: " + defaultNode.getId());
+      Node.setDefaultNode(defaultNode);
+    }
+    else{
+      Node node = Node.createDefaultNode();
+      logger.info("Creating First Node: \"" + node.getName() + "\"");
+      usermanager.addNode(node);
+    }
+  }
+  
+  private static void createFirstAdminUser() {
     logger.info("Creating First Admin User");
     String[] passwordHashAndSalt = PasswordUtil.generatePasswordHashAndSalt("admin");
     User admin = User.createAdminUser("admin", passwordHashAndSalt[0], passwordHashAndSalt[1]);
     usermanager.add(admin);
   }
   
-  private boolean databaseContainsAdminUser() {
+  private static boolean databaseContainsAdminUser() {
     List<User> users = usermanager.getAllUsers();
     for (User u : users) {
       if (u.getRole().equals(Role.FEDERATION_ADMIN)) {
@@ -145,10 +179,10 @@ public class UserManagerMDB implements MessageListener {
           message.setStringProperty(IMessageBus.TYPE_RESULT, gsonBuilder.toJson(user));
           break;
         case UserManager.ADD_USER:
-          message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_USER);
+          message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.ADD_USER);
           String userJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USER_JSON);
           try{
-            usermanager.add(gsonBuilder.fromJson(userJSON, User.class));
+            usermanager.add(new Gson().fromJson(userJSON, User.class));
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
@@ -358,6 +392,16 @@ public class UserManagerMDB implements MessageListener {
             return;
           }
           message.setBooleanProperty(IMessageBus.TYPE_RESULT, resultBoolean);
+          break;
+        case UserManager.GET_ALL_NODES:
+          message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_NODES);
+          try{
+            result = gsonBuilder.toJson(usermanager.getAllNodes());
+          } catch(EJBException e){      
+            exceptions.put(id, e.getCausedByException());
+            return;
+          }
+          message.setStringProperty(IMessageBus.TYPE_RESULT, result);
           break;
       }
       
