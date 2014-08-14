@@ -462,11 +462,12 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public void addNode(Node node) {
+  public Node addNode(Node node) {
     EntityManager em = getEntityManager();
     beginTransaction(em);
     em.persist(node);
     commitTransaction(em);
+    return node;
   }
   
   @Override

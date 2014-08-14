@@ -158,7 +158,7 @@ public class UserManagerMDB implements MessageListener {
       final String id = rcvMessage.getJMSCorrelationID();
       
       String username, description, result, password;
-      long classId;
+      long classId, nodeId;
       switch(methodName){
         case UserManager.GET_ALL_USERS: 
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_USERS);
@@ -392,6 +392,17 @@ public class UserManagerMDB implements MessageListener {
             return;
           }
           message.setBooleanProperty(IMessageBus.TYPE_RESULT, resultBoolean);
+          break;
+        case UserManager.ADD_NODE:
+          message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.ADD_NODE);
+          String nodeJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_NODE_JSON);
+          try{
+            nodeId = usermanager.addNode(gsonBuilder.fromJson(nodeJSON, Node.class)).getId();
+          } catch(EJBException e){            
+            exceptions.put(id, e.getCausedByException());
+            return;
+          }
+          message.setLongProperty(IMessageBus.TYPE_RESULT, nodeId);
           break;
         case UserManager.GET_ALL_NODES:
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_NODES);
