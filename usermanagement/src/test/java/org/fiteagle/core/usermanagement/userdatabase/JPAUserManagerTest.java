@@ -13,14 +13,14 @@ import java.util.List;
 import org.fiteagle.api.core.usermanagement.Class;
 import org.fiteagle.api.core.usermanagement.Node;
 import org.fiteagle.api.core.usermanagement.User;
-import org.fiteagle.api.core.usermanagement.UserManager;
-import org.fiteagle.api.core.usermanagement.UserPublicKey;
 import org.fiteagle.api.core.usermanagement.User.PublicKeyNotFoundException;
 import org.fiteagle.api.core.usermanagement.User.Role;
+import org.fiteagle.api.core.usermanagement.UserManager;
 import org.fiteagle.api.core.usermanagement.UserManager.DuplicateEmailException;
 import org.fiteagle.api.core.usermanagement.UserManager.DuplicatePublicKeyException;
 import org.fiteagle.api.core.usermanagement.UserManager.DuplicateUsernameException;
 import org.fiteagle.api.core.usermanagement.UserManager.UserNotFoundException;
+import org.fiteagle.api.core.usermanagement.UserPublicKey;
 import org.fiteagle.core.aaa.authentication.KeyManagement;
 import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
 import org.junit.After;
@@ -79,9 +79,10 @@ public class JPAUserManagerTest {
   }
   
   private void createAndAddClass1WithUser1(){
-	createUser1();
+    createUser1();
     manager.add(USER1);
     CLASS1 = new Class("class1", "my first description");
+    CLASS1.addNode(defaultNode);
     manager.addClass(USER1.getUsername(), CLASS1);   
   }
   
@@ -240,12 +241,14 @@ public class JPAUserManagerTest {
     manager.update(USER4.getUsername(), "mitja", "nikolaus", "test1@test.org", "mitjaAffiliation", "mitjasPassword", null);
   }
   
-  
   @Test
   public void testGetClass(){
     createAndAddClass1WithUser1();
     assertTrue(CLASS1.equals(manager.get(CLASS1)));
+    assertTrue(CLASS1.nodes().size() > 0);
     assertTrue(manager.getAllClasses().size() > 0); 
+    List<Node> nodes = manager.getAllNodes();
+    assertTrue(nodes.get(0).getClasses().size() > 0);
   }
   
   @Test(expected=UserManager.FiteagleClassNotFoundException.class)

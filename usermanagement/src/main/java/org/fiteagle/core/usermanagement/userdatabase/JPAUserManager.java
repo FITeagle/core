@@ -15,6 +15,7 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -376,9 +377,19 @@ public class JPAUserManager implements UserManager {
     if (user.classesOwned().contains(targetClass)) {
       throw new DuplicateClassException();
     }
+    List<Node> nodes = new ArrayList<>();
+    for(Node node : targetClass.nodes()){
+      nodes.add(getNode(node.getId()));
+    }
     beginTransaction(em);
     user.addOwnedClass(targetClass);
+    for(Node n : nodes){
+      n.addClass(targetClass);
+    }
     commitTransaction(em);
+    if(this != inMemoryInstance){
+      em.flush();
+    }
     return targetClass;
   }
   
@@ -467,6 +478,9 @@ public class JPAUserManager implements UserManager {
     beginTransaction(em);
     em.persist(node);
     commitTransaction(em);
+    if(this != inMemoryInstance){
+      em.flush();
+    }
     return node;
   }
   

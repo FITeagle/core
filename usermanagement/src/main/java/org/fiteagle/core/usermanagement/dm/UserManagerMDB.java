@@ -61,7 +61,8 @@ public class UserManagerMDB implements MessageListener {
         public boolean shouldSkipField(FieldAttributes f) {
           return ((f.getDeclaringClass() == UserPublicKey.class && (f.getName().equals("owner") || f.getName().equals("publicKey"))) ||
               (f.getDeclaringClass() == User.class && (f.getName().equals("classes") || f.getName().equals("classesOwned")) ||
-              (f.getDeclaringClass() == User.class && f.getName().equals("node"))));
+              (f.getDeclaringClass() == User.class && f.getName().equals("node"))) ||
+              (f.getDeclaringClass() == org.fiteagle.api.core.usermanagement.Class.class && f.getName().equals("nodes")));
         }
      })
     .create();
@@ -350,7 +351,7 @@ public class UserManagerMDB implements MessageListener {
           username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
           String classJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_CLASS_JSON);
           try{
-            classId = usermanager.addClass(username, gsonBuilder.fromJson(classJSON, org.fiteagle.api.core.usermanagement.Class.class)).getId();
+            classId = usermanager.addClass(username, new Gson().fromJson(classJSON, org.fiteagle.api.core.usermanagement.Class.class)).getId();
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
