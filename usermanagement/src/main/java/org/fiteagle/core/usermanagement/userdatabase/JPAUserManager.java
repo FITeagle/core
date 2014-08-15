@@ -21,8 +21,6 @@ import java.util.List;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
@@ -47,42 +45,20 @@ import org.fiteagle.core.config.preferences.InterfaceConfiguration;
 public class JPAUserManager implements UserManager {
   
   @PersistenceContext(unitName = "usersDB")
-  EntityManager entityManager;
+  protected EntityManager entityManager;
   
-  private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";  
-  private static UserManager inMemoryInstance;
-  
-  public static UserManager getInMemoryInstance() {
-    if (inMemoryInstance == null) {
-      inMemoryInstance = new JPAUserManager();
-    }
-    return inMemoryInstance;
-  }
-  
-  private synchronized EntityManager getEntityManager() {
-    if(entityManager == null) {
-      try {
-        java.lang.Class.forName("org.h2.Driver");
-      } catch (ClassNotFoundException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
-      EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME_INMEMORY);
-      entityManager = factory.createEntityManager();
-    }
+  protected synchronized EntityManager getEntityManager() {
     return entityManager;
   }
   
-  private void beginTransaction(EntityManager em) {
-    if (this == inMemoryInstance) {
-      em.getTransaction().begin();
-    }
+  protected void beginTransaction(EntityManager em) {
   }
   
-  private void commitTransaction(EntityManager em) {
-    if (this == inMemoryInstance) {
-      em.getTransaction().commit();
-    }
+  protected void commitTransaction(EntityManager em) {
+  }
+  
+  protected void flushTransaction(EntityManager em) {
+    em.flush();
   }
   
   @Override
@@ -332,35 +308,6 @@ public class JPAUserManager implements UserManager {
     
   }
   
-  private boolean verifyUserSignedCertificate(User identifiedUser, X509Certificate certificate) throws IOException,
-      InvalidKeySpecException, NoSuchAlgorithmException, CouldNotParse {
-    boolean verified = false;
-    KeyManagement keydecoder = KeyManagement.getInstance();
-    if (identifiedUser.getPublicKeys() == null || identifiedUser.getPublicKeys().size() == 0) {
-      identifiedUser.addPublicKey(new UserPublicKey(certificate.getPublicKey(), "created at "
-          + System.currentTimeMillis(), keydecoder.encodePublicKey(certificate.getPublicKey())));
-      addKey(identifiedUser.getUsername(), identifiedUser.getPublicKeys().get(0));
-    }
-    for (UserPublicKey oldUserPublicKey : identifiedUser.getPublicKeys()) {
-      PublicKey pubKey = oldUserPublicKey.publicKey();
-      
-      verified = AuthenticationHandler.getInstance().verifyCertificateWithPublicKey(certificate, pubKey);
-      if (verified) {
-        return true;
-      }
-    }
-    throw new AuthenticationHandler.KeyDoesNotMatchException();
-  }
-  
-  private String addDomain(String username) {
-    InterfaceConfiguration configuration = null;
-    if (!username.contains("@")) {
-      configuration = InterfaceConfiguration.getInstance();
-      username = username + "@" + configuration.getDomain();
-    }
-    return username;
-  }
-  
   @Override
   public List<User> getAllUsers() {
     EntityManager em = getEntityManager();
@@ -393,9 +340,7 @@ public class JPAUserManager implements UserManager {
       n.addClass(targetClass);
     }
     commitTransaction(em);
-    if(this != inMemoryInstance){
-      em.flush();
-    }
+    flushTransaction(em);
     return targetClass;
   }
   
@@ -484,9 +429,7 @@ public class JPAUserManager implements UserManager {
     beginTransaction(em);
     em.persist(node);
     commitTransaction(em);
-    if(this != inMemoryInstance){
-      em.flush();
-    }
+    flushTransaction(em);
     return node;
   }
   
@@ -527,4 +470,34 @@ public class JPAUserManager implements UserManager {
       System.out.println(e.getMessage());
     }
   }
+  
+  private boolean verifyUserSignedCertificate(User identifiedUser, X509Certificate certificate) throws IOException,
+    InvalidKeySpecException, NoSuchAlgorithmException, CouldNotParse {
+    boolean verified = false;
+    KeyManagement keydecoder = KeyManagement.getInstance();
+    if (identifiedUser.getPublicKeys() == null || identifiedUser.getPublicKeys().size() == 0) {
+      identifiedUser.addPublicKey(new UserPublicKey(certificate.getPublicKey(), "created at "
+          + System.currentTimeMillis(), keydecoder.encodePublicKey(certificate.getPublicKey())));
+      addKey(identifiedUser.getUsername(), identifiedUser.getPublicKeys().get(0));
+    }
+    for(UserPublicKey oldUserPublicKey : identifiedUser.getPublicKeys()) {
+      PublicKey pubKey = oldUserPublicKey.publicKey();
+    
+      verified = AuthenticationHandler.getInstance().verifyCertificateWithPublicKey(certificate, pubKey);
+      if (verified) {
+        return true;
+      }
+    }
+    throw new AuthenticationHandler.KeyDoesNotMatchException();
+  }
+  
+  protected String addDomain(String username) {
+    InterfaceConfiguration configuration = null;
+    if (!username.contains("@")) {
+      configuration = InterfaceConfiguration.getInstance();
+      username = username + "@" + configuration.getDomain();
+    }
+    return username;
+  }
+  
 }
