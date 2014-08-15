@@ -41,8 +41,12 @@ import org.fiteagle.core.aaa.authentication.PasswordUtil;
 import org.fiteagle.core.aaa.authentication.x509.X509Util;
 import org.fiteagle.core.config.preferences.InterfaceConfiguration;
 
+import org.jboss.logging.Logger;
+
 @Stateless
 public class JPAUserManager implements UserManager {
+  
+  private final static Logger log = Logger.getLogger(JPAUserManager.class.toString());
   
   @PersistenceContext(unitName = "usersDB")
   protected EntityManager entityManager;
@@ -241,8 +245,7 @@ public class JPAUserManager implements UserManager {
       encoded = X509Util.getCertficateEncoded(cert);
     } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | UnrecoverableEntryException
         | OperatorCreationException | IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      log.error(e.getMessage());
     }
     return encoded;
   }
@@ -269,8 +272,7 @@ public class JPAUserManager implements UserManager {
     try {
       cert = createUserCertificate(addDomain(username), passphrase, KeyManagement.getInstance().generateKeyPair());
     } catch (IOException | GeneralSecurityException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      log.error(e.getMessage());
     }
     return cert;
   }
