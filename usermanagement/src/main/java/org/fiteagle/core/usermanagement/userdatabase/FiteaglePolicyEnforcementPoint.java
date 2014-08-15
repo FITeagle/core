@@ -5,7 +5,14 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+
 import org.fiteagle.api.core.usermanagement.PolicyEnforcementPoint;
+import org.fiteagle.api.core.usermanagement.User.Role;
+import org.fiteagle.api.core.usermanagement.UserManager;
+import org.fiteagle.api.core.usermanagement.UserManager.UserNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,24 +40,81 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
     }
   }
   
-  public FiteaglePolicyEnforcementPoint(){};  
+  private UserManager usermanager;
+  
+  protected FiteaglePolicyEnforcementPoint(UserManager usermanager){
+    this.usermanager = usermanager;
+  }
+  
+  private FiteaglePolicyEnforcementPoint(){
+    Context context = null;
+    try {
+      context = new InitialContext();
+      usermanager = (UserManager) context.lookup("java:global/usermanagement/JPAUserManager");
+    } catch (NamingException e) {
+      log.error(e.getMessage());
+    }
+  };
+  
+  private static FiteaglePolicyEnforcementPoint instance = null;
+  
+  public static FiteaglePolicyEnforcementPoint getInstance(){
+    if(instance == null){
+      instance = new FiteaglePolicyEnforcementPoint();
+    }
+    return instance;
+  }  
   
   private static PolicyDecisionPoint policyDecisionPoint = PolicyDecisionPoint.getInstance();
   
   @Override
-  public boolean isRequestAuthorized(String subjectUsername, String resourceUsername, String action, String role, Boolean requiresAdminRights, Boolean requiresTBOwnerRights) {
-    RequestCtx request = createRequest(subjectUsername, resourceUsername, action , role, requiresAdminRights, requiresTBOwnerRights);
+  public boolean isRequestAuthorized(String subjectUsername, String resource, String action) {
+    RequestCtx request = createRequest(subjectUsername, resource, action);
     return policyDecisionPoint.evaluateRequest(request);
   }
-
-  private RequestCtx createRequest(String subjectUsername, String resourceUsername, String action, String role, Boolean requiresAdminRights, Boolean requiresTBOwnerRights) {
+  
+  private Role getRole(String subjectUsername){
+    Role role = Role.STUDENT;
+    try{
+      role = usermanager.getUser(subjectUsername).getRole();
+    } catch(UserNotFoundException e){
+      //TODO
+    }
+    return role;
+  }
+  
+  protected String getUsername(String resource) {
+    String[] splitted = resource.split("/");
+    for (int i = 0; i < splitted.length - 1; i++) {
+      if (splitted[i].equals("user")) {
+        return splitted[i+1];
+      }
+    }
+    return "";
+  }
+  
+  private Boolean requiresAdminRights(String resource) {
+    if(resource.endsWith("/role/FEDERATION_ADMIN") || resource.endsWith("/role/CLASSOWNER") || resource.endsWith("/role/NODE_ADMIN")){
+      return true;
+    }
+    return false;
+  }
+  
+  private Boolean requiresClassOwnerRights(String resource) {
+    if(resource.endsWith("user/") || resource.endsWith("user") ){
+      return true;
+    }
+    return false;
+  }
+  
+  private RequestCtx createRequest(String subjectUsername, String resource, String action) {
     RequestCtx request = null;
     try {
       request = new RequestCtx(
-          setSubject(subjectUsername, role),
-          setResource(resourceUsername),
+          setSubject(subjectUsername, getRole(subjectUsername).name()),
+          setResource(getUsername(resource)),
           setAction(action),
-          setEnvironment(requiresAdminRights, requiresTBOwnerRights));
+          setEnvironment(requiresAdminRights(resource), requiresClassOwnerRights(resource)));
     } catch (URISyntaxException e) {
       log.error(e.getMessage());
     }
@@ -85,11 +149,11 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
     return actionSet;
   }
   
-  private Set<Attribute> setEnvironment(Boolean requiresAdminRights, Boolean requiresTBOwnerRights) throws URISyntaxException {
+  private Set<Attribute> setEnvironment(Boolean requiresAdminRights, Boolean requiresClassOwnerRights) throws URISyntaxException {
     HashSet<Attribute> environmentSet = new HashSet<Attribute>();
 
     environmentSet.add(new Attribute(new URI("requiresAdminRights"), null, null, BooleanAttribute.getInstance(requiresAdminRights)));
-    environmentSet.add(new Attribute(new URI("requiresTBOwnerRights"), null, null, BooleanAttribute.getInstance(requiresTBOwnerRights)));
+    environmentSet.add(new Attribute(new URI("requiresClassOwnerRights"), null, null, BooleanAttribute.getInstance(requiresClassOwnerRights)));
     
     return environmentSet;
   }

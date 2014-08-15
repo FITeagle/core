@@ -37,7 +37,7 @@ public class PolicyEnforcementPointMDB implements MessageListener {
   private final static Logger logger = Logger.getLogger(PolicyEnforcementPointMDB.class.toString());
   
   public PolicyEnforcementPointMDB() throws NamingException{
-    policyEnforcementPoint = new FiteaglePolicyEnforcementPoint();
+    policyEnforcementPoint = FiteaglePolicyEnforcementPoint.getInstance();
   }
   
   
@@ -56,13 +56,9 @@ public class PolicyEnforcementPointMDB implements MessageListener {
         case PolicyEnforcementPoint.IS_REQUEST_AUTHORIZED:
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, PolicyEnforcementPoint.IS_REQUEST_AUTHORIZED);
           String subjectUsername = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_SUBJECT_USERNAME);
-          String resourceUsername = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_RESOURCE_USERNAME);
+          String resourceUsername = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_RESOURCE);
           String action = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_ACTION);
-          String role = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_ROLE);
-//          Boolean isAuthenticated = rcvMessage.getBooleanProperty(PolicyEnforcementPoint.TYPE_PARAMETER_IS_AUTHENTICATED);
-          Boolean requiresAdminRights = rcvMessage.getBooleanProperty(PolicyEnforcementPoint.TYPE_PARAMETER_REQUIRES_ADMIN_RIGHTS);
-          Boolean requiresTBOwnerRights = rcvMessage.getBooleanProperty(PolicyEnforcementPoint.TYPE_PARAMETER_REQUIRES_TBOWNER_RIGHTS);
-          Boolean isAuthorized = policyEnforcementPoint.isRequestAuthorized(subjectUsername, resourceUsername, action, role, requiresAdminRights, requiresTBOwnerRights);
+          Boolean isAuthorized = policyEnforcementPoint.isRequestAuthorized(subjectUsername, resourceUsername, action);
           message.setBooleanProperty(IMessageBus.TYPE_RESULT, isAuthorized);
           break;
       }

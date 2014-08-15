@@ -4,7 +4,7 @@
   PolicyId="FiteaglePolicy" RuleCombiningAlgId="urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:permit-overrides">
     <Target/>
          
-    <Rule RuleId="GET/POST/DELETE_is_permitted_if_subject=resource_and_action_does_not_require_admin_or_tbowner_rights" Effect="Permit">
+    <Rule RuleId="GET/POST/DELETE_is_permitted_if_subject=resource_and_action_does_not_require_admin_or_classowner_rights" Effect="Permit">
       <Target/>
       <Condition>
         <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:and">
@@ -36,7 +36,7 @@
           <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:boolean-equal">
             <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:boolean-one-and-only">
               <EnvironmentAttributeDesignator DataType="http://www.w3.org/2001/XMLSchema#boolean"
-                                              AttributeId="requiresTBOwnerRights"/>
+                                              AttributeId="requiresClassOwnerRights"/>
             </Apply>
             <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#boolean">false</AttributeValue>
           </Apply>
@@ -90,7 +90,7 @@
       </Condition>
     </Rule>
     
-    <Rule RuleId="GET/POST/DELETE_is_permitted_for_tbowner_if_action_does_not_require_admin_rights" Effect="Permit">
+    <Rule RuleId="GET/POST/DELETE_is_permitted_for_classowner_if_action_does_not_require_admin_rights" Effect="Permit">
       <Target/>
       <Condition>
         <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:and">
