@@ -21,6 +21,7 @@ import javax.jms.Topic;
 import org.apache.jena.riot.RiotException;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.IResourceRepository;
+import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.core.repo.ResourceInformListener;
 import org.fiteagle.core.repo.ResourceRepository;
 
@@ -41,19 +42,11 @@ import com.hp.hpl.jena.vocabulary.RDFS;
         @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
 public class ResourceInformListenerMDB implements MessageListener {
 
-    private ResourceRepository repo;
-    @Inject
-    private JMSContext context;
-    @Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
-    private Topic topic;
+//    @Inject
+//    private JMSContext context;
+//    @Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
+//    private Topic topic;
 
-    Property propertyInform;
-
-    @PostConstruct
-    private void setup() {
-        Model fiteagle = loadModel("fiteagle.owl");
-        propertyInform = fiteagle.getProperty("http://fiteagle.org/ontology#Inform");
-    }
 
     public void onMessage(final Message message) {
 
@@ -77,7 +70,7 @@ public class ResourceInformListenerMDB implements MessageListener {
                         // read the RDF/XML file
                         modelInform.read(is, null, message.getStringProperty(IMessageBus.SERIALIZATION));
 
-                        StmtIterator iter = modelInform.listStatements(new SimpleSelector(null, RDF.type, propertyInform));
+                        StmtIterator iter = modelInform.listStatements(new SimpleSelector(null, RDF.type, MessageBusOntologyModel.propertyFiteagleInform));
                         Statement currentStatement = null;
                         while (iter.hasNext()) {
                             currentStatement = iter.nextStatement();
@@ -110,21 +103,5 @@ public class ResourceInformListenerMDB implements MessageListener {
 
     }
 
-    public static Model loadModel(String filename2) {
-        Model fiteagle = ModelFactory.createDefaultModel();
-
-        // String filename2 = "/home/leo/ontology.txt";
-
-        // use the FileManager to find the input file
-        InputStream in2 = FileManager.get().open(filename2);
-        if (in2 == null) {
-            throw new IllegalArgumentException("File: " + filename2 + " not found");
-        }
-
-        // read the RDF/XML file
-        fiteagle.read(in2, null, "TURTLE");
-
-        return fiteagle;
-    }
-
 }
+
