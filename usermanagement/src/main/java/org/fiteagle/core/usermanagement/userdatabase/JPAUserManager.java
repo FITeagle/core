@@ -100,6 +100,9 @@ public class JPAUserManager implements UserManager {
         throw new DuplicateEmailException();
       }
     }
+    if(user.node() == null){
+      user.setNode(Node.defaultNode);
+    }
     Node node = em.find(Node.class, user.node().getId());
     if (node == null) {
       throw new NodeNotFoundException();
