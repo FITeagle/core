@@ -381,6 +381,9 @@ public class JPAUserManager implements UserManager {
       throw new DuplicateClassException();
     }
     List<Node> nodes = new ArrayList<>();
+    if(targetClass.nodes().isEmpty()){
+      targetClass.addNode(user.node());
+    }
     for(Node node : targetClass.nodes()){
       nodes.add(getNode(node.getId()));
     }
