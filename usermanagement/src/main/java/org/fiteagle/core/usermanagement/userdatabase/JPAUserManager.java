@@ -493,7 +493,7 @@ public class JPAUserManager implements UserManager {
     throw new AuthenticationHandler.KeyDoesNotMatchException();
   }
   
-  protected String addDomain(String username) {
+  protected static String addDomain(String username) {
     InterfaceConfiguration configuration = null;
     if (!username.contains("@")) {
       configuration = InterfaceConfiguration.getInstance();

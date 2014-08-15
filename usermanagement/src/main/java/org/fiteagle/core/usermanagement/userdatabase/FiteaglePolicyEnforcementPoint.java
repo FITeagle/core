@@ -69,6 +69,46 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
   
   @Override
   public boolean isRequestAuthorized(String subjectUsername, String resource, String action) {
+    subjectUsername = JPAUserManager.addDomain(subjectUsername);
+//    System.out.println("resource: "+resource);
+//    System.out.println("subject: "+subjectUsername);
+//    System.out.println("action: "+action);
+    if(resource.startsWith("class")){
+      if(action.equals("GET")){
+        return true;
+      }
+      if(subjectUsername == null){
+        return false;
+      }
+      Role role = Role.STUDENT;
+      try { 
+        role = getRole(subjectUsername);
+      } catch (Exception e) {
+        return false;
+      }
+      if(role.equals(Role.STUDENT)){
+        return false;
+      }
+      return true;
+    }   
+    if(resource.startsWith("node")){
+      if(!action.equals("GET")){
+        if(subjectUsername == null){
+          return false;
+        }
+        Role role;
+        try { 
+          role = getRole(subjectUsername);
+        } catch (Exception e) {
+          return false;
+        }
+        if(role.equals(Role.STUDENT) || role.equals(Role.CLASSOWNER)){
+          return false;
+        }
+      }
+      return true;
+    }
+    
     RequestCtx request = createRequest(subjectUsername, resource, action);
     return policyDecisionPoint.evaluateRequest(request);
   }
@@ -87,7 +127,7 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
     String[] splitted = resource.split("/");
     for (int i = 0; i < splitted.length - 1; i++) {
       if (splitted[i].equals("user")) {
-        return splitted[i+1];
+        return JPAUserManager.addDomain(splitted[i+1]);
       }
     }
     return "";

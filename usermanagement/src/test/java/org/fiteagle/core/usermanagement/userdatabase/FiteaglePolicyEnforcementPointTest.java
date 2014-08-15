@@ -41,16 +41,16 @@ public class FiteaglePolicyEnforcementPointTest {
   private Boolean authorizeRequest(String subjectUsername, String resource, String action, Role role){
     switch (role) {
       case FEDERATION_ADMIN:
-        expect(usermanager.getUser(subjectUsername)).andReturn(FEDERATION_ADMIN_USER);
+        expect(usermanager.getUser(subjectUsername+"@localhost")).andReturn(FEDERATION_ADMIN_USER);
         break;
       case NODE_ADMIN:
-        expect(usermanager.getUser(subjectUsername)).andReturn(NODE_ADMIN_USER);
+        expect(usermanager.getUser(subjectUsername+"@localhost")).andReturn(NODE_ADMIN_USER);
         break;
       case CLASSOWNER:
-        expect(usermanager.getUser(subjectUsername)).andReturn(CLASSOWNER_USER);
+        expect(usermanager.getUser(subjectUsername+"@localhost")).andReturn(CLASSOWNER_USER);
         break;
       case STUDENT:
-        expect(usermanager.getUser(subjectUsername)).andReturn(STUDENT_USER);
+        expect(usermanager.getUser(subjectUsername+"@localhost")).andReturn(STUDENT_USER);
         break;
       default:
         break;
@@ -78,6 +78,11 @@ public class FiteaglePolicyEnforcementPointTest {
   @Test
   public void authorizeGETRequestSameIDs() throws Exception{
     Assert.assertTrue(authorizeRequest("test", "user/test", "GET", Role.STUDENT));
+  }
+  
+  @Test
+  public void authorizeDELETERequestSameIDs() throws Exception{
+    Assert.assertTrue(authorizeRequest("test", "user/test", "DELETE", Role.STUDENT));
   }
   
   @Test
