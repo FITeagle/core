@@ -66,24 +66,24 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public void add(User user) {
+  public void addUser(User user) {
     EntityManager em = getEntityManager();
     
-    user.setUsername(addDomain(user.getUsername()));
-    
+    String username = addDomain(user.getUsername());
+    user.setUsername(username);
     List<User> users = getAllUsers();
     for (User u : users) {
-      if (u.getUsername().equals(user.getUsername())) {
+      if (u.getUsername().equals(username)) {
         throw new DuplicateUsernameException();
       }
       if (u.getEmail().equals(user.getEmail())) {
         throw new DuplicateEmailException();
       }
     }
-    if(user.node() == null){
+    if(user.getNode() == null){
       user.setNode(Node.defaultNode);
     }
-    Node node = em.find(Node.class, user.node().getId());
+    Node node = em.find(Node.class, user.getNode().getId());
     if (node == null) {
       throw new NodeNotFoundException();
     }
@@ -108,7 +108,7 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public void delete(User user) {
+  public void deleteUser(User user) {
     EntityManager em = getEntityManager();
     user.setUsername(addDomain(user.getUsername()));
     beginTransaction(em);
@@ -117,12 +117,12 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public void delete(String username) {
-    delete(getUser(username));
+  public void deleteUser(String username) {
+    deleteUser(getUser(username));
   }
   
   @Override
-  public void update(String username, String firstName, String lastName, String email, String affiliation,
+  public void updateUser(String username, String firstName, String lastName, String email, String affiliation,
       String password, List<UserPublicKey> publicKeys) {
     EntityManager em = getEntityManager();
     
@@ -231,8 +231,8 @@ public class JPAUserManager implements UserManager {
   public boolean verifyCredentials(String username, String password) throws NoSuchAlgorithmException, IOException,
       UserNotFoundException {
     username = addDomain(username);
-    User User = getUser(username);
-    return verifyPassword(password, User.hash(), User.salt());
+    User user = getUser(username);
+    return verifyPassword(password, user.getPasswordHash(), user.getPasswordSalt());
   }
   
   private String createUserCertificate(String username, PublicKey publicKey) {
@@ -326,18 +326,20 @@ public class JPAUserManager implements UserManager {
     if (user == null) {
       throw new UserNotFoundException();
     }
-    if (user.classesOwned().contains(targetClass)) {
+    if (user.getOwnedClasses().contains(targetClass)) {
       throw new DuplicateClassException();
     }
     List<Node> nodes = new ArrayList<>();
-    if(targetClass.nodes().isEmpty()){
-      targetClass.addNode(user.node());
+    if(targetClass.getNodes().isEmpty()){
+      targetClass.addNode(user.getNode());
     }
-    for(Node node : targetClass.nodes()){
+    for(Node node : targetClass.getNodes()){
       nodes.add(getNode(node.getId()));
     }
     beginTransaction(em);
-    user.addOwnedClass(targetClass);
+    targetClass.setNodes(nodes);
+    targetClass.setOwner(user);
+    user.addOwnedClass(targetClass);    
     for(Node n : nodes){
       n.addClass(targetClass);
     }
@@ -347,12 +349,12 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public Class get(Class targetClass) {
-    return get(targetClass.getId());
+  public Class getClass(Class targetClass) {
+    return getClass(targetClass.getId());
   }
   
   @Override
-  public Class get(long id) {
+  public Class getClass(long id) {
     EntityManager em = getEntityManager();
     Class targetClass = em.find(Class.class, id);
     if (targetClass == null) {
@@ -362,7 +364,7 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public void delete(Class targetClass) {
+  public void deleteClass(Class targetClass) {
 	EntityManager em = getEntityManager();
     User user = em.find(User.class, addDomain(targetClass.getOwner().getUsername()));
     if (user == null) {
@@ -374,21 +376,19 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public void delete(long id) {
-    delete(get(id));
+  public void deleteClass(long id) {
+    deleteClass(getClass(id));
   }
 
   @Override
   public void addParticipant(long id, String username){
     User participant = getUser(username);
     EntityManager em = getEntityManager();
-    Class targetCourse = em.find(Class.class, id);
-    if(targetCourse == null){
-      throw new FiteagleClassNotFoundException();
-    }
+    Class targetClass = getClass(id);
     beginTransaction(em);
-    targetCourse.addParticipant(participant);
+    targetClass.addParticipant(participant);
     commitTransaction(em);
+    flushTransaction(em);
   }
   
   @Override
@@ -407,13 +407,13 @@ public class JPAUserManager implements UserManager {
   @Override
   public List<Class> getAllClassesFromUser(String username) {
     User u = getUser(username);
-    return u.joinedClasses();
+    return u.getJoinedClasses();
   }
   
   @Override
   public List<Class> getAllClassesOwnedByUser(String username) {
     User u = getUser(username);
-    return u.classesOwned();
+    return u.getOwnedClasses();
   }
   
   @Override

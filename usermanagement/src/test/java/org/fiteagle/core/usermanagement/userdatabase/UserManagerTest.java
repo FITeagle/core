@@ -80,7 +80,7 @@ public class UserManagerTest {
   
   private void createAndAddClass1WithUser1(){
     createUser1();
-    manager.add(USER1);
+    manager.addUser(USER1);
     CLASS1 = new Class("class1", "my first description");
     CLASS1.addNode(defaultNode);
     manager.addClass(USER1.getUsername(), CLASS1);   
@@ -107,7 +107,7 @@ public class UserManagerTest {
   @Test
   public void testGet(){   
     createUser1();
-    manager.add(USER1);    
+    manager.addUser(USER1);    
     assertTrue(USER1.equals(manager.getUser(USER1)));  
     assertTrue(manager.getAllUsers().size() > 0); 
   }
@@ -116,15 +116,15 @@ public class UserManagerTest {
   public void testAddFails() {
     createUser1();
     createUser2();
-    manager.add(USER2);
+    manager.addUser(USER2);
     USER1.setUsername(USER2.getUsername());
-    manager.add(USER1);
+    manager.addUser(USER1);
   }
 
   @Test
   public void testGetUserWhoHasNoKeys() throws DuplicateUsernameException, NoSuchAlgorithmException{
     createUser3();
-    manager.add(USER3);
+    manager.addUser(USER3);
     assertTrue(USER3.equals(manager.getUser(USER3)));
   }
   
@@ -132,24 +132,24 @@ public class UserManagerTest {
   public void testGetFails() {
     createUser1();
     createUser2();
-    manager.add(USER1);
+    manager.addUser(USER1);
     manager.getUser(USER2);
   }
   
   @Test(expected=JPAUserManager.UserNotFoundException.class)
   public void testDelete(){
     createUser1();
-    manager.add(USER1);    
-    manager.delete(USER1);   
+    manager.addUser(USER1);    
+    manager.deleteUser(USER1);   
     manager.getUser(USER1);
   }
     
   @Test
   public void testUpdate() throws InterruptedException{
     createUser2();
-    manager.add(USER2);
+    manager.addUser(USER2);
     Thread.sleep(1);
-    manager.update(USER2.getUsername(), "herbert", null, null, null, null, null);
+    manager.updateUser(USER2.getUsername(), "herbert", null, null, null, null, null);
     User updatedUser = manager.getUser(USER2);
     assertTrue("herbert".equals(updatedUser.getFirstName()));
     Date created = updatedUser.getCreated();
@@ -159,13 +159,13 @@ public class UserManagerTest {
   
   @Test(expected=UserNotFoundException.class)
   public void testUpdateFails() {
-    manager.update("test1", null, null, null, null, null, null);
+    manager.updateUser("test1", null, null, null, null, null, null);
   }
   
   @Test
   public void testSetRole(){
     createUser1();
-    manager.add(USER1);
+    manager.addUser(USER1);
     manager.setRole(USER1.getUsername(), Role.FEDERATION_ADMIN);
     Assert.assertEquals(Role.FEDERATION_ADMIN, manager.getUser(USER1).getRole());
   }
@@ -173,7 +173,7 @@ public class UserManagerTest {
   @Test
   public void testAddKey() throws UserNotFoundException, InvalidKeySpecException, NoSuchAlgorithmException, IOException{
     createUser1();
-    manager.add(USER1);    
+    manager.addUser(USER1);    
     manager.addKey(USER1.getUsername(), new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key4", key4String));
     assertTrue(manager.getUser(USER1).getPublicKeys().contains(new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key4", key4String)));
   }
@@ -181,14 +181,14 @@ public class UserManagerTest {
   @Test(expected = DuplicatePublicKeyException.class)
   public void testAddDuplicateKey() {
     createUser1();
-    manager.add(USER1);  
+    manager.addUser(USER1);  
     manager.addKey(USER1.getUsername(), KEYS1.get(0));
   }
   
   @Test(expected = DuplicatePublicKeyException.class)
   public void testAddDuplicateKeysWithDifferentDescription() throws UserNotFoundException, DuplicatePublicKeyException, InvalidKeySpecException, NoSuchAlgorithmException, IOException{
     createUser1();
-    manager.add(USER1);  
+    manager.addUser(USER1);  
     manager.addKey(USER1.getUsername(), new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key5", key4String));
     manager.addKey(USER1.getUsername(), new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key4String), "key6", key4String));
   }
@@ -197,7 +197,7 @@ public class UserManagerTest {
   public void testDeleteKey() {
     createUser2();
     String key = KEYS2.get(0).getDescription();
-    manager.add(USER2);
+    manager.addUser(USER2);
     manager.deleteKey(USER2.getUsername(), key);
     assertTrue(!manager.getUser(USER2).getPublicKeys().contains(key));
   } 
@@ -205,7 +205,7 @@ public class UserManagerTest {
   @Test
   public void testRenameKey() {
     createUser2();
-    manager.add(USER2);
+    manager.addUser(USER2);
     manager.renameKey(USER2.getUsername(), "key3", "my new description");
     assertEquals("my new description", manager.getUser(USER2).getPublicKeys().get(0).getDescription());
   }
@@ -213,14 +213,14 @@ public class UserManagerTest {
   @Test(expected = DuplicatePublicKeyException.class)
   public void testRenameKeyDuplicateDescription() {
     createUser1();
-    manager.add(USER1);
+    manager.addUser(USER1);
     manager.renameKey(USER1.getUsername(), "key1", "key2");
   }
   
   @Test(expected = PublicKeyNotFoundException.class)
   public void testRenameKeyNotFound() {
     createUser1();
-    manager.add(USER1);
+    manager.addUser(USER1);
     manager.renameKey(USER1.getUsername(), "key5", "my new description");
   }
   
@@ -228,24 +228,24 @@ public class UserManagerTest {
   public void testDuplicateEmailExeptionWhenAdd(){
     createUser3();
     createUser4();
-    manager.add(USER3);
-    manager.add(USER4);
+    manager.addUser(USER3);
+    manager.addUser(USER4);
   }
 
   @Test(expected = DuplicateEmailException.class)
   public void testDuplicateEmailExeptionWhenUpdate(){
     createUser1();
     createUser4();
-    manager.add(USER1);
-    manager.add(USER4);
-    manager.update(USER4.getUsername(), "mitja", "nikolaus", "test1@test.org", "mitjaAffiliation", "mitjasPassword", null);
+    manager.addUser(USER1);
+    manager.addUser(USER4);
+    manager.updateUser(USER4.getUsername(), "mitja", "nikolaus", "test1@test.org", "mitjaAffiliation", "mitjasPassword", null);
   }
   
   @Test
   public void testGetClass(){
     createAndAddClass1WithUser1();
-    assertTrue(CLASS1.equals(manager.get(CLASS1)));
-    assertTrue(CLASS1.nodes().size() > 0);
+    assertTrue(CLASS1.equals(manager.getClass(CLASS1)));
+    assertTrue(CLASS1.getNodes().size() > 0);
     assertTrue(manager.getAllClasses().size() > 0); 
     List<Node> nodes = manager.getAllNodes();
     assertTrue(nodes.get(0).getClasses().size() > 0);
@@ -254,53 +254,53 @@ public class UserManagerTest {
   @Test(expected=UserManager.FiteagleClassNotFoundException.class)
   public void testDeleteClass(){
     createAndAddClass1WithUser1();
-    manager.delete(CLASS1);
-    manager.get(CLASS1);
+    manager.deleteClass(CLASS1);
+    manager.getClass(CLASS1);
   }
   
   @Test
   public void testAddParticipant(){
     createAndAddClass1WithUser1();
     createUser2();
-    manager.add(USER2);
+    manager.addUser(USER2);
     manager.addParticipant(CLASS1.getId(), USER2.getUsername());
-    assertEquals(manager.get(CLASS1).getParticipants().get(0),USER2);
-    assertEquals(manager.getUser(USER2).joinedClasses().get(0),CLASS1);
+    assertEquals(manager.getClass(CLASS1).getParticipants().get(0),USER2);
+    assertEquals(manager.getUser(USER2).getJoinedClasses().get(0),CLASS1);
   }
   
   @Test
-  public void testDeleteCourseWithParticipant(){
+  public void testDeleteClassWithParticipant(){
     createAndAddClass1WithUser1();
     createUser2();
-    manager.add(USER2);
+    manager.addUser(USER2);
     manager.addParticipant(CLASS1.getId(), USER2.getUsername());
-    manager.delete(CLASS1);
-    assertTrue(manager.getUser(USER2).joinedClasses().isEmpty());
+    manager.deleteClass(CLASS1);
+    assertTrue(manager.getUser(USER2).getJoinedClasses().isEmpty());
   }
   
   @Test
   public void testDeleteUserWithCourse(){
     createAndAddClass1WithUser1();
     createUser2();
-    manager.add(USER2);
+    manager.addUser(USER2);
     manager.addParticipant(CLASS1.getId(), USER2.getUsername());
-    manager.delete(USER2);
-    assertTrue(manager.get(CLASS1).getParticipants().isEmpty());
+    manager.deleteUser(USER2);
+    assertTrue(manager.getClass(CLASS1).getParticipants().isEmpty());
   }
   
   @After
   public void deleteUsers() {
     try{
-      manager.delete("test1");
+      manager.deleteUser("test1");
     }catch (UserNotFoundException e){}
     try{
-      manager.delete("test2");
+      manager.deleteUser("test2");
     }catch (UserNotFoundException e){}
     try{
-      manager.delete("test3");
+      manager.deleteUser("test3");
     }catch (UserNotFoundException e){}
     try{
-      manager.delete("test4");
+      manager.deleteUser("test4");
     }catch (UserNotFoundException e){}
     manager.deleteAllEntries();
   }

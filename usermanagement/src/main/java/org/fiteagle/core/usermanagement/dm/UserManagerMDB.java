@@ -1,9 +1,7 @@
 package org.fiteagle.core.usermanagement.dm;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -32,11 +30,8 @@ import org.fiteagle.api.core.usermanagement.UserManager.UserNotFoundException;
 import org.fiteagle.api.core.usermanagement.UserPublicKey;
 import org.fiteagle.core.aaa.authentication.PasswordUtil;
 
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 @MessageDriven(name="UserManagerMDB", activationConfig = {
@@ -48,24 +43,12 @@ import com.google.gson.reflect.TypeToken;
 public class UserManagerMDB implements MessageListener {
 
   private static UserManager usermanager;
-  private static Gson gsonBuilder;
+  private static ObjectMapper objectMapper;
   
   private static boolean connectionEstablished = false;
   
   static {
-    gsonBuilder = new GsonBuilder()
-    .setExclusionStrategies(new ExclusionStrategy() {
-        public boolean shouldSkipClass(Class<?> classToSkip) {
-           return false;
-        }
-        public boolean shouldSkipField(FieldAttributes f) {
-          return ((f.getDeclaringClass() == UserPublicKey.class && (f.getName().equals("owner") || f.getName().equals("publicKey"))) ||
-              (f.getDeclaringClass() == User.class && (f.getName().equals("classes") || f.getName().equals("classesOwned")) ||
-              (f.getDeclaringClass() == User.class && f.getName().equals("node"))) ||
-              (f.getDeclaringClass() == org.fiteagle.api.core.usermanagement.Class.class && f.getName().equals("nodes")));
-        }
-     })
-    .create();
+    objectMapper = new ObjectMapper();
   }
   
   @Inject
@@ -116,7 +99,7 @@ public class UserManagerMDB implements MessageListener {
     logger.info("Creating First Admin User");
     String[] passwordHashAndSalt = PasswordUtil.generatePasswordHashAndSalt("admin");
     User admin = User.createAdminUser("admin", passwordHashAndSalt[0], passwordHashAndSalt[1]);
-    usermanager.add(admin);
+    usermanager.addUser(admin);
   }
   
   private static boolean databaseContainsAdminUser() {
@@ -164,7 +147,7 @@ public class UserManagerMDB implements MessageListener {
         case UserManager.GET_ALL_USERS: 
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_USERS);
           List<User> users = usermanager.getAllUsers();
-          final String usersJSON = gsonBuilder.toJson(users);
+          final String usersJSON = objectMapper.writeValueAsString(users);
           message.setStringProperty(IMessageBus.TYPE_RESULT, usersJSON);
           break;          
         case UserManager.GET_USER:
@@ -177,13 +160,13 @@ public class UserManagerMDB implements MessageListener {
             exceptions.put(id, e.getCausedByException());
             return;
           }
-          message.setStringProperty(IMessageBus.TYPE_RESULT, gsonBuilder.toJson(user));
+          message.setStringProperty(IMessageBus.TYPE_RESULT, objectMapper.writeValueAsString(user));
           break;
         case UserManager.ADD_USER:
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.ADD_USER);
           String userJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USER_JSON);
           try{
-            usermanager.add(new Gson().fromJson(userJSON, User.class));
+            usermanager.addUser(objectMapper.readValue(userJSON, User.class));
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
@@ -197,10 +180,9 @@ public class UserManagerMDB implements MessageListener {
           String email = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_EMAIL);
           String affiliation = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_AFFILIATION);
           password = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PASSWORD);
-          Type listType = new TypeToken<ArrayList<UserPublicKey>>() {}.getType();
-          List<UserPublicKey> publicKeys = gsonBuilder.fromJson(rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PUBLIC_KEYS), listType);
+          List<UserPublicKey> publicKeys = objectMapper.readValue(rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PUBLIC_KEYS), new TypeReference<List<UserPublicKey>>(){});
           try{
-            usermanager.update(username, firstName, lastName, email, affiliation, password, publicKeys);
+            usermanager.updateUser(username, firstName, lastName, email, affiliation, password, publicKeys);
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
@@ -220,7 +202,7 @@ public class UserManagerMDB implements MessageListener {
         case UserManager.ADD_PUBLIC_KEY:
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.ADD_PUBLIC_KEY);
           username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
-          UserPublicKey publicKey = gsonBuilder.fromJson(rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PUBLIC_KEY), UserPublicKey.class);
+          UserPublicKey publicKey = objectMapper.readValue(rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PUBLIC_KEY), UserPublicKey.class);
           try{
             usermanager.addKey(username, publicKey);
           } catch(EJBException e){            
@@ -255,7 +237,7 @@ public class UserManagerMDB implements MessageListener {
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.DELETE_USER);
           username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
           try{
-            usermanager.delete(username);
+            usermanager.deleteUser(username);
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
@@ -295,7 +277,7 @@ public class UserManagerMDB implements MessageListener {
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_CLASSES_FROM_USER);
           username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
           try{
-            result = gsonBuilder.toJson(usermanager.getAllClassesFromUser(username));
+            result = objectMapper.writeValueAsString(usermanager.getAllClassesFromUser(username));
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
@@ -306,7 +288,7 @@ public class UserManagerMDB implements MessageListener {
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_CLASSES_OWNED_BY_USER);
           username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
           try{
-            result = gsonBuilder.toJson(usermanager.getAllClassesOwnedByUser(username));
+            result = objectMapper.writeValueAsString(usermanager.getAllClassesOwnedByUser(username));
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
@@ -339,7 +321,7 @@ public class UserManagerMDB implements MessageListener {
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_CLASS);
           classId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_CLASS_ID);
           try{
-            result = gsonBuilder.toJson(usermanager.get(classId));
+            result = objectMapper.writeValueAsString(usermanager.getClass(classId));
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
@@ -351,7 +333,7 @@ public class UserManagerMDB implements MessageListener {
           username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
           String classJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_CLASS_JSON);
           try{
-            classId = usermanager.addClass(username, new Gson().fromJson(classJSON, org.fiteagle.api.core.usermanagement.Class.class)).getId();
+            classId = usermanager.addClass(username, objectMapper.readValue(classJSON, org.fiteagle.api.core.usermanagement.Class.class)).getId();
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
@@ -362,7 +344,7 @@ public class UserManagerMDB implements MessageListener {
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.DELETE_CLASS);
           classId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_CLASS_ID);
           try{
-            usermanager.delete(classId);
+            usermanager.deleteClass(classId);
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
@@ -371,7 +353,7 @@ public class UserManagerMDB implements MessageListener {
         case UserManager.GET_ALL_CLASSES:
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_CLASSES);
           try{
-            result = gsonBuilder.toJson(usermanager.getAllClasses());
+            result = objectMapper.writeValueAsString(usermanager.getAllClasses());
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
@@ -398,7 +380,7 @@ public class UserManagerMDB implements MessageListener {
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.ADD_NODE);
           String nodeJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_NODE_JSON);
           try{
-            nodeId = usermanager.addNode(gsonBuilder.fromJson(nodeJSON, Node.class)).getId();
+            nodeId = usermanager.addNode(objectMapper.readValue(nodeJSON, Node.class)).getId();
           } catch(EJBException e){            
             exceptions.put(id, e.getCausedByException());
             return;
@@ -408,7 +390,7 @@ public class UserManagerMDB implements MessageListener {
         case UserManager.GET_ALL_NODES:
           message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_NODES);
           try{
-            result = gsonBuilder.toJson(usermanager.getAllNodes());
+            result = objectMapper.writeValueAsString(usermanager.getAllNodes());
           } catch(EJBException e){      
             exceptions.put(id, e.getCausedByException());
             return;
@@ -424,6 +406,8 @@ public class UserManagerMDB implements MessageListener {
       
     } catch (final JMSException | InterruptedException e) {      
         logger.log(Level.SEVERE, "Issue with JMS", e);
+    } catch (IOException e1) {
+        logger.log(Level.SEVERE, "Issue while Serializing", e1);
     }
   }
   
