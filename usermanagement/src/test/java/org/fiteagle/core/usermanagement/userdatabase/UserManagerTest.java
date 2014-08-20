@@ -266,6 +266,7 @@ public class UserManagerTest {
     manager.addParticipant(CLASS1.getId(), USER2.getUsername());
     assertEquals(manager.getClass(CLASS1).getParticipants().get(0),USER2);
     assertEquals(manager.getUser(USER2).getJoinedClasses().get(0),CLASS1);
+    assertEquals(1, manager.getUser(USER2).getJoinedClasses().size());
   }
   
   @Test

@@ -388,7 +388,6 @@ public class JPAUserManager implements UserManager {
     beginTransaction(em);
     targetClass.addParticipant(participant);
     commitTransaction(em);
-    flushTransaction(em);
   }
   
   @Override
