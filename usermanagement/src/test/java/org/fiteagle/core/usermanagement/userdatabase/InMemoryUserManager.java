@@ -8,9 +8,6 @@ public class InMemoryUserManager extends JPAUserManager {
   
   private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";  
   
-  public InMemoryUserManager() {
-  }
-  
   @Override
   protected synchronized EntityManager getEntityManager() {
     if(entityManager == null) {

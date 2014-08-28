@@ -10,8 +10,7 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import com.sun.xacml.PDP;
 import com.sun.xacml.PDPConfig;
@@ -23,7 +22,7 @@ import com.sun.xacml.finder.impl.FilePolicyModule;
 
 public class PolicyDecisionPoint {
   
-  private Logger log = LoggerFactory.getLogger(getClass());
+  private final static Logger log = Logger.getLogger(PolicyDecisionPoint.class.toString());
   
   private static PolicyDecisionPoint instance = new PolicyDecisionPoint();
   
@@ -58,7 +57,7 @@ public class PolicyDecisionPoint {
         
         pathToPolicy = "Policy.xml";
       } catch (IOException e) {
-       log.error(e.getMessage());
+       log.error(e);
       }
     }
     

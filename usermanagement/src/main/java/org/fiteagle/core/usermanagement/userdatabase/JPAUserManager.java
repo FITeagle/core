@@ -20,8 +20,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.ejb.Stateless;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import net.iharder.Base64;
@@ -40,7 +42,6 @@ import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
 import org.fiteagle.core.aaa.authentication.PasswordUtil;
 import org.fiteagle.core.aaa.authentication.x509.X509Util;
 import org.fiteagle.core.config.preferences.InterfaceConfiguration;
-
 import org.jboss.logging.Logger;
 
 @Stateless
@@ -48,8 +49,28 @@ public class JPAUserManager implements UserManager {
   
   private final static Logger log = Logger.getLogger(JPAUserManager.class.toString());
   
-  @PersistenceContext(unitName = "usersDB")
   protected EntityManager entityManager;
+  
+  private static UserManager instance;
+  
+  public static UserManager getInstance(){
+    if(instance == null){
+      instance = new JPAUserManager("java:/fiteagle/users/entitymanager");
+    }
+    return instance;
+  }
+  
+  public JPAUserManager(){};
+  
+  private JPAUserManager(String uriOfEntityManager){
+    Context context;
+    try {
+      context = new InitialContext();
+      entityManager = (EntityManager) context.lookup(uriOfEntityManager);
+    } catch (NamingException e) {
+      log.error(e);
+    }
+  }
   
   protected synchronized EntityManager getEntityManager() {
     return entityManager;
@@ -245,7 +266,7 @@ public class JPAUserManager implements UserManager {
       encoded = X509Util.getCertficateEncoded(cert);
     } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | UnrecoverableEntryException
         | OperatorCreationException | IOException e) {
-      log.error(e.getMessage());
+      log.error(e);
     }
     return encoded;
   }
@@ -272,7 +293,7 @@ public class JPAUserManager implements UserManager {
     try {
       cert = createUserCertificate(addDomain(username), passphrase, KeyManagement.getInstance().generateKeyPair());
     } catch (IOException | GeneralSecurityException e) {
-      log.error(e.getMessage());
+      log.error(e);
     }
     return cert;
   }

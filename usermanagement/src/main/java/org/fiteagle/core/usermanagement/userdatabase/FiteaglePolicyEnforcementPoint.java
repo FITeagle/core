@@ -5,16 +5,10 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
 import org.fiteagle.api.core.usermanagement.PolicyEnforcementPoint;
 import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.api.core.usermanagement.UserManager;
-import org.fiteagle.api.core.usermanagement.UserManager.UserNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import com.sun.xacml.attr.BooleanAttribute;
 import com.sun.xacml.attr.StringAttribute;
@@ -24,7 +18,7 @@ import com.sun.xacml.ctx.Subject;
 
 public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
   
-  private static Logger log = LoggerFactory.getLogger(FiteaglePolicyEnforcementPoint.class);
+  private final static Logger log = Logger.getLogger(FiteaglePolicyEnforcementPoint.class.toString());
   
   private static URI SUBJECT_ID;
   private static URI RESOURCE_ID;
@@ -36,7 +30,7 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
       RESOURCE_ID = new URI("urn:oasis:names:tc:xacml:1.0:resource:resource-id");
       ACTION_ID = new URI("urn:oasis:names:tc:xacml:1.0:action:action-id");
     } catch (URISyntaxException e) {
-      log.error(e.getMessage());
+      log.error(e);
     }
   }
   
@@ -47,13 +41,7 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
   }
   
   private FiteaglePolicyEnforcementPoint(){
-    Context context = null;
-    try {
-      context = new InitialContext();
-      usermanager = (UserManager) context.lookup("java:global/usermanagement/JPAUserManager");
-    } catch (NamingException e) {
-      log.error(e.getMessage());
-    }
+    usermanager = JPAUserManager.getInstance();
   };
   
   private static FiteaglePolicyEnforcementPoint instance = null;
@@ -70,9 +58,6 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
   @Override
   public boolean isRequestAuthorized(String subjectUsername, String resource, String action) {
     subjectUsername = JPAUserManager.addDomain(subjectUsername);
-//    System.out.println("resource: "+resource);
-//    System.out.println("subject: "+subjectUsername);
-//    System.out.println("action: "+action);
     if(resource.startsWith("class")){
       if(action.equals("GET")){
         return true;
@@ -115,11 +100,7 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
   
   private Role getRole(String subjectUsername){
     Role role = Role.STUDENT;
-    try{
-      role = usermanager.getUser(subjectUsername).getRole();
-    } catch(UserNotFoundException e){
-      //TODO
-    }
+    role = usermanager.getUser(subjectUsername).getRole();
     return role;
   }
   
@@ -156,7 +137,7 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
           setAction(action),
           setEnvironment(requiresAdminRights(resource), requiresClassOwnerRights(resource)));
     } catch (URISyntaxException e) {
-      log.error(e.getMessage());
+      log.error(e);
     }
     return request;
   }

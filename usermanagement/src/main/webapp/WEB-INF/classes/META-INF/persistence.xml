@@ -10,7 +10,7 @@
 			<property name="hibernate.hbm2ddl.auto" value="update" />
 			<property name="hibernate.connection.url"
 				value="jdbc:h2:~/.fiteagle/users;INIT=CREATE SCHEMA IF NOT EXISTS users" />
-
+			<property name="jboss.entity.manager.jndi.name" value="java:/fiteagle/users/entitymanager"/>
 		</properties>
 	</persistence-unit>
 </persistence>
