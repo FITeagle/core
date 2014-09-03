@@ -42,10 +42,12 @@ public class ResourceRepositoryTest {
 		Assert.assertTrue(result.contains("value"));
 		result = repo.listResources(IMessageBus.SERIALIZATION_JSONLD);
 		Assert.assertTrue(result.contains("@id"));
+		
 	}	
 	
 	@Test
 	public void testQuery() {
+		
 		String type = IMessageBus.SERIALIZATION_JSONLD;
 		String query = "SELECT ?resource WHERE {?resource <http://fiteagle.org/ontology#isInstantiatedBy> ?y}";
 		String result = repo.queryDatabse(query, type);
@@ -59,5 +61,6 @@ public class ResourceRepositoryTest {
 			String actual = solution.get("resource").toString();
 			//Assert.assertEquals(expected, actual);
 		}
+		
 	}
 }
