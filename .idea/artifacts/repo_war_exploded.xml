@@ -1,0 +1,35 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="repo:war exploded">
+    <output-path>$PROJECT_DIR$/repo/target/repo</output-path>
+    <root id="root">
+      <element id="javaee-facet-resources" facet="repo/web/Web" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="repo" />
+        </element>
+        <element id="directory" name="lib">
+          <element id="library" level="project" name="Maven: org.fiteagle:api:0.1-SNAPSHOT" />
+          <element id="library" level="project" name="Maven: org.apache.jena:jena-tdb:1.0.2" />
+          <element id="library" level="project" name="Maven: org.apache.jena:jena-arq:2.11.2" />
+          <element id="library" level="project" name="Maven: org.apache.jena:jena-core:2.11.2" />
+          <element id="library" level="project" name="Maven: org.slf4j:slf4j-api:1.7.6" />
+          <element id="library" level="project" name="Maven: org.apache.jena:jena-iri:1.0.2" />
+          <element id="library" level="project" name="Maven: org.slf4j:slf4j-log4j12:1.7.6" />
+          <element id="library" level="project" name="Maven: xerces:xercesImpl:2.11.0" />
+          <element id="library" level="project" name="Maven: xml-apis:xml-apis:1.4.01" />
+          <element id="library" level="project" name="Maven: org.apache.httpcomponents:httpclient:4.2.1" />
+          <element id="library" level="project" name="Maven: org.apache.httpcomponents:httpcore:4.2.5" />
+          <element id="library" level="project" name="Maven: commons-codec:commons-codec:1.6" />
+          <element id="library" level="project" name="Maven: com.github.jsonld-java:jsonld-java:0.4" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-core:2.3.3" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.3.3" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.3.0" />
+          <element id="library" level="project" name="Maven: org.apache.httpcomponents:httpclient-cache:4.2.6" />
+          <element id="library" level="project" name="Maven: org.slf4j:jcl-over-slf4j:1.6.6" />
+          <element id="library" level="project" name="Maven: org.slf4j:slf4j-jdk14:1.6.6" />
+          <element id="library" level="project" name="Maven: org.slf4j:log4j-over-slf4j:1.6.6" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

@@ -2,6 +2,7 @@ package org.fiteagle.core.bus.dm;
 
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.Set;
@@ -15,6 +16,7 @@ import javax.ejb.MessageDriven;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import javax.json.*;
 import javax.websocket.EndpointConfig;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -22,7 +24,9 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import org.apache.jena.atlas.json.JsonBuilder;
 import org.fiteagle.api.core.IMessageBus;
+import org.hornetq.utils.json.JSONObject;
 
 @ServerEndpoint("/api/logger")
 @MessageDriven(name = "LoggerMDB", activationConfig = { @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -96,7 +100,7 @@ public class MessageBusLoggerWS implements MessageListener {
 //            LOGGER.log(Level.INFO, "Logging JMS message...");
 //            LOGGER.log(Level.INFO, "" + this.wsSession.isOpen());
 //            if (null != this.wsSession && this.wsSession.isOpen()) {
-                String result = messageToString(message);
+                String result = messageToJson(message);
                 sendAll(result);
 //                Set<Session> sessions = this.wsSession.getOpenSessions();
 //                for (Session client : sessions) {
@@ -109,7 +113,23 @@ public class MessageBusLoggerWS implements MessageListener {
             LOGGER.log(Level.SEVERE, e.getMessage());
         }
     }
+    private String messageToJson(Message message) throws JMSException{
+        JsonObjectBuilder job = Json.createObjectBuilder()
+                .add("MessageID", message.getJMSMessageID())
+                .add("JMSCorrelationID", message.getJMSCorrelationID());
+        for (Enumeration<String> properties = message.getPropertyNames(); properties.hasMoreElements();) {
+            String currentProperty = properties.nextElement();
+            job.add(currentProperty ,message.getStringProperty(currentProperty));
+        }
+        JsonObject model = job.build();
+        StringWriter stWriter = new StringWriter();
+        try (JsonWriter jsonWriter = Json.createWriter(stWriter)) {
+            jsonWriter.writeObject(model);
+        }
 
+        String jsonString = stWriter.toString();
+        return jsonString;
+    }
     private String messageToString(Message message) throws JMSException {
         String result = "";
 
