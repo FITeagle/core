@@ -1,28 +1,23 @@
 package org.fiteagle.core.repo;
 
+import java.io.ByteArrayOutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.hp.hpl.jena.query.DatasetAccessor;
-import com.hp.hpl.jena.query.DatasetAccessorFactory;
-import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.QueryExecutionFactory;
-import com.hp.hpl.jena.query.QueryFactory;
-import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.Model;
 
 public class ResourceRequestListener {
     
-    private static final String FUSEKI_SERVICE = "http://localhost:3030/ds/data";
+    private static final String FUSEKI_SERVICE = "http://localhost:3030/ds/query";
     
     private static Logger LOGGER = Logger.getLogger(ResourceRequestListener.class.toString());
 
-    public static Model queryModelFromDatabase(String sparqlQuery){
+    public static ResultSet queryModelFromDatabase(String sparqlQuery){
   
         ResourceRequestListener.LOGGER.log(Level.INFO, "Querying Fuseki Service");
         
-    	Model queryResult = submitSparqlQuery(sparqlQuery);
+    	ResultSet queryResult = submitSparqlQuery(sparqlQuery);
 
         return queryResult;        
     }
@@ -30,12 +25,18 @@ public class ResourceRequestListener {
     /**
      * Submits a given sparql query string to the db
      * @param queryString String containing the sparql query to be issued
-     * @return Model retrieved from db, null on failure
+     * @return ResultSet retrieved from db, null on failure
      */
-    private static Model submitSparqlQuery(String queryString){
-    	try { 
+    private static ResultSet submitSparqlQuery(String queryString){
+        ResultSet rs = null;
+    	try {
+            QueryExecution qe = QueryExecutionFactory.sparqlService(FUSEKI_SERVICE, queryString);
+            LOGGER.log(Level.INFO, "Now Sending query: "+ qe.getQuery().toString());
+            rs = qe.execSelect();
+            // LOGGER.log(Level.INFO, )
     		// Get current Model from DB
-            DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+         /*   DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+            ResourceRequestListener.LOGGER.log(Level.INFO, "after createHTTP");
             Model currentModel = accessor.getModel();
             ResourceRequestListener.LOGGER.log(Level.INFO, "Remote Fuseki Model obtained");
             
@@ -47,11 +48,13 @@ public class ResourceRequestListener {
 			// Generate Return Model
 			Model returnModel = results.getResourceModel();
 			ResourceRequestListener.LOGGER.log(Level.INFO, "Query Result model generated");
-			return returnModel;
+			return returnModel;*/
+
+
  		} catch (Exception e){
- 			e.printStackTrace();
+ 			//e.printStackTrace();
  		}
-		return null;
+		return rs;
 	}
     
 

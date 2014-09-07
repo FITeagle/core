@@ -1,9 +1,12 @@
 package org.fiteagle.core.repo.dm;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.util.UUID;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.annotation.Resource;
 import javax.ejb.ActivationConfigProperty;
@@ -15,6 +18,9 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.ResultSetFormatter;
+import com.hp.hpl.jena.vocabulary.XSD;
 import org.apache.jena.riot.RiotException;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusMsgFactory;
@@ -35,6 +41,7 @@ import com.hp.hpl.jena.vocabulary.RDFS;
         @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
 public class ResourceRequestListenerMDB implements MessageListener {
 
+    Logger LOGGER = Logger.getLogger(ResourceRequestListenerMDB.class.toString());
   @Inject
   private JMSContext context;
   @Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
@@ -52,6 +59,7 @@ public class ResourceRequestListenerMDB implements MessageListener {
 
                     Model resultModel = ModelFactory.createDefaultModel();
                     String inputRDF = message.getStringProperty(IMessageBus.RDF);
+                    ResultSet resultSet = null;
 
                     // create an empty model
                     Model modelRequest = ModelFactory.createDefaultModel();
@@ -74,13 +82,13 @@ public class ResourceRequestListenerMDB implements MessageListener {
                             	continue;
                             }
                             sparqlQuery = rdfsComment.getObject().toString();
-                            System.err.println("SPARQL Query found " + sparqlQuery);
+                            LOGGER.log(Level.INFO, "SPARQL Query found " + sparqlQuery);
                             break;
                         }
 
                         // This is a request message, so query the database with the given sparql query
                         if (sparqlQuery != "") {
-                            resultModel = ResourceRequestListener.queryModelFromDatabase(sparqlQuery);
+                            resultSet = ResourceRequestListener.queryModelFromDatabase(sparqlQuery);
                         } else {
                         	// NOTHING FOUND
                         	System.err.println("No sparql query found!");
@@ -96,9 +104,21 @@ public class ResourceRequestListenerMDB implements MessageListener {
                     replyMessage.setJMSCorrelationID(message.getJMSCorrelationID());
                     replyMessage.setStringProperty(IMessageBus.TYPE_RESULT, IMessageBus.TYPE_INFORM);
                     replyMessage.setStringProperty(IMessageBus.METHOD_TYPE, IMessageBus.TYPE_INFORM);
-                    
+
+
+
+
                     Model returnModel = MessageBusMsgFactory.createMsgInform(resultModel);
-                    String serializedRDF = MessageBusMsgFactory.serializeModel(returnModel);
+
+                    com.hp.hpl.jena.rdf.model.Resource r = returnModel.getResource("http://fiteagleinternal#Message");
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                    ResultSetFormatter.outputAsJSON(baos, resultSet);
+                    String jsonString = baos.toString();
+                    LOGGER.log(Level.INFO, "JSONString ResultSet before sending over Message Bus" +jsonString);
+                    r.addProperty(RDFS.comment, jsonString);
+
+                            String serializedRDF = MessageBusMsgFactory.serializeModel(returnModel);
                     replyMessage.setStringProperty(IMessageBus.RDF, serializedRDF);                                   		
                     
                     this.context.createProducer().send(topic, replyMessage);
