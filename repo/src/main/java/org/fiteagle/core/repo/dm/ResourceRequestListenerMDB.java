@@ -87,8 +87,36 @@ public class ResourceRequestListenerMDB implements MessageListener {
                         }
 
                         // This is a request message, so query the database with the given sparql query
-                        if (sparqlQuery != "") {
+                        if (!sparqlQuery.isEmpty()) {
                             resultSet = ResourceRequestListener.queryModelFromDatabase(sparqlQuery);
+                            
+                            //resultModel = null;
+                            
+                            // generate reply message
+                            final Message replyMessage = this.context.createMessage();
+                            replyMessage.setJMSCorrelationID(message.getJMSCorrelationID());
+                            // we dont need that
+                            //replyMessage.setStringProperty(IMessageBus.TYPE_RESULT, IMessageBus.TYPE_INFORM);
+                            replyMessage.setStringProperty(IMessageBus.METHOD_TYPE, IMessageBus.TYPE_INFORM);
+
+
+
+
+                            Model returnModel = MessageBusMsgFactory.createMsgInform(resultModel);
+
+                            com.hp.hpl.jena.rdf.model.Resource r = returnModel.getResource("http://fiteagleinternal#Message");
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                            ResultSetFormatter.outputAsJSON(baos, resultSet);
+                            String jsonString = baos.toString();
+                            LOGGER.log(Level.INFO, "JSONString ResultSet before sending over Message Bus" +jsonString);
+                            r.addProperty(RDFS.comment, jsonString);
+
+                                    String serializedRDF = MessageBusMsgFactory.serializeModel(returnModel);
+                            replyMessage.setStringProperty(IMessageBus.RDF, serializedRDF);                                       
+                            
+                            this.context.createProducer().send(topic, replyMessage);
+                            
                         } else {
                         	// NOTHING FOUND
                         	System.err.println("No sparql query found!");
@@ -97,31 +125,6 @@ public class ResourceRequestListenerMDB implements MessageListener {
                         System.err.println("Invalid RDF");
                     }
                     
-                    //resultModel = null;
-                  
-                    // generate reply message
-                    final Message replyMessage = this.context.createMessage();
-                    replyMessage.setJMSCorrelationID(message.getJMSCorrelationID());
-                    replyMessage.setStringProperty(IMessageBus.TYPE_RESULT, IMessageBus.TYPE_INFORM);
-                    replyMessage.setStringProperty(IMessageBus.METHOD_TYPE, IMessageBus.TYPE_INFORM);
-
-
-
-
-                    Model returnModel = MessageBusMsgFactory.createMsgInform(resultModel);
-
-                    com.hp.hpl.jena.rdf.model.Resource r = returnModel.getResource("http://fiteagleinternal#Message");
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-                    ResultSetFormatter.outputAsJSON(baos, resultSet);
-                    String jsonString = baos.toString();
-                    LOGGER.log(Level.INFO, "JSONString ResultSet before sending over Message Bus" +jsonString);
-                    r.addProperty(RDFS.comment, jsonString);
-
-                            String serializedRDF = MessageBusMsgFactory.serializeModel(returnModel);
-                    replyMessage.setStringProperty(IMessageBus.RDF, serializedRDF);                                   		
-                    
-                    this.context.createProducer().send(topic, replyMessage);
                 }
             }
 
