@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 import com.hp.hpl.jena.query.DatasetAccessor;
 import com.hp.hpl.jena.query.DatasetAccessorFactory;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
@@ -51,6 +52,19 @@ public class ResourceInformListener {
         accessor.putModel(currentModel);
         
         ResourceInformListener.LOGGER.log(Level.INFO, "Updated Fuseki Service");
+
+        return true;        
+    }
+    
+    public synchronized static boolean releaseResource(Resource rscToRemove){
+        
+        DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+
+        Model currentModel = accessor.getModel();
+        
+        currentModel.removeAll(rscToRemove, null,null);
+
+        accessor.putModel(currentModel);        
 
         return true;        
     }

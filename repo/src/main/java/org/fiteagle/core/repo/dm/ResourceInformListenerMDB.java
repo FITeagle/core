@@ -42,12 +42,6 @@ import com.hp.hpl.jena.vocabulary.RDFS;
         @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
 public class ResourceInformListenerMDB implements MessageListener {
 
-//    @Inject
-//    private JMSContext context;
-//    @Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
-//    private Topic topic;
-
-
     public void onMessage(final Message message) {
 
         try {
@@ -59,7 +53,7 @@ public class ResourceInformListenerMDB implements MessageListener {
 
                     String inputRDF = message.getStringProperty(IMessageBus.RDF);
 
-                    //System.err.println("Input RDF: " + inputRDF);
+                    // System.err.println("Input RDF: " + inputRDF);
                     // create an empty model
                     Model modelInform = ModelFactory.createDefaultModel();
 
@@ -70,12 +64,13 @@ public class ResourceInformListenerMDB implements MessageListener {
                         // read the RDF/XML file
                         modelInform.read(is, null, message.getStringProperty(IMessageBus.SERIALIZATION));
 
+                        // Do this manually, so the fiteagle:Inform Statement can be removed from the graph later
                         StmtIterator iter = modelInform.listStatements(new SimpleSelector(null, RDF.type, MessageBusOntologyModel.propertyFiteagleInform));
                         Statement currentStatement = null;
                         while (iter.hasNext()) {
                             currentStatement = iter.nextStatement();
                             // Resource currentResource = iter2.nextStatement().getSubject();
-                            //System.err.println("+" + currentStatement.toString());
+                            // System.err.println("+" + currentStatement.toString());
 
                             // System.out.println(currentResource.getProperty(RDFS.label).getObject().toString());
                             // StmtIterator iter2 = currentResource.listProperties(RDFS.domain);
@@ -88,7 +83,10 @@ public class ResourceInformListenerMDB implements MessageListener {
                         // This is an inform message, so do something with it
                         if (currentStatement != null) {
                             modelInform.remove(currentStatement);
-                            //modelInform.write(System.err, "TURTLE");
+
+                            checkForReleases(modelInform);
+
+                            // modelInform.write(System.err, "TURTLE");
                             ResourceInformListener.addInformToRepository(modelInform);
                         }
                     } catch (RiotException e) {
@@ -103,5 +101,27 @@ public class ResourceInformListenerMDB implements MessageListener {
 
     }
 
-}
+    private void checkForReleases(Model modelInform) {
+        List<Statement> releasesStatementsToRemove = new LinkedList<Statement>();
 
+        // Do this manually, so the fiteagle:Inform Statement can be removed from the graph later
+        StmtIterator iter = modelInform.listStatements();
+        Statement currentStatement = null;
+        while (iter.hasNext()) {
+            currentStatement = iter.nextStatement();
+
+            if (currentStatement.getPredicate().equals(MessageBusOntologyModel.methodReleases)) {
+                ResourceInformListener.releaseResource(currentStatement.getResource());
+                System.err.println("RDF Repo: Removing resource: " + currentStatement.getResource());
+                releasesStatementsToRemove.add(currentStatement);
+                
+            }
+        }
+        
+        for (Statement statement : releasesStatementsToRemove) {
+            modelInform.remove(statement);
+        }
+
+    }
+
+}
