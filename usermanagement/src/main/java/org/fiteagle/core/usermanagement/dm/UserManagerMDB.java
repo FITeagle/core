@@ -16,6 +16,7 @@ import javax.jms.Topic;
 
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.usermanagement.Node;
+import org.fiteagle.api.core.usermanagement.Task;
 import org.fiteagle.api.core.usermanagement.User;
 import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.api.core.usermanagement.UserManager;
@@ -109,7 +110,7 @@ public class UserManagerMDB implements MessageListener {
       final Message message = this.context.createMessage();
       
       String username, description, result, password;
-      long classId, nodeId;
+      long classId, nodeId, taskId;
       try{
         switch(methodName){
           case UserManager.GET_ALL_USERS: 
@@ -225,6 +226,20 @@ public class UserManagerMDB implements MessageListener {
             message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.DELETE_CLASS);
             classId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_CLASS_ID);
             usermanager.deleteClass(classId);
+            break;
+          case UserManager.ADD_TASK:
+            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.ADD_TASK);
+            String taskJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_TASK_JSON);
+            Task task = objectMapper.readValue(taskJSON, Task.class);
+            classId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_CLASS_ID);
+            taskId = usermanager.addTask(classId, task).getId(); 
+            message.setLongProperty(IMessageBus.TYPE_RESULT, taskId);
+            break;
+          case UserManager.REMOVE_TASK:
+            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.REMOVE_TASK);
+            taskId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_TASK_ID);
+            classId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_CLASS_ID);
+            usermanager.removeTask(classId, taskId);
             break;
           case UserManager.GET_ALL_CLASSES:
             message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_CLASSES);

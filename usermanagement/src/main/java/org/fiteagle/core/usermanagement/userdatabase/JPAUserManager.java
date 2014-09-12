@@ -31,6 +31,7 @@ import net.iharder.Base64;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.fiteagle.api.core.usermanagement.Class;
 import org.fiteagle.api.core.usermanagement.Node;
+import org.fiteagle.api.core.usermanagement.Task;
 import org.fiteagle.api.core.usermanagement.User;
 import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.api.core.usermanagement.UserManager;
@@ -401,6 +402,36 @@ public class JPAUserManager implements UserManager {
     deleteClass(getClass(id));
   }
 
+  @Override
+  public Task addTask(long id, Task task) {
+    EntityManager em = getEntityManager();
+    Class targetClass = em.find(Class.class, id);
+    if (targetClass == null) {
+      throw new FiteagleClassNotFoundException();
+    }
+    beginTransaction(em);
+    targetClass.addTask(task);
+    commitTransaction(em);
+    flushTransaction(em);
+    return task;
+  }
+  
+  @Override
+  public void removeTask(long classId, long taskId) {
+    EntityManager em = getEntityManager();
+    Class targetClass = em.find(Class.class, classId);
+    if (targetClass == null) {
+      throw new FiteagleClassNotFoundException();
+    }
+    Task task = em.find(Task.class, taskId);
+    if(task == null){
+      throw new TaskNotFoundException();
+    }
+    beginTransaction(em);
+    targetClass.removeTask(task);
+    commitTransaction(em);
+  }
+  
   @Override
   public void addParticipant(long id, String username){
     User participant = getUser(username);
