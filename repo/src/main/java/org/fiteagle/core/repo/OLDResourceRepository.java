@@ -18,25 +18,25 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.tdb.TDBFactory;
 
-public class ResourceRepository implements IResourceRepository {
+public class OLDResourceRepository implements IResourceRepository {
 
 	private static final String DEFAULT_SELECT = "SELECT * {?s ?p ?o} LIMIT 100";
 	private static final String REPODB_DIR = "repodb";
 	private final static Logger LOGGER = Logger
-			.getLogger(ResourceRepository.class.toString());
+			.getLogger(OLDResourceRepository.class.toString());
 	private Dataset dataset;
 
-	public ResourceRepository() {
-		this.dataset = TDBFactory.createDataset(ResourceRepository.REPODB_DIR);
+	public OLDResourceRepository() {
+		this.dataset = TDBFactory.createDataset(OLDResourceRepository.REPODB_DIR);
 	}
 
-	public ResourceRepository(String filename) {
+	public OLDResourceRepository(String filename) {
 		this();
 		addDummyData(filename);
 	}
 
 	private void addDummyData(String filename) {
-		ResourceRepository.LOGGER.log(Level.INFO, "Loading data from: "
+		OLDResourceRepository.LOGGER.log(Level.INFO, "Loading data from: "
 				+ filename);
 		Model dataModel = RDFDataMgr.loadModel(filename, Lang.RDFXML);
 		addData(dataModel);
@@ -61,7 +61,7 @@ public class ResourceRepository implements IResourceRepository {
 	}
 
 	public String queryDatabse(final String query, final String serialization) {
-		ResourceRepository.LOGGER.log(Level.INFO, "Querying database '" + query
+		OLDResourceRepository.LOGGER.log(Level.INFO, "Querying database '" + query
 				+ "'...");
 		Model model = ModelFactory.createDefaultModel();
 
@@ -93,15 +93,15 @@ public class ResourceRepository implements IResourceRepository {
 	}
 
 	public String listResources(final String serialization) {
-		ResourceRepository.LOGGER.log(Level.INFO, "Response to format: "
+		OLDResourceRepository.LOGGER.log(Level.INFO, "Response to format: "
 				+ serialization);
 
-		return this.queryDatabse(ResourceRepository.DEFAULT_SELECT,
+		return this.queryDatabse(OLDResourceRepository.DEFAULT_SELECT,
 				serialization);
 	}
 
 	public String listResources() {
-		ResourceRepository.LOGGER
+		OLDResourceRepository.LOGGER
 				.log(Level.INFO, "Response to default format.");
 		return this
 				.listResources(IResourceRepository.SERIALIZATION_RDFXML_ABBREV);

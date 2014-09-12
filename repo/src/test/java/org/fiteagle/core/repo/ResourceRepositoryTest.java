@@ -24,7 +24,7 @@ public class ResourceRepositoryTest {
 	
 	@Before
 	public void setup() {
-		this.repo = new ResourceRepository(DUMMY_DATA);
+		this.repo = new OLDResourceRepository(DUMMY_DATA);
 	}
 	
 	@Test

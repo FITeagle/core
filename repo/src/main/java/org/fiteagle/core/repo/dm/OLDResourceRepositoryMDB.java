@@ -15,31 +15,31 @@ import javax.jms.Topic;
 
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.IResourceRepository;
-import org.fiteagle.core.repo.ResourceRepository;
+import org.fiteagle.core.repo.OLDResourceRepository;
 
 @MessageDriven(name = "ResourceRepositoryMDB", activationConfig = {
 		@ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
 		@ActivationConfigProperty(propertyName = "destination", propertyValue = IMessageBus.TOPIC_CORE),
 		@ActivationConfigProperty(propertyName = "messageSelector", propertyValue = IResourceRepository.MESSAGE_FILTER),
 		@ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
-public class ResourceRepositoryMDB implements MessageListener {
+public class OLDResourceRepositoryMDB implements MessageListener {
 
-	private ResourceRepository repo;
+	private OLDResourceRepository repo;
 	@Inject
 	private JMSContext context;
 	@Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
 	private Topic topic;
 
-	public ResourceRepositoryMDB() throws JMSException {
-		this.repo = new ResourceRepository("dummy-answer.xml");
+	public OLDResourceRepositoryMDB() throws JMSException {
+		this.repo = new OLDResourceRepository("dummy-answer.xml");
 	}
 
 	private final static Logger LOGGER = Logger
-			.getLogger(ResourceRepositoryMDB.class.toString());
+			.getLogger(OLDResourceRepositoryMDB.class.toString());
 
 	public void onMessage(final Message rcvMessage) {
 		try {
-			ResourceRepositoryMDB.LOGGER.info("Received a message");
+			OLDResourceRepositoryMDB.LOGGER.info("Received a message");
 			final String serialization = rcvMessage.getStringProperty(IMessageBus.SERIALIZATION);
 			final String query = rcvMessage.getStringProperty(IMessageBus.QUERY);
 			final String result = this.repo.queryDatabse(query, serialization);
@@ -54,7 +54,7 @@ public class ResourceRepositoryMDB implements MessageListener {
 
 			this.context.createProducer().send(topic, message);
 		} catch (final JMSException e) {
-			ResourceRepositoryMDB.LOGGER.log(Level.SEVERE, "Issue with JMS", e);
+			OLDResourceRepositoryMDB.LOGGER.log(Level.SEVERE, "Issue with JMS", e);
 		}
 	}
 }

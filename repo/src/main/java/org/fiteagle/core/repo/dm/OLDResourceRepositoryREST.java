@@ -20,12 +20,12 @@ import javax.ws.rs.QueryParam;
 
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.IResourceRepository;
-import org.fiteagle.core.repo.ResourceRepository;
+import org.fiteagle.core.repo.OLDResourceRepository;
 
 import com.hp.hpl.jena.query.QueryParseException;
 
 @Path("/")
-public class ResourceRepositoryREST {
+public class OLDResourceRepositoryREST {
 
 	private static final int TIMEOUT = 2000;
 	@Inject
@@ -36,14 +36,14 @@ public class ResourceRepositoryREST {
 	private static final String EJB_NAME = "java:global/repo/ResourceRepositoryEJB";
 
 	private static Logger LOGGER = Logger
-			.getLogger(ResourceRepositoryREST.class.toString());
+			.getLogger(OLDResourceRepositoryREST.class.toString());
 	private IResourceRepository repoEJB;
 	private IResourceRepository repo;
 
-	public ResourceRepositoryREST() throws NamingException {
+	public OLDResourceRepositoryREST() throws NamingException {
 		this.repoEJB = (IResourceRepository) new InitialContext()
-				.lookup(ResourceRepositoryREST.EJB_NAME);
-		this.repo = new ResourceRepository();
+				.lookup(OLDResourceRepositoryREST.EJB_NAME);
+		this.repo = new OLDResourceRepository();
 	}
 
 	@GET
