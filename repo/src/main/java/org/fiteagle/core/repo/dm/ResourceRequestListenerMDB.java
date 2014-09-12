@@ -59,7 +59,7 @@ public class ResourceRequestListenerMDB implements MessageListener {
 
                     Model resultModel = ModelFactory.createDefaultModel();
                     String inputRDF = message.getStringProperty(IMessageBus.RDF);
-                    ResultSet resultSet = null;
+
 
                     // create an empty model
                     Model modelRequest = ModelFactory.createDefaultModel();
@@ -71,48 +71,29 @@ public class ResourceRequestListenerMDB implements MessageListener {
                         // read the RDF/XML file
                         modelRequest.read(is, null, message.getStringProperty(IMessageBus.SERIALIZATION));
 
-                        StmtIterator iter = modelRequest.listStatements(new SimpleSelector(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest));
-                        Statement currentStatement = null;
-                        Statement rdfsComment = null;
-                        String sparqlQuery = "";
-                        while (iter.hasNext()) {
-                            currentStatement = iter.nextStatement();
-                            rdfsComment = currentStatement.getSubject().getProperty(RDFS.comment);
-                            if (rdfsComment == null) {
-                            	continue;
-                            }
-                            sparqlQuery = rdfsComment.getObject().toString();
-                            LOGGER.log(Level.INFO, "SPARQL Query found " + sparqlQuery);
-                            break;
-                        }
+                        String sparqlQuery = getQueryFromModel(modelRequest);
 
                         // This is a request message, so query the database with the given sparql query
                         if (!sparqlQuery.isEmpty()) {
-                            resultSet = ResourceRequestListener.queryModelFromDatabase(sparqlQuery);
-                            
-                            //resultModel = null;
-                            
+                            ResultSet resultSet = ResourceRequestListener.queryModelFromDatabase(sparqlQuery);
+                            String jsonString = getResultSetAsJsonString(resultSet);
+
+
+                            //create result containing model
+                            Model returnModel = MessageBusMsgFactory.createMsgInform(resultModel);
+                            com.hp.hpl.jena.rdf.model.Resource r = returnModel.getResource("http://fiteagleinternal#Message");
+                            r.addProperty(RDFS.comment, jsonString);
+
+                            String serializedRDF = MessageBusMsgFactory.serializeModel(returnModel);
+
+
+
+                            LOGGER.log(Level.INFO, "JSONString ResultSet before sending over Message Bus" +jsonString);
+
                             // generate reply message
                             final Message replyMessage = this.context.createMessage();
                             replyMessage.setJMSCorrelationID(message.getJMSCorrelationID());
-                            // we dont need that
-                            //replyMessage.setStringProperty(IMessageBus.TYPE_RESULT, IMessageBus.TYPE_INFORM);
                             replyMessage.setStringProperty(IMessageBus.METHOD_TYPE, IMessageBus.TYPE_INFORM);
-
-
-
-
-                            Model returnModel = MessageBusMsgFactory.createMsgInform(resultModel);
-
-                            com.hp.hpl.jena.rdf.model.Resource r = returnModel.getResource("http://fiteagleinternal#Message");
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-                            ResultSetFormatter.outputAsJSON(baos, resultSet);
-                            String jsonString = baos.toString();
-                            LOGGER.log(Level.INFO, "JSONString ResultSet before sending over Message Bus" +jsonString);
-                            r.addProperty(RDFS.comment, jsonString);
-
-                                    String serializedRDF = MessageBusMsgFactory.serializeModel(returnModel);
                             replyMessage.setStringProperty(IMessageBus.RDF, serializedRDF);                                       
                             
                             this.context.createProducer().send(topic, replyMessage);
@@ -134,5 +115,38 @@ public class ResourceRequestListenerMDB implements MessageListener {
 
     }
 
+    /**
+     * Get the comment section of the rdf model
+     * @param model
+     * @return
+     */
+    public String getQueryFromModel(Model model) {
+        StmtIterator iter = model.listStatements(new SimpleSelector(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest));
+        Statement currentStatement = null;
+        Statement rdfsComment = null;
+        String sparqlQuery = "";
+        while (iter.hasNext()) {
+            currentStatement = iter.nextStatement();
+            rdfsComment = currentStatement.getSubject().getProperty(RDFS.comment);
+            if (rdfsComment != null) {
+                sparqlQuery = rdfsComment.getObject().toString();
+                LOGGER.log(Level.INFO, "SPARQL Query found " + sparqlQuery);
+                break;
+            }
+        }
+        return sparqlQuery;
+    }
+
+    /**
+     * Gets the result set as json string
+     * @param resultSet
+     * @return
+     */
+    public String getResultSetAsJsonString(ResultSet resultSet) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ResultSetFormatter.outputAsJSON(baos, resultSet);
+        String jsonString = baos.toString();
+        return jsonString;
+    }
 }
 
