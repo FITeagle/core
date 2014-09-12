@@ -3,8 +3,6 @@ package org.fiteagle.core.repo.dm;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.StringWriter;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,12 +18,11 @@ import javax.jms.Topic;
 
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
-import com.hp.hpl.jena.vocabulary.XSD;
 import org.apache.jena.riot.RiotException;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusMsgFactory;
 import org.fiteagle.api.core.MessageBusOntologyModel;
-import org.fiteagle.core.repo.ResourceRequestListener;
+import org.fiteagle.core.repo.QueryExecuter;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
@@ -35,20 +32,21 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
 import com.hp.hpl.jena.vocabulary.RDFS;
 
-@MessageDriven(name = "ResourceRequestListenerMDB", activationConfig = { @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
+/**
+ * This class listens for request messages, if the message rdf contains a comment, which is the sparql query as string, it will response with the result set in
+ * JSON format
+ */
+@MessageDriven(name = "ResourceRequestListenerMDB", activationConfig = {@ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = IMessageBus.TOPIC_CORE),
         // @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = IResourceRepository.MESSAGE_FILTER),
-        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
+        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge")})
 public class ResourceRequestListenerMDB implements MessageListener {
 
     Logger LOGGER = Logger.getLogger(ResourceRequestListenerMDB.class.toString());
-  @Inject
-  private JMSContext context;
-  @Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
-  private Topic topic;
-	/**
-	 * PLEASE MERGE ME WITH ResourceInformListenerMDB
-	 */
+    @Inject
+    private JMSContext context;
+    @Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
+    private Topic topic;
 
     public void onMessage(final Message message) {
 
@@ -68,14 +66,14 @@ public class ResourceRequestListenerMDB implements MessageListener {
 
                     try {
 
-                        // read the RDF/XML file
+                        // read the RDF
                         modelRequest.read(is, null, message.getStringProperty(IMessageBus.SERIALIZATION));
 
                         String sparqlQuery = getQueryFromModel(modelRequest);
 
                         // This is a request message, so query the database with the given sparql query
                         if (!sparqlQuery.isEmpty()) {
-                            ResultSet resultSet = ResourceRequestListener.queryModelFromDatabase(sparqlQuery);
+                            ResultSet resultSet = QueryExecuter.queryModelFromDatabase(sparqlQuery);
                             String jsonString = getResultSetAsJsonString(resultSet);
 
 
@@ -86,26 +84,24 @@ public class ResourceRequestListenerMDB implements MessageListener {
 
                             String serializedRDF = MessageBusMsgFactory.serializeModel(returnModel);
 
-
-
-                            LOGGER.log(Level.INFO, "JSONString ResultSet before sending over Message Bus" +jsonString);
+                            LOGGER.log(Level.INFO, "JSONString ResultSet before sending over Message Bus" + jsonString);
 
                             // generate reply message
                             final Message replyMessage = this.context.createMessage();
                             replyMessage.setJMSCorrelationID(message.getJMSCorrelationID());
                             replyMessage.setStringProperty(IMessageBus.METHOD_TYPE, IMessageBus.TYPE_INFORM);
-                            replyMessage.setStringProperty(IMessageBus.RDF, serializedRDF);                                       
-                            
+                            replyMessage.setStringProperty(IMessageBus.RDF, serializedRDF);
+
                             this.context.createProducer().send(topic, replyMessage);
-                            
+
                         } else {
-                        	// NOTHING FOUND
-                        	System.err.println("No sparql query found!");
+                            // NOTHING FOUND
+                            System.err.println("No sparql query found!");
                         }
                     } catch (RiotException e) {
                         System.err.println("Invalid RDF");
                     }
-                    
+
                 }
             }
 
@@ -117,6 +113,7 @@ public class ResourceRequestListenerMDB implements MessageListener {
 
     /**
      * Get the comment section of the rdf model
+     *
      * @param model
      * @return
      */
@@ -139,6 +136,7 @@ public class ResourceRequestListenerMDB implements MessageListener {
 
     /**
      * Gets the result set as json string
+     *
      * @param resultSet
      * @return
      */
