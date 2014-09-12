@@ -52,10 +52,6 @@ public class UserManagerMDB implements MessageListener {
   private final static Logger logger = Logger.getLogger(UserManagerMDB.class.toString());
   
   public UserManagerMDB() {
-    if(connectionEstablished == false){
-      setupConnection();
-      connectionEstablished = true;
-    }
   }
   
   private void setupConnection(){
@@ -100,6 +96,12 @@ public class UserManagerMDB implements MessageListener {
   
   @Override
   public void onMessage(final Message rcvMessage) {
+    
+    if(connectionEstablished == false){
+      setupConnection();
+      connectionEstablished = true;
+    }
+    
     try {
       String methodName = rcvMessage.getStringProperty(IMessageBus.TYPE_REQUEST);
       logger.info("Received a message: "+methodName);
