@@ -114,12 +114,25 @@ public class MessageBusLoggerWS implements MessageListener {
         }
     }
     private String messageToJson(Message message) throws JMSException{
-        JsonObjectBuilder job = Json.createObjectBuilder()
-                .add("MessageID", message.getJMSMessageID())
-                .add("JMSCorrelationID", message.getJMSCorrelationID());
-        for (Enumeration<String> properties = message.getPropertyNames(); properties.hasMoreElements();) {
-            String currentProperty = properties.nextElement();
-            job.add(currentProperty ,message.getStringProperty(currentProperty));
+        JsonObjectBuilder job = Json.createObjectBuilder();
+        try {
+
+            if (message.getJMSMessageID() == null) {
+                job.add("MessageID", "N.A.");
+            } else {
+                job.add("MessageID", message.getJMSMessageID());
+            }
+            if (message.getJMSCorrelationID() == null) {
+                job.add("JMSCorrelationID", "N.A.");
+            } else {
+                job.add("JMSCorrelationID", message.getJMSCorrelationID());
+            }
+            for (Enumeration<String> properties = message.getPropertyNames(); properties.hasMoreElements(); ) {
+                String currentProperty = properties.nextElement();
+                job.add(currentProperty ,message.getStringProperty(currentProperty));
+            }
+        } catch (Error e) {
+            LOGGER.log(Level.SEVERE, e.getMessage());
         }
         JsonObject model = job.build();
         StringWriter stWriter = new StringWriter();
