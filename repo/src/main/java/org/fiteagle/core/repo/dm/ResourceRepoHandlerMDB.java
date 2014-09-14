@@ -1,9 +1,8 @@
 package org.fiteagle.core.repo.dm;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,26 +17,18 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
-import org.apache.jena.riot.RiotException;
 import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.IResourceRepository;
 import org.fiteagle.api.core.MessageBusMsgFactory;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.core.repo.ResourceRepoHandler;
-import org.fiteagle.core.repo.OLDResourceRepository;
 
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.SimpleSelector;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.util.FileManager;
-import com.hp.hpl.jena.vocabulary.OWL;
 import com.hp.hpl.jena.vocabulary.RDF;
-import com.hp.hpl.jena.vocabulary.RDFS;
 
-@MessageDriven(name = "ResourceInformListenerMDB", activationConfig = { @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
+@MessageDriven(name = "ResourceRepoHandlerMDB", activationConfig = { @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = IMessageBus.TOPIC_CORE),
         // @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = IResourceRepository.MESSAGE_FILTER),
         @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
@@ -68,11 +59,11 @@ public class ResourceRepoHandlerMDB implements MessageListener {
 
                 if (modelMessage != null) {
                     if (message.getStringProperty(IMessageBus.METHOD_TYPE).equals(IMessageBus.TYPE_INFORM)) {
-                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.toString() + " : Received an INFORM message");
+                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.toString() + " : Received an INFORM message " + message.getJMSCorrelationID());
                         handleInform(modelMessage);
 
                     } else if (message.getStringProperty(IMessageBus.METHOD_TYPE).equals(IMessageBus.TYPE_REQUEST)) {
-                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.toString() + " : Received a CREATE message");
+                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.toString() + " : Received a REQUEST message" + message.getJMSCorrelationID());
                         result = handleRequest(modelMessage);
 
                     }
@@ -84,6 +75,8 @@ public class ResourceRepoHandlerMDB implements MessageListener {
                     if (null != message.getJMSCorrelationID()) {
                         responseMessage.setJMSCorrelationID(message.getJMSCorrelationID());
                     }
+                    //responseMessage.setJMSCorrelationID(UUID.randomUUID().toString());
+                    
 
                     this.context.createProducer().send(topic, responseMessage);
                 }
@@ -95,11 +88,12 @@ public class ResourceRepoHandlerMDB implements MessageListener {
 
     }
     
-    public Message generateResponseMessage(Message requestMessage, String result) throws JMSException {
+    public Message generateResponseMessage(Message requestMessage, String serializedRDF) throws JMSException {
         final Message responseMessage = this.context.createMessage();
 
-        responseMessage.setStringProperty(IMessageBus.TYPE_RESPONSE, IMessageBus.TYPE_INFORM);
-        responseMessage.setStringProperty(IMessageBus.RDF, result);
+        responseMessage.setStringProperty(IMessageBus.METHOD_TYPE, IMessageBus.TYPE_INFORM);
+        responseMessage.setStringProperty(IMessageBus.RDF, serializedRDF);
+        responseMessage.setStringProperty(IMessageBus.SERIALIZATION, IMessageBus.SERIALIZATION_DEFAULT);
 
         return responseMessage;
     }

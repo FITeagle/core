@@ -61,6 +61,10 @@ public class ResourceRepoHandler {
         
         Model responseModel = ModelFactory.createDefaultModel();
         
+       
+
+
+        
         StmtIterator stmtIterator = modelRequests.listStatements();
         while (stmtIterator.hasNext()) {
             Statement currentStatement = stmtIterator.nextStatement();
@@ -74,6 +78,9 @@ public class ResourceRepoHandler {
                 while (adapterPropertiesIterator.hasNext()) {
                     responseModel.add(adapterPropertiesIterator.next());
                 }
+                
+                com.hp.hpl.jena.rdf.model.Resource message = responseModel.createResource("http://fiteagleinternal#Message");
+                message.addProperty(MessageBusOntologyModel.methodRestores, currentStatement.getSubject());
                 
                 // Check what resource it implements
                 NodeIterator implementedResourceTypes = currentModel.listObjectsOfProperty(currentStatement.getResource(), MessageBusOntologyModel.propertyFiteagleImplements);
