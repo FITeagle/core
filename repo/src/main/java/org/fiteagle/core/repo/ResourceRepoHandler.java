@@ -79,9 +79,6 @@ public class ResourceRepoHandler {
                     responseModel.add(adapterPropertiesIterator.next());
                 }
                 
-                com.hp.hpl.jena.rdf.model.Resource message = responseModel.createResource("http://fiteagleinternal#Message");
-                message.addProperty(MessageBusOntologyModel.methodRestores, currentStatement.getSubject());
-                
                 // Check what resource it implements
                 NodeIterator implementedResourceTypes = currentModel.listObjectsOfProperty(currentStatement.getResource(), MessageBusOntologyModel.propertyFiteagleImplements);
                 while(implementedResourceTypes.hasNext()){
@@ -96,6 +93,15 @@ public class ResourceRepoHandler {
                     }
                 }
             }
+            
+            
+            // TODO: Check resource
+            
+            if(currentStatement.getPredicate().equals(MessageBusOntologyModel.methodRestores)){
+                responseModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodRestores, currentStatement.getResource());
+            }
+            
+            
         }
 
         return responseModel;        
@@ -110,8 +116,10 @@ public class ResourceRepoHandler {
         StmtIterator stmtIterator = modelInform.listStatements();
         while (stmtIterator.hasNext()) {
             Statement currentStatement = stmtIterator.nextStatement();
-            currentModel.removeAll(currentStatement.getSubject(), currentStatement.getPredicate(),null);
-            currentModel.add(currentStatement);
+            if(!currentStatement.getSubject().equals(MessageBusOntologyModel.internalMessage)){
+              currentModel.removeAll(currentStatement.getSubject(), currentStatement.getPredicate(),null);
+              currentModel.add(currentStatement);
+            }
         }
         accessor.putModel(currentModel);
         

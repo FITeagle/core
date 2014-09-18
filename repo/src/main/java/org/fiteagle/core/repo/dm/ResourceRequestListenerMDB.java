@@ -89,8 +89,7 @@ public class ResourceRequestListenerMDB implements MessageListener {
 
                             //create result containing model
                             Model returnModel = MessageBusMsgFactory.createMsgInform(resultModel);
-                            com.hp.hpl.jena.rdf.model.Resource r = returnModel.getResource("http://fiteagleinternal#Message");
-                            r.addProperty(RDFS.comment, jsonString);
+                            returnModel.add(MessageBusOntologyModel.internalMessage, RDFS.comment, jsonString);
 
                             String serializedRDF = MessageBusMsgFactory.serializeModel(returnModel);
 
