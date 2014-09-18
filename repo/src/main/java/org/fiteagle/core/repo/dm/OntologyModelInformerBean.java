@@ -56,18 +56,4 @@ public class OntologyModelInformerBean {
 
 
     }
-
-    public static Model loadModel(String filename, String serialization) {
-        Model fiteagle = ModelFactory.createDefaultModel();
-
-        InputStream in2 = FileManager.get().open(filename);
-        if (in2 == null) {
-            throw new IllegalArgumentException("Ontology File: " + filename + " not found");
-        }
-
-        // read the RDF/XML file
-        fiteagle.read(in2, null, serialization);
-
-        return fiteagle;
-    }
 }

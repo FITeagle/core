@@ -16,6 +16,8 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
+import com.hp.hpl.jena.query.QueryException;
+import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import org.apache.jena.riot.RiotException;
@@ -73,6 +75,14 @@ public class ResourceRequestListenerMDB implements MessageListener {
 
                         // This is a request message, so query the database with the given sparql query
                         if (!sparqlQuery.isEmpty()) {
+                            //test if comment was really a query
+                            try{
+                                QueryFactory.create(sparqlQuery);
+                            }catch(QueryException e){
+                                LOGGER.log(Level.INFO, "Comment of message was no valid query");
+                                return;
+
+                            }
                             ResultSet resultSet = QueryExecuter.queryModelFromDatabase(sparqlQuery);
                             String jsonString = getResultSetAsJsonString(resultSet);
 
