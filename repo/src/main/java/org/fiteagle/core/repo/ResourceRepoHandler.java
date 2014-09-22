@@ -1,11 +1,16 @@
 package org.fiteagle.core.repo;
 
+import java.io.StringWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 
 import com.hp.hpl.jena.query.DatasetAccessor;
 import com.hp.hpl.jena.query.DatasetAccessorFactory;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
@@ -94,6 +99,45 @@ public class ResourceRepoHandler {
                 }
             }
             
+            // Check if it a testbed
+            
+         
+
+           
+            
+            
+            //:FITEAGLE_Testbed rdf:type fiteagle:Testbed.
+            if(currentModel.contains(currentStatement.getSubject(), RDF.type, MessageBusOntologyModel.classTestbed)){                
+                
+                // Get contained adapter names
+                //:FITEAGLE_Testbed fiteagle:containsAdapter :ADeployedMotorAdapter1.
+                StmtIterator testbedAdapterIterator = currentModel.listStatements(new SimpleSelector(currentStatement.getSubject(), MessageBusOntologyModel.propertyFiteagleContainsAdapter, (RDFNode) null)); 
+                while (testbedAdapterIterator.hasNext()) {
+                    Statement currentTestbedStatement = testbedAdapterIterator.next();
+                    responseModel.add(currentTestbedStatement); 
+                    
+                    StmtIterator adapterIterator = currentModel.listStatements(new SimpleSelector(currentTestbedStatement.getResource(), RDF.type, (RDFNode) null));
+                    while (adapterIterator.hasNext()) {
+                        Statement currentAdapterStatement = adapterIterator.next();
+                        responseModel.add(currentAdapterStatement); 
+                        
+//                      motor:MotorGarageAdapter
+//                      a                    owl:Class ;
+//                      rdfs:label           "MotorGarageAdapterType "@en ;
+//                      rdfs:subClassOf      fiteagle:Adapter ;
+//                      fiteagle:implements  motor:Motor .
+                       // System.err.println(currentAdapterStatement);
+                        
+                        StmtIterator adapterPropertiesIterator = currentModel.listStatements(new SimpleSelector(currentAdapterStatement.getResource(), (Property) null, (RDFNode) null)); 
+                        while (adapterPropertiesIterator.hasNext()) {
+                           // System.err.println("in: " + adapterPropertiesIterator.next());
+                            responseModel.add(adapterPropertiesIterator.next());
+                        }
+                        
+                    }
+                }
+            }
+            
             
             // TODO: Check resource
             
@@ -114,10 +158,20 @@ public class ResourceRepoHandler {
         Model currentModel = accessor.getModel();
         
         StmtIterator stmtIterator = modelInform.listStatements();
+        
+        // First remove old values
         while (stmtIterator.hasNext()) {
             Statement currentStatement = stmtIterator.nextStatement();
             if(!currentStatement.getSubject().equals(MessageBusOntologyModel.internalMessage)){
               currentModel.removeAll(currentStatement.getSubject(), currentStatement.getPredicate(),null);
+            }
+        }
+        
+        // Now add new values
+        stmtIterator = modelInform.listStatements();
+        while (stmtIterator.hasNext()) {
+            Statement currentStatement = stmtIterator.nextStatement();
+            if(!currentStatement.getSubject().equals(MessageBusOntologyModel.internalMessage)){
               currentModel.add(currentStatement);
             }
         }
@@ -139,6 +193,33 @@ public class ResourceRepoHandler {
         accessor.putModel(currentModel);        
 
         return true;        
+    }
+    
+    
+  //  private static final String FUSEKI_SERVICE = "http://localhost:3030/ds/data"; //query
+
+    private String queryDB(String query, String serialization) {
+
+        try {
+
+            DatasetAccessor dataAccessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+            Model model = dataAccessor.getModel();
+
+            QueryExecution queryExec = QueryExecutionFactory.create(QueryFactory.create(query), model);
+            ResultSet result = queryExec.execSelect();
+
+            Model resultModel = result.getResourceModel();
+
+            StringWriter writer = new StringWriter();
+            resultModel.write(writer, serialization);
+
+            return writer.toString();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "found no data in the repository";
+
     }
     
     
