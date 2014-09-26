@@ -78,6 +78,7 @@ public class ResourceRepoHandler {
           //  model.listStatements(new SimpleSelector(currentStatement.getResource(), RDFS.subClassOf, MessageBusOntologyModel.classAdapter));
             
             if(currentModel.contains(currentStatement.getResource(), RDFS.subClassOf, MessageBusOntologyModel.classAdapter)){
+                responseModel.add(currentStatement);
                 
                 StmtIterator adapterPropertiesIterator = currentModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null)); 
                 while (adapterPropertiesIterator.hasNext()) {

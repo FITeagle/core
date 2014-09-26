@@ -89,7 +89,7 @@ public class MessageBusLoggerWS implements MessageListener {
        }    
       }
       queue.removeAll(closedSessions);
-      LOGGER.log(Level.INFO, "Sending message to "+queue.size()+" clients");
+      // LOGGER.log(Level.INFO, "Sending message to "+queue.size()+" clients");
      } catch (Throwable e) {
       e.printStackTrace();
      }
