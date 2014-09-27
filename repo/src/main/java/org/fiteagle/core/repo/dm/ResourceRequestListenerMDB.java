@@ -3,6 +3,8 @@ package org.fiteagle.core.repo.dm;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,9 +55,8 @@ public class ResourceRequestListenerMDB implements MessageListener {
     public void onMessage(final Message message) {
 
         try {
-            if (message.getStringProperty(IMessageBus.METHOD_TYPE) != null && message.getStringProperty(IMessageBus.RDF) != null) {
-
-                if (message.getStringProperty(IMessageBus.METHOD_TYPE).equals(IMessageBus.TYPE_REQUEST)) {
+            if (message.getStringProperty(IMessageBus.METHOD_TYPE) != null && message.getStringProperty(IMessageBus.RDF) != null && 
+            		message.getStringProperty(IMessageBus.METHOD_TYPE).equals(IMessageBus.TYPE_REQUEST)) {
 
                     Model resultModel = ModelFactory.createDefaultModel();
                     String inputRDF = message.getStringProperty(IMessageBus.RDF);
@@ -64,7 +65,7 @@ public class ResourceRequestListenerMDB implements MessageListener {
                     // create an empty model
                     Model modelRequest = ModelFactory.createDefaultModel();
 
-                    InputStream is = new ByteArrayInputStream(inputRDF.getBytes());
+                    InputStream is = new ByteArrayInputStream(inputRDF.getBytes(Charset.defaultCharset()));
 
                     try {
 
@@ -81,7 +82,6 @@ public class ResourceRequestListenerMDB implements MessageListener {
                             }catch(QueryException e){
                                 LOGGER.log(Level.INFO, "Comment of message was no valid query");
                                 return;
-
                             }
                             ResultSet resultSet = QueryExecuter.queryModelFromDatabase(sparqlQuery);
                             String jsonString = getResultSetAsJsonString(resultSet);
@@ -110,8 +110,6 @@ public class ResourceRequestListenerMDB implements MessageListener {
                     } catch (RiotException e) {
                         System.err.println("Invalid RDF");
                     }
-
-                }
             }
 
         } catch (JMSException e) {
@@ -146,13 +144,19 @@ public class ResourceRequestListenerMDB implements MessageListener {
     /**
      * Gets the result set as json string
      *
-     * @param resultSet
-     * @return
+     * @param resultSet resultset to be converted to json format
+     * @return String containing the converted resultset in json format
      */
     public String getResultSetAsJsonString(ResultSet resultSet) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ResultSetFormatter.outputAsJSON(baos, resultSet);
-        String jsonString = baos.toString();
+        String jsonString = "";
+		try {
+			jsonString = baos.toString(Charset.defaultCharset().toString());
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         return jsonString;
     }
 }

@@ -2,7 +2,6 @@ package org.fiteagle.core.repo.dm;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,6 +43,7 @@ public class ResourceRepoHandlerMDB implements MessageListener {
     private Topic topic;
     
     @PostConstruct
+    @SuppressWarnings("unused")
     private void startUp(){
         repository = ResourceRepoHandler.getInstance();
     }

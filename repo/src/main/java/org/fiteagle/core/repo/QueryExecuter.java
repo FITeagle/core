@@ -11,6 +11,11 @@ public class QueryExecuter {
 
     private static Logger LOGGER = Logger.getLogger(QueryExecuter.class.toString());
 
+    /**
+     * Submits a given sparql query string to the db
+     * @param sparqlQuery String containing the sparql query to be issued
+     * @return ResultSet retrieved from db, null on failure
+     */
     public static ResultSet queryModelFromDatabase(String sparqlQuery){
 
         QueryExecuter.LOGGER.log(Level.INFO, "Querying Fuseki Service");
@@ -32,7 +37,7 @@ public class QueryExecuter {
             LOGGER.log(Level.INFO, "Now Sending query: "+ qe.getQuery().toString());
             rs = qe.execSelect();
  		} catch (Exception e){
- 			//e.printStackTrace();
+ 			e.printStackTrace();
  		}
 		return rs;
 	}
