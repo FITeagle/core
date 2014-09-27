@@ -1,32 +1,30 @@
 package org.fiteagle.core.bus.dm;
 
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Enumeration;
 
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
-import javax.json.*;
-import javax.websocket.EndpointConfig;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonWriter;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-import org.apache.jena.atlas.json.JsonBuilder;
 import org.fiteagle.api.core.IMessageBus;
-import org.hornetq.utils.json.JSONObject;
 
 @ServerEndpoint("/api/logger")
 @MessageDriven(name = "LoggerMDB", activationConfig = { @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -143,6 +141,7 @@ public class MessageBusLoggerWS implements MessageListener {
         String jsonString = stWriter.toString();
         return jsonString;
     }
+    /*
     private String messageToString(Message message) throws JMSException {
         String result = "";
 
@@ -155,7 +154,7 @@ public class MessageBusLoggerWS implements MessageListener {
         }
 
         return result;
-    }
+    }*/
 }
 
 

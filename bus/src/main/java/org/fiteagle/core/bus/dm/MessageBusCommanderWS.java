@@ -15,7 +15,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-import org.fiteagle.api.core.IMessageBus;
+
 
 @Named
 @ServerEndpoint("/api/commander")

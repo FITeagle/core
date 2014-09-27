@@ -4,11 +4,8 @@ package org.fiteagle.core.repo.dm;
  * Created by vju on 9/9/14.
  */
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.util.FileManager;
-import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageBusMsgFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -18,12 +15,14 @@ import javax.inject.Inject;
 import javax.jms.JMSContext;
 import javax.jms.Message;
 import javax.jms.Topic;
-import java.io.InputStream;
-import java.lang.Exception;import java.lang.IllegalArgumentException;import java.lang.String;import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.MessageBusMsgFactory;
+
+import com.hp.hpl.jena.rdf.model.Model;
 
 /**
- * This Bean sends the ontology Model over message bus on startup, currently only the motor-ontology
+ * This Bean sends the ontology Model over message bus on startup
  */
 @Singleton
 @Startup
