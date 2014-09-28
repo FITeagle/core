@@ -58,125 +58,149 @@ public class ResourceRepoHandler {
     // }
 
     public synchronized Model handleRequest(Model modelRequests) {
-
-        DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
-        Model currentModel = accessor.getModel();
+        
+        System.err.println("hlandling request");
 
         Model responseModel = ModelFactory.createDefaultModel();
 
-        StmtIterator stmtIterator = modelRequests.listStatements();
-        while (stmtIterator.hasNext()) {
-            Statement currentStatement = stmtIterator.nextStatement();
+        try {
+            DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+            Model tripletStoreModel = accessor.getModel();
 
-            // Check if requested object is an adapter
-            if (currentModel.contains(currentStatement.getResource(), RDFS.subClassOf, MessageBusOntologyModel.classAdapter)) {
+            StmtIterator stmtIterator = modelRequests.listStatements();
+            while (stmtIterator.hasNext()) {
+                Statement currentStatement = stmtIterator.nextStatement();
+                System.err.println(currentStatement.toString());
 
-                responseModel.add(currentStatement);
-
-                // Find properties of adapter instance
-                StmtIterator adapterPropertiesIterator = currentModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null));
-                while (adapterPropertiesIterator.hasNext()) {
-                    responseModel.add(adapterPropertiesIterator.next());
+                // Check if requested object is an adapter
+                if (tripletStoreModel.contains(currentStatement.getResource(), RDFS.subClassOf, MessageBusOntologyModel.classAdapter)) {
+                    System.err.println("found adapter request");
+                    processAdapterRequest(tripletStoreModel, responseModel, currentStatement);
                 }
 
-                // Find properties of adapter type
-                StmtIterator adapterTypePropertiesIterator = currentModel.listStatements(new SimpleSelector(currentStatement.getResource(), (Property) null, (RDFNode) null));
-                while (adapterTypePropertiesIterator.hasNext()) {
-                    responseModel.add(adapterTypePropertiesIterator.next());
+                // Check if requested object is a testbed
+                // :FITEAGLE_Testbed rdf:type fiteagle:Testbed.
+                else if (tripletStoreModel.contains(currentStatement.getSubject(), RDF.type, MessageBusOntologyModel.classTestbed)) {
+                    System.err.println("found testbed request");
+                    processTestbedAdapterListRequest(tripletStoreModel, responseModel, currentStatement);
                 }
 
-                // Check what kind of resource it implements
-                NodeIterator implementedResourceTypes = currentModel.listObjectsOfProperty(currentStatement.getResource(), MessageBusOntologyModel.propertyFiteagleImplements);
-                while (implementedResourceTypes.hasNext()) {
-                    RDFNode implementedResource = implementedResourceTypes.next();
-                    
-                    // Get implemented resource properties
-                    StmtIterator implementedResourcePropertiesIterator = currentModel.listStatements(new SimpleSelector((Resource) implementedResource, (Property) null, (RDFNode) null));
-                    while (implementedResourcePropertiesIterator.hasNext()) {
-                        responseModel.add(implementedResourcePropertiesIterator.next());
-                    }
-                    
-                    StmtIterator implementedResourceLinkedPropertiesIterator = currentModel.listStatements(new SimpleSelector(null, RDFS.domain, implementedResource));
-                    while (implementedResourceLinkedPropertiesIterator.hasNext()) {
-                        StmtIterator linkedPropertiesIterator = currentModel.listStatements(new SimpleSelector(implementedResourceLinkedPropertiesIterator.next().getSubject(), (Property) null, (RDFNode) null));
-                        while (linkedPropertiesIterator.hasNext()) {
-                            responseModel.add(linkedPropertiesIterator.next());
-                        }
-                    }
-                    
-                    // Get implemented resource instances
-                    StmtIterator resourceTypeIterator = currentModel.listStatements(new SimpleSelector(null, RDF.type, implementedResource));
-                    while (resourceTypeIterator.hasNext()) {
-
-                        StmtIterator resourceInstancePropertiesIterator = currentModel.listStatements(new SimpleSelector(resourceTypeIterator.next().getSubject(), (Property) null, (RDFNode) null));
-                        while (resourceInstancePropertiesIterator.hasNext()) {
-                            responseModel.add(resourceInstancePropertiesIterator.next());
-                        }
-
-                    }
+                // Check if requested object is a resource instance
+                else if (tripletStoreModel.contains(currentStatement)) {
+                    processResourceInstanceRequest(tripletStoreModel, responseModel, currentStatement);
                 }
+
+                // Was this a restores message? If yes, add restores property to response
+                if (currentStatement.getPredicate().equals(MessageBusOntologyModel.methodRestores)) {
+                    responseModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodRestores, currentStatement.getResource());
+                }
+
             }
-
-            // Check if requested object is a testbed
-
-            // :FITEAGLE_Testbed rdf:type fiteagle:Testbed.
-            else if (currentModel.contains(currentStatement.getSubject(), RDF.type, MessageBusOntologyModel.classTestbed)) {
-
-                // Get contained adapter names
-                // :FITEAGLE_Testbed fiteagle:containsAdapter :ADeployedMotorAdapter1.
-                StmtIterator testbedAdapterIterator = currentModel.listStatements(new SimpleSelector(currentStatement.getSubject(), MessageBusOntologyModel.propertyFiteagleContainsAdapter,
-                        (RDFNode) null));
-                while (testbedAdapterIterator.hasNext()) {
-                    Statement currentTestbedStatement = testbedAdapterIterator.next();
-                    responseModel.add(currentTestbedStatement);
-
-                    StmtIterator adapterIterator = currentModel.listStatements(new SimpleSelector(currentTestbedStatement.getResource(), RDF.type, (RDFNode) null));
-                    while (adapterIterator.hasNext()) {
-                        Statement currentAdapterStatement = adapterIterator.next();
-                        responseModel.add(currentAdapterStatement);
-
-                        // Get properties of adapter type (e.g. motor:MotorGarageAdapter)
-                        StmtIterator adapterPropertiesIterator = currentModel.listStatements(new SimpleSelector(currentAdapterStatement.getResource(), (Property) null, (RDFNode) null));
-                        while (adapterPropertiesIterator.hasNext()) {
-                            // System.err.println("in: " + adapterPropertiesIterator.next());
-                            responseModel.add(adapterPropertiesIterator.next());
-                        }
-
-                    }
-                }
-            }
-            // Check if requested object is a resource instance
-            else if (currentModel.contains(currentStatement)) {
-                System.err.println("got: " + currentStatement.toString());
-                StmtIterator resourcePropertiesIterator = currentModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null));
-                while (resourcePropertiesIterator.hasNext()) {
-                    responseModel.add(resourcePropertiesIterator.next());
-                }
-            }
-
-            // Was this a restores message? If yes, add restores property to response
-            if (currentStatement.getPredicate().equals(MessageBusOntologyModel.methodRestores)) {
-                responseModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodRestores, currentStatement.getResource());
-            }
-
+        } catch (org.apache.jena.atlas.web.HttpException e) {
+            ResourceRepoHandler.LOGGER.log(Level.INFO, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
         }
 
         return responseModel;
     }
 
+    private void processResourceInstanceRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
+        StmtIterator resourcePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null));
+        while (resourcePropertiesIterator.hasNext()) {
+            responseModel.add(resourcePropertiesIterator.next());
+        }
+    }
+
+    private void processTestbedAdapterListRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
+        // Get contained adapter names
+        // :FITEAGLE_Testbed fiteagle:containsAdapter :ADeployedMotorAdapter1.
+        StmtIterator testbedAdapterIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), MessageBusOntologyModel.propertyFiteagleContainsAdapter,
+                (RDFNode) null));
+        while (testbedAdapterIterator.hasNext()) {
+            Statement currentTestbedStatement = testbedAdapterIterator.next();
+            responseModel.add(currentTestbedStatement);
+
+            StmtIterator adapterIterator = tripletStoreModel.listStatements(new SimpleSelector(currentTestbedStatement.getResource(), RDF.type, (RDFNode) null));
+            while (adapterIterator.hasNext()) {
+                Statement currentAdapterStatement = adapterIterator.next();
+                responseModel.add(currentAdapterStatement);
+
+                // Get properties of adapter type (e.g. motor:MotorGarageAdapter)
+                StmtIterator adapterPropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentAdapterStatement.getResource(), (Property) null, (RDFNode) null));
+                while (adapterPropertiesIterator.hasNext()) {
+                    // System.err.println("in: " + adapterPropertiesIterator.next());
+                    responseModel.add(adapterPropertiesIterator.next());
+                }
+
+            }
+        }
+    }
+
+    private void processAdapterRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
+        responseModel.add(currentStatement);
+
+        // Find properties of adapter instance
+        StmtIterator adapterPropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null));
+        while (adapterPropertiesIterator.hasNext()) {
+            responseModel.add(adapterPropertiesIterator.next());
+        }
+
+        // Find properties of adapter type
+        StmtIterator adapterTypePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getResource(), (Property) null, (RDFNode) null));
+        while (adapterTypePropertiesIterator.hasNext()) {
+            responseModel.add(adapterTypePropertiesIterator.next());
+        }
+
+        // Check what kind of resource it implements
+        NodeIterator implementedResourceTypes = tripletStoreModel.listObjectsOfProperty(currentStatement.getResource(), MessageBusOntologyModel.propertyFiteagleImplements);
+        while (implementedResourceTypes.hasNext()) {
+            RDFNode implementedResource = implementedResourceTypes.next();
+
+            // Get implemented resource properties
+            StmtIterator implementedResourcePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector((Resource) implementedResource, (Property) null, (RDFNode) null));
+            while (implementedResourcePropertiesIterator.hasNext()) {
+                responseModel.add(implementedResourcePropertiesIterator.next());
+            }
+
+            StmtIterator implementedResourceLinkedPropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(null, RDFS.domain, implementedResource));
+            while (implementedResourceLinkedPropertiesIterator.hasNext()) {
+                StmtIterator linkedPropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(implementedResourceLinkedPropertiesIterator.next().getSubject(), (Property) null,
+                        (RDFNode) null));
+                while (linkedPropertiesIterator.hasNext()) {
+                    responseModel.add(linkedPropertiesIterator.next());
+                }
+            }
+
+            // Get implemented resource instances
+            StmtIterator resourceTypeIterator = tripletStoreModel.listStatements(new SimpleSelector(null, RDF.type, implementedResource));
+            while (resourceTypeIterator.hasNext()) {
+
+                StmtIterator resourceInstancePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(resourceTypeIterator.next().getSubject(), (Property) null, (RDFNode) null));
+                while (resourceInstancePropertiesIterator.hasNext()) {
+                    responseModel.add(resourceInstancePropertiesIterator.next());
+                }
+
+            }
+        }
+    }
+
     public synchronized boolean addInformToRepository(Model modelInform) {
 
-        DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+        try {
+            DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
 
-        Model currentModel = accessor.getModel();
+            Model currentModel = accessor.getModel();
 
-        // First remove old values
-        removeExistingValuesFromModel(currentModel, modelInform);
+            // First remove old values
+            removeExistingValuesFromModel(currentModel, modelInform);
 
-        // Now add new values
-        addValuesToModel(currentModel, modelInform);
+            // Now add new values
+            addValuesToModel(currentModel, modelInform);
 
-        accessor.putModel(currentModel);
+            accessor.putModel(currentModel);
+        } catch (org.apache.jena.atlas.web.HttpException e) {
+            ResourceRepoHandler.LOGGER.log(Level.INFO, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
+            return false;
+        }
 
         return true;
     }
@@ -203,41 +227,47 @@ public class ResourceRepoHandler {
 
     public synchronized boolean releaseResource(Resource rscToRemove) {
 
-        DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+        try {
+            DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
 
-        Model currentModel = accessor.getModel();
+            Model currentModel = accessor.getModel();
 
-        currentModel.removeAll(rscToRemove, null, null);
+            currentModel.removeAll(rscToRemove, null, null);
 
-        accessor.putModel(currentModel);
+            accessor.putModel(currentModel);
+
+        } catch (org.apache.jena.atlas.web.HttpException e) {
+            ResourceRepoHandler.LOGGER.log(Level.INFO, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
+            return false;
+        }
 
         return true;
     }
 
     // private static final String FUSEKI_SERVICE = "http://localhost:3030/ds/data"; //query
 
-    private String queryDB(String query, String serialization) {
-
-        try {
-
-            DatasetAccessor dataAccessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
-            Model model = dataAccessor.getModel();
-
-            QueryExecution queryExec = QueryExecutionFactory.create(QueryFactory.create(query), model);
-            ResultSet result = queryExec.execSelect();
-
-            Model resultModel = result.getResourceModel();
-
-            StringWriter writer = new StringWriter();
-            resultModel.write(writer, serialization);
-
-            return writer.toString();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "found no data in the repository";
-
-    }
+    // private String queryDB(String query, String serialization) {
+    //
+    // try {
+    //
+    // DatasetAccessor dataAccessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+    // Model model = dataAccessor.getModel();
+    //
+    // QueryExecution queryExec = QueryExecutionFactory.create(QueryFactory.create(query), model);
+    // ResultSet result = queryExec.execSelect();
+    //
+    // Model resultModel = result.getResourceModel();
+    //
+    // StringWriter writer = new StringWriter();
+    // resultModel.write(writer, serialization);
+    //
+    // return writer.toString();
+    //
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // }
+    // return "found no data in the repository";
+    //
+    // }
 
 }
