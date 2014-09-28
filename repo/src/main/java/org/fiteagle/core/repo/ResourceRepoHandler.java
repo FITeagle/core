@@ -1,12 +1,22 @@
 package org.fiteagle.core.repo;
 
+import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.jms.Message;
+
+import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 
 import com.hp.hpl.jena.query.DatasetAccessor;
 import com.hp.hpl.jena.query.DatasetAccessorFactory;
+import com.hp.hpl.jena.query.QueryException;
+import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
@@ -52,10 +62,37 @@ public class ResourceRepoHandler {
     //
     // return true;
     // }
+    
+    public Model handleSPARQLRequest(Model modelRequest){
+        
+        Model resultModel = ModelFactory.createDefaultModel();
+        String sparqlQuery = getQueryFromModel(modelRequest);
+        String jsonString = "";
+
+        // This is a request message, so query the database with the given sparql query
+        if (!sparqlQuery.isEmpty()) {
+            //test if comment was really a query
+            try{
+                QueryFactory.create(sparqlQuery);
+                ResultSet resultSet = QueryExecuter.queryModelFromDatabase(sparqlQuery);
+                jsonString = getResultSetAsJsonString(resultSet);
+            }catch(QueryException e){
+                LOGGER.log(Level.INFO, "Comment of message was no valid query");
+            }
+
+            //create result containing model
+            resultModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyJsonResult, jsonString);
+        } else {
+            // NOTHING FOUND
+            System.err.println("SPARQL Query expected, but no sparql query found!");
+        }
+        
+        return resultModel;
+    }
+    
 
     public synchronized Model handleRequest(Model modelRequests) {
         
-        System.err.println("hlandling request");
 
         Model responseModel = ModelFactory.createDefaultModel();
 
@@ -66,18 +103,15 @@ public class ResourceRepoHandler {
             StmtIterator stmtIterator = modelRequests.listStatements();
             while (stmtIterator.hasNext()) {
                 Statement currentStatement = stmtIterator.nextStatement();
-                System.err.println(currentStatement.toString());
 
                 // Check if requested object is an adapter
                 if (tripletStoreModel.contains(currentStatement.getResource(), RDFS.subClassOf, MessageBusOntologyModel.classAdapter)) {
-                    System.err.println("found adapter request");
                     processAdapterRequest(tripletStoreModel, responseModel, currentStatement);
                 }
 
                 // Check if requested object is a testbed
                 // :FITEAGLE_Testbed rdf:type fiteagle:Testbed.
                 else if (tripletStoreModel.contains(currentStatement.getSubject(), RDF.type, MessageBusOntologyModel.classTestbed)) {
-                    System.err.println("found testbed request");
                     processTestbedAdapterListRequest(tripletStoreModel, responseModel, currentStatement);
                 }
 
@@ -123,7 +157,6 @@ public class ResourceRepoHandler {
                 // Get properties of adapter type (e.g. motor:MotorGarageAdapter)
                 StmtIterator adapterPropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentAdapterStatement.getResource(), (Property) null, (RDFNode) null));
                 while (adapterPropertiesIterator.hasNext()) {
-                    // System.err.println("in: " + adapterPropertiesIterator.next());
                     responseModel.add(adapterPropertiesIterator.next());
                 }
 
@@ -238,6 +271,48 @@ public class ResourceRepoHandler {
         }
 
         return true;
+    }
+    
+    /**
+     * Get the comment section of the rdf model
+     *
+     * @param model
+     * @return
+     */
+    public String getQueryFromModel(Model model) {
+        StmtIterator iter = model.listStatements(new SimpleSelector(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest));
+        Statement currentStatement = null;
+        Statement rdfsComment = null;
+        String sparqlQuery = "";
+        while (iter.hasNext()) {
+            currentStatement = iter.nextStatement();
+            rdfsComment = currentStatement.getSubject().getProperty(MessageBusOntologyModel.propertySparqlQuery);
+            if (rdfsComment != null) {
+                sparqlQuery = rdfsComment.getObject().toString();
+                LOGGER.log(Level.INFO, "SPARQL Query found " + sparqlQuery);
+                break;
+            }
+        }
+        return sparqlQuery;
+    }
+
+    /**
+     * Gets the result set as json string
+     *
+     * @param resultSet resultset to be converted to json format
+     * @return String containing the converted resultset in json format
+     */
+    public String getResultSetAsJsonString(ResultSet resultSet) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ResultSetFormatter.outputAsJSON(baos, resultSet);
+        String jsonString = "";
+    try {
+      jsonString = baos.toString(Charset.defaultCharset().toString());
+    } catch (UnsupportedEncodingException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+        return jsonString;
     }
 
     // private static final String FUSEKI_SERVICE = "http://localhost:3030/ds/data"; //query

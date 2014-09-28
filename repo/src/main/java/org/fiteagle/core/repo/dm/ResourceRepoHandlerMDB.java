@@ -99,23 +99,29 @@ public class ResourceRepoHandlerMDB implements MessageListener {
     }
     
     private String handleRequest(Model modelRequest) {
+        
+        Model response = null;
 
         // Do this manually, so the fiteagle:Inform Statement can be removed from the graph later
         StmtIterator iter = modelRequest.listStatements(new SimpleSelector(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest));
         Statement currentStatement = null;
         while (iter.hasNext()) {
             currentStatement = iter.nextStatement();
-        }
-
-        // This is a request message, so do something with it
-        if (currentStatement != null) {
-            modelRequest.remove(currentStatement);
-            Model response = repository.handleRequest(modelRequest);
             
-            MessageBusMsgFactory.setCommonPrefixes(response);
-
-            return MessageBusMsgFactory.serializeModel(MessageBusMsgFactory.createMsgInform(response));
+            if(currentStatement.getSubject().hasProperty(MessageBusOntologyModel.propertySparqlQuery)){
+                response = repository.handleSPARQLRequest(modelRequest);
+             
+            } else {
+                modelRequest.remove(currentStatement);
+                response = repository.handleRequest(modelRequest);
+                MessageBusMsgFactory.setCommonPrefixes(response);
+            }
+            
+            if(response != null){
+                return MessageBusMsgFactory.serializeModel(MessageBusMsgFactory.createMsgInform(response));
+            }
         }
+        
         return "";
     }
 
