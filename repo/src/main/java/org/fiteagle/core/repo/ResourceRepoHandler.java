@@ -6,9 +6,6 @@ import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.jms.Message;
-
-import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 
 import com.hp.hpl.jena.query.DatasetAccessor;
