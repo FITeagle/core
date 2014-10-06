@@ -43,7 +43,6 @@ public class ResourceRepoHandlerMDB implements MessageListener {
     private Topic topic;
     
     @PostConstruct
-    @SuppressWarnings("unused")
     private void startUp(){
         repository = ResourceRepoHandler.getInstance();
     }
