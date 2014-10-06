@@ -29,7 +29,6 @@ import com.hp.hpl.jena.vocabulary.RDF;
 
 @MessageDriven(name = "ResourceRepoHandlerMDB", activationConfig = { @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = IMessageBus.TOPIC_CORE),
-        // @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = IResourceRepository.MESSAGE_FILTER),
         @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
 public class ResourceRepoHandlerMDB implements MessageListener {
 
@@ -58,11 +57,11 @@ public class ResourceRepoHandlerMDB implements MessageListener {
 
                 if (modelMessage != null) {
                     if (message.getStringProperty(IMessageBus.METHOD_TYPE).equals(IMessageBus.TYPE_INFORM)) {
-                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.toString() + " : Received an INFORM message " + message.getJMSCorrelationID());
+                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.getClass().getName() + " : Received an INFORM message " + message.getJMSCorrelationID());
                         handleInform(modelMessage);
 
                     } else if (message.getStringProperty(IMessageBus.METHOD_TYPE).equals(IMessageBus.TYPE_REQUEST)) {
-                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.toString() + " : Received a REQUEST message" + message.getJMSCorrelationID());
+                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.getClass().getName() + " : Received a REQUEST message" + message.getJMSCorrelationID());
                         result = handleRequest(modelMessage);
 
                     }
@@ -74,8 +73,6 @@ public class ResourceRepoHandlerMDB implements MessageListener {
                     if (null != message.getJMSCorrelationID()) {
                         responseMessage.setJMSCorrelationID(message.getJMSCorrelationID());
                     }
-                    //responseMessage.setJMSCorrelationID(UUID.randomUUID().toString());
-                    
 
                     this.context.createProducer().send(topic, responseMessage);
                 }
