@@ -149,9 +149,8 @@ public class ResourceRepoHandlerMDB implements MessageListener {
 
             if (currentStatement.getPredicate().equals(MessageBusOntologyModel.methodReleases)) {
                 repository.releaseResource(currentStatement.getResource());
-                System.err.println("RDF Repo: Removing resource: " + currentStatement.getResource());
+                LOGGER.log(Level.INFO, this.getClass().getSimpleName() + ": removing resource: " + currentStatement.getResource());
                 releasesStatementsToRemove.add(currentStatement);
-
             }
         }
 
