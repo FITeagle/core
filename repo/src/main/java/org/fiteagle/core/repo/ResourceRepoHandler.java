@@ -124,7 +124,7 @@ public class ResourceRepoHandler {
 
             }
         } catch (org.apache.jena.atlas.web.HttpException e) {
-            ResourceRepoHandler.LOGGER.log(Level.INFO, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
+            ResourceRepoHandler.LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + ": Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
         }
 
         return responseModel;
