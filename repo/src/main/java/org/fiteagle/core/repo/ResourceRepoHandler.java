@@ -40,26 +40,6 @@ public class ResourceRepoHandler {
         return resourceRepositoryHandlerSingleton;
     }
 
-    // public synchronized static boolean addInformToRepository(String resourceDescription, String serialization){
-    //
-    // // create an empty model
-    // Model modelToAdd = ModelFactory.createDefaultModel();
-    // InputStream is = new ByteArrayInputStream( resourceDescription.getBytes() );
-    // // read the RDF/XML file
-    // modelToAdd.read(is, null, serialization);
-    //
-    // DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
-    //
-    // // Download the updated model
-    // Model currentModel = accessor.getModel();
-    // currentModel.add(modelToAdd);
-    // accessor.add(currentModel);
-    //
-    // System.err.println("Sucess writing to fuseki");
-    //
-    // return true;
-    // }
-    
     public Model handleSPARQLRequest(Model modelRequest){
         
         Model resultModel = ModelFactory.createDefaultModel();
@@ -68,7 +48,6 @@ public class ResourceRepoHandler {
 
         // This is a request message, so query the database with the given sparql query
         if (!sparqlQuery.isEmpty()) {
-            //test if comment was really a query
             try{
                 QueryFactory.create(sparqlQuery);
                 ResultSet resultSet = QueryExecuter.queryModelFromDatabase(sparqlQuery);
@@ -77,20 +56,15 @@ public class ResourceRepoHandler {
                 LOGGER.log(Level.INFO, "Comment of message was no valid query");
             }
 
-            //create result containing model
             resultModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyJsonResult, jsonString);
         } else {
-            // NOTHING FOUND
-            System.err.println("SPARQL Query expected, but no sparql query found!");
+          LOGGER.log(Level.SEVERE, "SPARQL Query expected, but no sparql query found!");
         }
         
         return resultModel;
     }
-    
 
     public synchronized Model handleRequest(Model modelRequests) {
-        
-
         Model responseModel = ModelFactory.createDefaultModel();
 
         try {
@@ -210,7 +184,6 @@ public class ResourceRepoHandler {
     }
 
     public synchronized boolean addInformToRepository(Model modelInform) {
-
         try {
             DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
 
@@ -224,7 +197,7 @@ public class ResourceRepoHandler {
 
             accessor.putModel(currentModel);
         } catch (org.apache.jena.atlas.web.HttpException e) {
-            ResourceRepoHandler.LOGGER.log(Level.INFO, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
+            ResourceRepoHandler.LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
             return false;
         }
 
@@ -263,7 +236,7 @@ public class ResourceRepoHandler {
             accessor.putModel(currentModel);
 
         } catch (org.apache.jena.atlas.web.HttpException e) {
-            ResourceRepoHandler.LOGGER.log(Level.INFO, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
+            ResourceRepoHandler.LOGGER.log(Level.SEVERE, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
             return false;
         }
 
@@ -311,31 +284,5 @@ public class ResourceRepoHandler {
     }
         return jsonString;
     }
-
-    // private static final String FUSEKI_SERVICE = "http://localhost:3030/ds/data"; //query
-
-    // private String queryDB(String query, String serialization) {
-    //
-    // try {
-    //
-    // DatasetAccessor dataAccessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
-    // Model model = dataAccessor.getModel();
-    //
-    // QueryExecution queryExec = QueryExecutionFactory.create(QueryFactory.create(query), model);
-    // ResultSet result = queryExec.execSelect();
-    //
-    // Model resultModel = result.getResourceModel();
-    //
-    // StringWriter writer = new StringWriter();
-    // resultModel.write(writer, serialization);
-    //
-    // return writer.toString();
-    //
-    // } catch (Exception e) {
-    // e.printStackTrace();
-    // }
-    // return "found no data in the repository";
-    //
-    // }
 
 }
