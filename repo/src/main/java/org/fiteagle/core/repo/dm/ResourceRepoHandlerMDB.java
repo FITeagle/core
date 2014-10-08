@@ -57,11 +57,11 @@ public class ResourceRepoHandlerMDB implements MessageListener {
 
                 if (modelMessage != null) {
                     if (message.getStringProperty(IMessageBus.METHOD_TYPE).equals(IMessageBus.TYPE_INFORM)) {
-                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.getClass().getSimpleName() + ": Received an INFORM message " + message.getJMSCorrelationID());
+                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.getClass().getSimpleName() + ": Received an INFORM message");
                         handleInform(modelMessage);
 
                     } else if (message.getStringProperty(IMessageBus.METHOD_TYPE).equals(IMessageBus.TYPE_REQUEST)) {
-                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.getClass().getSimpleName() + ": Received a REQUEST message" + message.getJMSCorrelationID());
+                        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.getClass().getSimpleName() + ": Received a REQUEST message");
                         result = handleRequest(modelMessage);
 
                     }
