@@ -95,7 +95,8 @@ public class MessageBusLoggerWS implements MessageListener {
       } else {
         job.add("JMSCorrelationID", message.getJMSCorrelationID());
       }
-      for (Enumeration<String> properties = message.getPropertyNames(); properties.hasMoreElements();) {
+      for (@SuppressWarnings("unchecked")
+      Enumeration<String> properties = message.getPropertyNames(); properties.hasMoreElements();) {
         String currentProperty = properties.nextElement();
         job.add(currentProperty, message.getStringProperty(currentProperty));
       }
