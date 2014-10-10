@@ -1,13 +1,14 @@
 package org.fiteagle.core.repo;
 
-import org.junit.Assert;
 import org.junit.Test;
+
+import com.hp.hpl.jena.query.QueryParseException;
 
 public class QueryExecuterTest {
 
-	@Test
+  @Test(expected=QueryParseException.class)
 	public void testInvalidQuery(){
-		Assert.assertNull(QueryExecuter.queryModelFromDatabase("This is no valid SPARQL Query"));
+		QueryExecuter.queryModelFromDatabase("This is no valid SPARQL Query");
 	}
 	
 }
