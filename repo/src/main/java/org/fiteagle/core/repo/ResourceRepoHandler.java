@@ -95,7 +95,7 @@ public class ResourceRepoHandler {
                 
                 // Check if request is get all resources
                 else if (currentStatement.getSubject().isAnon() && currentStatement.getPredicate().equals(RDFS.subClassOf) && currentStatement.getResource().equals(MessageBusOntologyModel.classAdapter)) {
-                  processGetAllResourcesRequest(tripletStoreModel, responseModel);
+                  addAllInstancesOfSublassesToModel(tripletStoreModel, responseModel, MessageBusOntologyModel.classResource);
                 }
 
                 // Was this a restores message? If yes, add restores property to response
@@ -111,14 +111,23 @@ public class ResourceRepoHandler {
         return responseModel;
     }
 
-    private void processGetAllResourcesRequest(Model tripletStoreModel, Model responseModel){
-      StmtIterator iterator =  tripletStoreModel.listStatements(null, RDFS.subClassOf, MessageBusOntologyModel.classAdapter);
-      
-      while(iterator.hasNext()){
-        Statement adapterStatement = iterator.next();
-        responseModel.add(adapterStatement);
-      }
+  private void addAllInstancesOfSublassesToModel(Model tripletStoreModel, Model model, Resource resource){
+    StmtIterator resourceIterator = tripletStoreModel.listStatements(null, RDFS.subClassOf, resource);
+    while (resourceIterator.hasNext()) {
+      Resource subClassResource = resourceIterator.next().getSubject();
+      addAllInstancesOfResourceToModel(tripletStoreModel, model, subClassResource);      
+      addAllInstancesOfSublassesToModel(tripletStoreModel, model, subClassResource);
     }
+  }
+  
+  private void addAllInstancesOfResourceToModel(Model tripletStoreModel, Model model, Resource resource){
+    StmtIterator resourceIterator = tripletStoreModel.listStatements(null, RDF.type, resource);
+    
+    while (resourceIterator.hasNext()) {
+      Statement resourceStatement = resourceIterator.next();
+      model.add(resourceStatement);
+    }
+  }
     
     private void processResourceInstanceRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
         StmtIterator resourcePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null));

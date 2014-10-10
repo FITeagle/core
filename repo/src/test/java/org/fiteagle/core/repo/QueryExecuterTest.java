@@ -10,5 +10,5 @@ public class QueryExecuterTest {
 	public void testInvalidQuery(){
 		QueryExecuter.queryModelFromDatabase("This is no valid SPARQL Query");
 	}
-	
+  
 }
