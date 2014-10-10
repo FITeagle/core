@@ -6,6 +6,7 @@ import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.jena.atlas.web.HttpException;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 
 import com.hp.hpl.jena.query.DatasetAccessor;
@@ -97,7 +98,7 @@ public class ResourceRepoHandler {
                 }
 
             }
-        } catch (org.apache.jena.atlas.web.HttpException e) {
+        } catch (HttpException e) {
             ResourceRepoHandler.LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + ": Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
         }
 
