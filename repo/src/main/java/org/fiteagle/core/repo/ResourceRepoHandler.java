@@ -75,7 +75,8 @@ public class ResourceRepoHandler {
             StmtIterator stmtIterator = modelRequests.listStatements();
             while (stmtIterator.hasNext()) {
                 Statement currentStatement = stmtIterator.nextStatement();
-
+                LOGGER.log(Level.INFO, "Processing Statement: " + currentStatement.toString());
+                
                 // Check if requested object is an adapter
                 if (tripletStoreModel.contains(currentStatement.getResource(), RDFS.subClassOf, MessageBusOntologyModel.classAdapter)) {
                     processAdapterRequest(tripletStoreModel, responseModel, currentStatement);
@@ -91,6 +92,11 @@ public class ResourceRepoHandler {
                 else if (tripletStoreModel.contains(currentStatement)) {
                     processResourceInstanceRequest(tripletStoreModel, responseModel, currentStatement);
                 }
+                
+                // Check if request is get all resources
+                else if (currentStatement.getSubject().isAnon() && currentStatement.getPredicate().equals(RDFS.subClassOf) && currentStatement.getResource().equals(MessageBusOntologyModel.classAdapter)) {
+                  processGetAllResourcesRequest(tripletStoreModel, responseModel);
+                }
 
                 // Was this a restores message? If yes, add restores property to response
                 if (currentStatement.getPredicate().equals(MessageBusOntologyModel.methodRestores)) {
@@ -99,12 +105,21 @@ public class ResourceRepoHandler {
 
             }
         } catch (HttpException e) {
-            ResourceRepoHandler.LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + ": Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
+            LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + ": Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
         }
 
         return responseModel;
     }
 
+    private void processGetAllResourcesRequest(Model tripletStoreModel, Model responseModel){
+      StmtIterator iterator =  tripletStoreModel.listStatements(null, RDFS.subClassOf, MessageBusOntologyModel.classAdapter);
+      
+      while(iterator.hasNext()){
+        Statement adapterStatement = iterator.next();
+        responseModel.add(adapterStatement);
+      }
+    }
+    
     private void processResourceInstanceRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
         StmtIterator resourcePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null));
         while (resourcePropertiesIterator.hasNext()) {
@@ -135,7 +150,7 @@ public class ResourceRepoHandler {
             }
         }
     }
-
+    
     private void processAdapterRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
         responseModel.add(currentStatement);
 
@@ -198,7 +213,7 @@ public class ResourceRepoHandler {
 
             accessor.putModel(currentModel);
         } catch (org.apache.jena.atlas.web.HttpException e) {
-            ResourceRepoHandler.LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
+            LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
             return false;
         }
 
@@ -237,7 +252,7 @@ public class ResourceRepoHandler {
             accessor.putModel(currentModel);
 
         } catch (org.apache.jena.atlas.web.HttpException e) {
-            ResourceRepoHandler.LOGGER.log(Level.SEVERE, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
+            LOGGER.log(Level.SEVERE, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
             return false;
         }
 
