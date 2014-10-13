@@ -93,9 +93,9 @@ public class ResourceRepoHandler {
                     processResourceInstanceRequest(tripletStoreModel, responseModel, currentStatement);
                 }
                 
-                // Check if request is get all resources
-                else if (currentStatement.getSubject().isAnon() && currentStatement.getPredicate().equals(RDFS.subClassOf) && currentStatement.getResource().equals(MessageBusOntologyModel.classAdapter)) {
-                  addAllInstancesOfSublassesToModel(tripletStoreModel, responseModel, MessageBusOntologyModel.classResource);
+                // Check if requesting for multiple objects
+                else if (currentStatement.getSubject().isAnon() && !currentStatement.getPredicate().isAnon() && !currentStatement.getResource().isAnon()) {
+                  addMatchingSubjectsToModel(tripletStoreModel, responseModel, currentStatement.getPredicate(), currentStatement.getResource());
                 }
 
                 // Was this a restores message? If yes, add restores property to response
@@ -111,23 +111,14 @@ public class ResourceRepoHandler {
         return responseModel;
     }
 
-  private void addAllInstancesOfSublassesToModel(Model tripletStoreModel, Model model, Resource resource){
-    StmtIterator resourceIterator = tripletStoreModel.listStatements(null, RDFS.subClassOf, resource);
-    while (resourceIterator.hasNext()) {
-      Resource subClassResource = resourceIterator.next().getSubject();
-      addAllInstancesOfResourceToModel(tripletStoreModel, model, subClassResource);      
-      addAllInstancesOfSublassesToModel(tripletStoreModel, model, subClassResource);
-    }
-  }
-  
-  private void addAllInstancesOfResourceToModel(Model tripletStoreModel, Model model, Resource resource){
-    StmtIterator resourceIterator = tripletStoreModel.listStatements(null, RDF.type, resource);
-    
+  private void addMatchingSubjectsToModel(Model tripletStoreModel, Model model, Property property, Resource resource){
+    StmtIterator resourceIterator = tripletStoreModel.listStatements(null, property, resource);
     while (resourceIterator.hasNext()) {
       Statement resourceStatement = resourceIterator.next();
       model.add(resourceStatement);
     }
   }
+  
     
     private void processResourceInstanceRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
         StmtIterator resourcePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null));
