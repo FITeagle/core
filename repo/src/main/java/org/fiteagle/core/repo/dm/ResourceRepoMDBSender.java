@@ -1,20 +1,15 @@
 package org.fiteagle.core.repo.dm;
 
-/**
- * Created by vju on 9/9/14.
- */
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
 import javax.inject.Inject;
 import javax.jms.JMSContext;
 import javax.jms.Message;
 import javax.jms.Topic;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusMsgFactory;
@@ -23,20 +18,19 @@ import org.fiteagle.api.core.OntologyModels;
 import com.hp.hpl.jena.rdf.model.Model;
 
 /**
- * This Bean sends the ontology Model over message bus on startup
+ * This Class sends the ontology Model over message bus on startup
  */
-@Singleton
-@Startup
-public class OntologyModelInformerBean {
+public class ResourceRepoMDBSender implements ServletContextListener{
+ 
   @Inject
   private JMSContext context;
   @Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
   private Topic topic;
   
-  private static Logger LOGGER = Logger.getLogger(OntologyModelInformerBean.class.toString());
+  private static Logger LOGGER = Logger.getLogger(ResourceRepoMDBSender.class.toString());
   
-  @PostConstruct
-  public void onStartup() {
+  @Override
+  public void contextInitialized(ServletContextEvent sce) {
     try {
       Model model = OntologyModels.getModel();
       Model messageModel = MessageBusMsgFactory.createMsgInform(model);
@@ -52,5 +46,9 @@ public class OntologyModelInformerBean {
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
+  }
+
+  @Override
+  public void contextDestroyed(ServletContextEvent sce) {
   }
 }
