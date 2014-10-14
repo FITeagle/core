@@ -8,7 +8,7 @@ public class QueryExecuterTest {
 
   @Test(expected=QueryParseException.class)
 	public void testInvalidQuery(){
-		QueryExecuter.queryModelFromDatabase("This is no valid SPARQL Query");
+		QueryExecuter.executeSparqlDescribeQuery("This is no valid SPARQL Query");
 	}
   
 }
