@@ -68,10 +68,13 @@ public class ResourceRepoHandlerMDB implements MessageListener {
                 }
 
                 if (!result.isEmpty()) {
+                	System.out.println("result in not empty" + result);
                     Message responseMessage = generateResponseMessage(message, result);
 
                     if (null != message.getJMSCorrelationID()) {
+                    	System.out.println("JMSCorrelationID is not null ");
                         responseMessage.setJMSCorrelationID(message.getJMSCorrelationID());
+                        System.out.println("response JMSCorr " + responseMessage.getJMSCorrelationID());
                     }
 
                     this.context.createProducer().send(topic, responseMessage);
@@ -114,6 +117,7 @@ public class ResourceRepoHandlerMDB implements MessageListener {
             }
             
             if(response != null){
+            	System.out.println("the response is not null");
                 return MessageBusMsgFactory.serializeModel(MessageBusMsgFactory.createMsgInform(response));
             }
         }

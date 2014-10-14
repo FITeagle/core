@@ -93,6 +93,12 @@ public class ResourceRepoHandler {
                     processResourceInstanceRequest(tripletStoreModel, responseModel, currentStatement);
                 }
                 
+                // Check if request is get all testbeds
+                else if (currentStatement.getSubject().isAnon() && currentStatement.getPredicate().equals(RDF.type) && currentStatement.getResource().equals(MessageBusOntologyModel.classTestbed)) {
+                	System.out.println("getting all Testbeds");
+                  processGetAllTestbedsRequest(tripletStoreModel, responseModel);
+                }
+                
                 // Check if request is get all resources
                 else if (currentStatement.getSubject().isAnon() && currentStatement.getPredicate().equals(RDFS.subClassOf) && currentStatement.getResource().equals(MessageBusOntologyModel.classAdapter)) {
                   processGetAllResourcesRequest(tripletStoreModel, responseModel);
@@ -119,6 +125,16 @@ public class ResourceRepoHandler {
         responseModel.add(adapterStatement);
       }
     }
+    
+    private void processGetAllTestbedsRequest(Model tripletStoreModel, Model responseModel){
+        StmtIterator iterator =  tripletStoreModel.listStatements(null, RDF.type, MessageBusOntologyModel.classTestbed);
+        
+        while(iterator.hasNext()){
+          Statement adapterStatement = iterator.next();
+          responseModel.add(adapterStatement);
+          System.out.println("founding a statement");
+        }
+      }
     
     private void processResourceInstanceRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
         StmtIterator resourcePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null));
