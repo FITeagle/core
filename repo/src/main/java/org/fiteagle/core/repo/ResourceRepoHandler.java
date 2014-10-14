@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.jena.atlas.web.HttpException;
+import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusMsgFactory;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 
@@ -41,10 +42,11 @@ public class ResourceRepoHandler {
         return resourceRepositoryHandlerSingleton;
     }
 
-  public Model handleSPARQLRequest(Model modelRequest) {
+  public Model handleSPARQLRequest(Model modelRequest, String serialization) {
     Model replyModel = ModelFactory.createDefaultModel();
     String sparqlQuery = getQueryFromModel(modelRequest);
     Model resultModel = null;
+    String resultJSON = null;
     
     if (!sparqlQuery.isEmpty()) {
       LOGGER.log(Level.INFO, "Processing SPARQL Query: " + sparqlQuery);
@@ -54,6 +56,7 @@ public class ResourceRepoHandler {
           case "SELECT":
             ResultSet resultSet = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
             resultModel = ResultSetFormatter.toModel(resultSet);
+            resultJSON = getResultSetAsJsonString(resultSet);
             break;
           case "DESCRIBE":
             resultModel = QueryExecuter.executeSparqlDescribeQuery(sparqlQuery);
@@ -65,10 +68,20 @@ public class ResourceRepoHandler {
     } else {
       LOGGER.log(Level.SEVERE, "SPARQL Query expected, but no sparql query found!");
     }
-    String resultModelSerialized = MessageBusMsgFactory.serializeModel(resultModel);
-    replyModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyResultModelTTL, resultModelSerialized);
+    
+    switch(serialization){
+      case IMessageBus.SERIALIZATION_TURTLE:
+        String resultModelSerialized = MessageBusMsgFactory.serializeModel(resultModel);
+        replyModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyResultModelTTL, resultModelSerialized);
+        break;
+      case IMessageBus.SERIALIZATION_JSONLD:
+        replyModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyJsonResult, resultJSON);
+        break;
+    }
+    
     return replyModel;
   }
+  
 
     public synchronized Model handleRequest(Model modelRequests) {
         Model responseModel = ModelFactory.createDefaultModel();
@@ -326,6 +339,16 @@ public class ResourceRepoHandler {
     return rdfString;
   }
   
-  
+  public String getResultSetAsJsonString(ResultSet resultSet) {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ResultSetFormatter.outputAsJSON(baos, resultSet);
+    String jsonString = "";
+    try {
+      jsonString = baos.toString(Charset.defaultCharset().toString());
+    } catch (UnsupportedEncodingException e) {
+      LOGGER.log(Level.SEVERE, e.getMessage());
+    }
+    return jsonString;
+  }
 
 }

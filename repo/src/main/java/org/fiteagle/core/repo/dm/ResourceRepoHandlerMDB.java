@@ -49,10 +49,9 @@ public class ResourceRepoHandlerMDB implements MessageListener {
     public void onMessage(final Message message) {
 
         try {
-
             if (message.getStringProperty(IMessageBus.METHOD_TYPE) != null && message.getStringProperty(IMessageBus.RDF) != null) {
                 String result = "";
-
+                
                 Model modelMessage = MessageBusMsgFactory.getMessageRDFModel(message);
 
                 if (modelMessage != null) {
@@ -62,19 +61,16 @@ public class ResourceRepoHandlerMDB implements MessageListener {
 
                     } else if (message.getStringProperty(IMessageBus.METHOD_TYPE).equals(IMessageBus.TYPE_REQUEST)) {
                         ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, this.getClass().getSimpleName() + ": Received a REQUEST message");
-                        result = handleRequest(modelMessage);
+                        result = handleRequest(modelMessage, message.getStringProperty(IMessageBus.SERIALIZATION));
 
                     }
                 }
 
                 if (!result.isEmpty()) {
-                	System.out.println("result in not empty" + result);
                     Message responseMessage = generateResponseMessage(message, result);
 
                     if (null != message.getJMSCorrelationID()) {
-                    	System.out.println("JMSCorrelationID is not null ");
                         responseMessage.setJMSCorrelationID(message.getJMSCorrelationID());
-                        System.out.println("response JMSCorr " + responseMessage.getJMSCorrelationID());
                     }
 
                     this.context.createProducer().send(topic, responseMessage);
@@ -82,7 +78,7 @@ public class ResourceRepoHandlerMDB implements MessageListener {
             }
 
         } catch (JMSException e) {
-            System.err.println(this.toString() + "JMSException");
+          ResourceRepoHandlerMDB.LOGGER.log(Level.SEVERE, e.getMessage());
         }
 
     }
@@ -97,33 +93,29 @@ public class ResourceRepoHandlerMDB implements MessageListener {
         return responseMessage;
     }
     
-    private String handleRequest(Model modelRequest) {
-        
-        Model response = null;
-
-        // Do this manually, so the fiteagle:Inform Statement can be removed from the graph later
-        StmtIterator iter = modelRequest.listStatements(new SimpleSelector(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest));
-        Statement currentStatement = null;
-        while (iter.hasNext()) {
-            currentStatement = iter.nextStatement();
-            
-            if(currentStatement.getSubject().hasProperty(MessageBusOntologyModel.propertySparqlQuery)){
-                response = repository.handleSPARQLRequest(modelRequest);
-             
-            } else {
-                modelRequest.remove(currentStatement);
-                response = repository.handleRequest(modelRequest);
-                MessageBusMsgFactory.setCommonPrefixes(response);
-            }
-            
-            if(response != null){
-            	System.out.println("the response is not null");
-                return MessageBusMsgFactory.serializeModel(MessageBusMsgFactory.createMsgInform(response));
-            }
-        }
-        
-        return "";
+  private String handleRequest(Model modelRequest, String serialization) {
+    Model response = null;
+    
+    StmtIterator iter = modelRequest.listStatements(new SimpleSelector(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest));
+    Statement currentStatement = null;
+    while (iter.hasNext()) {
+      currentStatement = iter.nextStatement();
+      
+      if (currentStatement.getSubject().hasProperty(MessageBusOntologyModel.propertySparqlQuery)) {
+        response = repository.handleSPARQLRequest(modelRequest, serialization);
+      } else {
+        modelRequest.remove(currentStatement);
+        response = repository.handleRequest(modelRequest);
+        MessageBusMsgFactory.setCommonPrefixes(response);
+      }
+      
+      if (response != null) {
+        return MessageBusMsgFactory.serializeModel(MessageBusMsgFactory.createMsgInform(response));
+      }
     }
+    
+    return "";
+  }
 
     private void handleInform(Model modelInform) {
 
