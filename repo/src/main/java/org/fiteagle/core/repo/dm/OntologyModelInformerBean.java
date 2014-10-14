@@ -36,7 +36,7 @@ public class OntologyModelInformerBean {
     @PostConstruct
     public void onStartup() {
     try{
-        Model motorModel = org.fiteagle.api.core.OntologyModels.getMotorModel();
+        Model motorModel = org.fiteagle.api.core.OntologyModels.getModel();
         Model messageModel = MessageBusMsgFactory.createMsgInform(motorModel);
         String serializedRDF = MessageBusMsgFactory.serializeModel(messageModel);
 
