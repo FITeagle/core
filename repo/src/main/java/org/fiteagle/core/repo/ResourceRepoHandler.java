@@ -7,12 +7,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.jena.atlas.web.HttpException;
+import org.fiteagle.api.core.MessageBusMsgFactory;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 
 import com.hp.hpl.jena.query.DatasetAccessor;
 import com.hp.hpl.jena.query.DatasetAccessorFactory;
-import com.hp.hpl.jena.query.QueryException;
-import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -41,29 +41,34 @@ public class ResourceRepoHandler {
         return resourceRepositoryHandlerSingleton;
     }
 
-    public Model handleSPARQLRequest(Model modelRequest){
-        
-        Model resultModel = ModelFactory.createDefaultModel();
-        String sparqlQuery = getQueryFromModel(modelRequest);
-        String jsonString = "";
-
-        // This is a request message, so query the database with the given sparql query
-        if (!sparqlQuery.isEmpty()) {
-            try{
-                QueryFactory.create(sparqlQuery);
-                ResultSet resultSet = QueryExecuter.queryModelFromDatabase(sparqlQuery);
-                jsonString = getResultSetAsJsonString(resultSet);
-            }catch(QueryException e){
-                LOGGER.log(Level.INFO, "Comment of message was no valid query");
-            }
-
-            resultModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyJsonResult, jsonString);
-        } else {
-          LOGGER.log(Level.SEVERE, "SPARQL Query expected, but no sparql query found!");
+  public Model handleSPARQLRequest(Model modelRequest) {
+    Model replyModel = ModelFactory.createDefaultModel();
+    String sparqlQuery = getQueryFromModel(modelRequest);
+    Model resultModel = null;
+    
+    if (!sparqlQuery.isEmpty()) {
+      LOGGER.log(Level.INFO, "Processing SPARQL Query: " + sparqlQuery);
+      String method = sparqlQuery.split(" ")[0].toUpperCase();
+      try {
+        switch (method) {
+          case "SELECT":
+            ResultSet resultSet = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
+            resultModel = ResultSetFormatter.toModel(resultSet);
+            break;
+          case "DESCRIBE":
+            resultModel = QueryExecuter.executeSparqlDescribeQuery(sparqlQuery);
+            break;
         }
-        
-        return resultModel;
+      } catch (QueryParseException e) {
+        LOGGER.log(Level.SEVERE, "Comment of message was no valid query");
+      }
+    } else {
+      LOGGER.log(Level.SEVERE, "SPARQL Query expected, but no sparql query found!");
     }
+    String resultModelSerialized = MessageBusMsgFactory.serializeModel(resultModel);
+    replyModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyResultModelTTL, resultModelSerialized);
+    return replyModel;
+  }
 
     public synchronized Model handleRequest(Model modelRequests) {
         Model responseModel = ModelFactory.createDefaultModel();
@@ -99,9 +104,9 @@ public class ResourceRepoHandler {
                   processGetAllTestbedsRequest(tripletStoreModel, responseModel);
                 }
                 
-                // Check if request is get all resources
-                else if (currentStatement.getSubject().isAnon() && currentStatement.getPredicate().equals(RDFS.subClassOf) && currentStatement.getResource().equals(MessageBusOntologyModel.classAdapter)) {
-                  processGetAllResourcesRequest(tripletStoreModel, responseModel);
+                // Check if requesting for multiple objects
+                else if (currentStatement.getSubject().isAnon() && !currentStatement.getPredicate().isAnon() && !currentStatement.getResource().isAnon()) {
+                  addMatchingSubjectsToModel(tripletStoreModel, responseModel, currentStatement.getPredicate(), currentStatement.getResource());
                 }
 
                 // Was this a restores message? If yes, add restores property to response
@@ -117,14 +122,14 @@ public class ResourceRepoHandler {
         return responseModel;
     }
 
-    private void processGetAllResourcesRequest(Model tripletStoreModel, Model responseModel){
-      StmtIterator iterator =  tripletStoreModel.listStatements(null, RDFS.subClassOf, MessageBusOntologyModel.classAdapter);
-      
-      while(iterator.hasNext()){
-        Statement adapterStatement = iterator.next();
-        responseModel.add(adapterStatement);
-      }
+  private void addMatchingSubjectsToModel(Model tripletStoreModel, Model model, Property property, Resource resource){
+    StmtIterator resourceIterator = tripletStoreModel.listStatements(null, property, resource);
+    while (resourceIterator.hasNext()) {
+      Statement resourceStatement = resourceIterator.next();
+      model.add(resourceStatement);
     }
+  }
+  
     
     private void processGetAllTestbedsRequest(Model tripletStoreModel, Model responseModel){
         StmtIterator iterator =  tripletStoreModel.listStatements(null, RDF.type, MessageBusOntologyModel.classTestbed);
@@ -291,30 +296,36 @@ public class ResourceRepoHandler {
             rdfsComment = currentStatement.getSubject().getProperty(MessageBusOntologyModel.propertySparqlQuery);
             if (rdfsComment != null) {
                 sparqlQuery = rdfsComment.getObject().toString();
-                LOGGER.log(Level.INFO, "SPARQL Query found " + sparqlQuery);
                 break;
             }
         }
         return sparqlQuery;
     }
 
-    /**
-     * Gets the result set as json string
-     *
-     * @param resultSet resultset to be converted to json format
-     * @return String containing the converted resultset in json format
-     */
-    public String getResultSetAsJsonString(ResultSet resultSet) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ResultSetFormatter.outputAsJSON(baos, resultSet);
-        String jsonString = "";
+  public static String parseResultSetToJsonString(ResultSet resultSet) {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ResultSetFormatter.outputAsJSON(baos, resultSet);
+    String jsonString = "";
     try {
       jsonString = baos.toString(Charset.defaultCharset().toString());
     } catch (UnsupportedEncodingException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      LOGGER.log(Level.SEVERE, e.getMessage());
     }
-        return jsonString;
+    return jsonString;
+  }
+  
+  public static String parseResultSetToModel(ResultSet resultSet) {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    Model resultModel = ResultSetFormatter.toModel(resultSet);
+    String rdfString = MessageBusMsgFactory.serializeModel(resultModel);
+    try {
+      rdfString = baos.toString(Charset.defaultCharset().toString());
+    } catch (UnsupportedEncodingException e) {
+      LOGGER.log(Level.SEVERE, e.getMessage());
     }
+    return rdfString;
+  }
+  
+  
 
 }

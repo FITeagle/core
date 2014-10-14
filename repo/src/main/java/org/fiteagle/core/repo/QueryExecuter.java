@@ -4,7 +4,9 @@ import java.util.logging.Logger;
 
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.rdf.model.Model;
 
 public class QueryExecuter {
   
@@ -13,29 +15,17 @@ public class QueryExecuter {
   @SuppressWarnings("unused")
   private static Logger LOGGER = Logger.getLogger(QueryExecuter.class.toString());
   
-  /**
-   * Submits a given sparql query string to the db
-   * 
-   * @param sparqlQuery
-   *          String containing the sparql query to be issued
-   * @return ResultSet retrieved from db, null on failure
-   */
-  public static ResultSet queryModelFromDatabase(String sparqlQuery) {
-    ResultSet queryResult = submitSparqlQuery(sparqlQuery);
-    return queryResult;
-  }
-  
-  /**
-   * Submits a given sparql query string to the db
-   * 
-   * @param queryString
-   *          String containing the sparql query to be issued
-   * @return ResultSet retrieved from db, null on failure
-   */
-  private static ResultSet submitSparqlQuery(String queryString) {
+  public static ResultSet executeSparqlSelectQuery(String queryString) throws QueryParseException{
     ResultSet rs = null;
     QueryExecution qe = QueryExecutionFactory.sparqlService(FUSEKI_SERVICE, queryString);
     rs = qe.execSelect();
+    return rs;
+  }
+  
+  public static Model executeSparqlDescribeQuery(String queryString) throws QueryParseException{
+    Model rs = null;
+    QueryExecution qe = QueryExecutionFactory.sparqlService(FUSEKI_SERVICE, queryString);
+    rs = qe.execDescribe();
     return rs;
   }
   
