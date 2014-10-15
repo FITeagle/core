@@ -101,7 +101,6 @@ public class ResourceRepoHandler {
                 }
 
                 // Check if requested object is a testbed
-                // :FITEAGLE_Testbed rdf:type fiteagle:Testbed.
                 else if (tripletStoreModel.contains(currentStatement.getSubject(), RDF.type, MessageBusOntologyModel.classTestbed)) {
                     processTestbedAdapterListRequest(tripletStoreModel, responseModel, currentStatement);
                 }
@@ -162,7 +161,6 @@ public class ResourceRepoHandler {
 
     private void processTestbedAdapterListRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
         // Get contained adapter names
-        // :FITEAGLE_Testbed fiteagle:containsAdapter :ADeployedMotorAdapter1.
         StmtIterator testbedAdapterIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), MessageBusOntologyModel.propertyFiteagleContainsAdapter,
                 (RDFNode) null));
         while (testbedAdapterIterator.hasNext()) {
