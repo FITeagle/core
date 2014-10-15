@@ -113,7 +113,6 @@ public class ResourceRepoHandler {
                 
                 // Check if request is get all testbeds
                 else if (currentStatement.getSubject().isAnon() && currentStatement.getPredicate().equals(RDF.type) && currentStatement.getResource().equals(MessageBusOntologyModel.classTestbed)) {
-                	System.out.println("getting all Testbeds");
                   processGetAllTestbedsRequest(tripletStoreModel, responseModel);
                 }
                 
