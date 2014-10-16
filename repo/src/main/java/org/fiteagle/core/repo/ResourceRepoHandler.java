@@ -73,6 +73,7 @@ public class ResourceRepoHandler {
       case IMessageBus.SERIALIZATION_TURTLE:
         String resultModelSerialized = MessageBusMsgFactory.serializeModel(resultModel);
         replyModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyResultModelTTL, resultModelSerialized);
+        replyModel.setNsPrefix("fiteagle", "http://fiteagle.org/ontology#");
         break;
       case IMessageBus.SERIALIZATION_JSONLD:
         replyModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyJsonResult, resultJSON);
