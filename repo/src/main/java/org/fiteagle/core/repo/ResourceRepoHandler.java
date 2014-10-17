@@ -236,14 +236,12 @@ public class ResourceRepoHandler {
 
             Model currentModel = accessor.getModel();
 
-            // First remove old values
             removeExistingValuesFromModel(currentModel, modelInform);
 
-            // Now add new values
             addValuesToModel(currentModel, modelInform);
 
             accessor.putModel(currentModel);
-        } catch (org.apache.jena.atlas.web.HttpException e) {
+        } catch (HttpException e) {
             LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
             return false;
         }
@@ -282,7 +280,7 @@ public class ResourceRepoHandler {
 
             accessor.putModel(currentModel);
 
-        } catch (org.apache.jena.atlas.web.HttpException e) {
+        } catch (HttpException e) {
             LOGGER.log(Level.SEVERE, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
             return false;
         }
