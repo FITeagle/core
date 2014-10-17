@@ -110,16 +110,6 @@ public class ResourceRepoHandler {
                     processResourceInstanceRequest(tripletStoreModel, responseModel, currentStatement);
                 }
                 
-                // Check if request is get all testbeds
-                else if (currentStatement.getSubject().isAnon() && currentStatement.getPredicate().equals(RDF.type) && currentStatement.getResource().equals(MessageBusOntologyModel.classTestbed)) {
-                  processGetAllTestbedsRequest(tripletStoreModel, responseModel);
-                }
-                
-                // Check if requesting for multiple objects
-                else if (currentStatement.getSubject().isAnon() && !currentStatement.getPredicate().isAnon() && !currentStatement.getResource().isAnon()) {
-                  addMatchingSubjectsToModel(tripletStoreModel, responseModel, currentStatement.getPredicate(), currentStatement.getResource());
-                }
-
                 // Was this a restores message? If yes, add restores property to response
                 if (currentStatement.getPredicate().equals(MessageBusOntologyModel.methodRestores)) {
                     responseModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodRestores, currentStatement.getResource());
@@ -133,25 +123,6 @@ public class ResourceRepoHandler {
         return responseModel;
     }
 
-  private void addMatchingSubjectsToModel(Model tripletStoreModel, Model model, Property property, Resource resource){
-    StmtIterator resourceIterator = tripletStoreModel.listStatements(null, property, resource);
-    while (resourceIterator.hasNext()) {
-      Statement resourceStatement = resourceIterator.next();
-      model.add(resourceStatement);
-    }
-  }
-  
-    
-    private void processGetAllTestbedsRequest(Model tripletStoreModel, Model responseModel){
-        StmtIterator iterator =  tripletStoreModel.listStatements(null, RDF.type, MessageBusOntologyModel.classTestbed);
-        
-        while(iterator.hasNext()){
-          Statement adapterStatement = iterator.next();
-          responseModel.add(adapterStatement);
-          System.out.println("founding a statement");
-        }
-      }
-    
     private void processResourceInstanceRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
         StmtIterator resourcePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null));
         while (resourcePropertiesIterator.hasNext()) {
