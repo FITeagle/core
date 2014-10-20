@@ -2,6 +2,8 @@ package org.fiteagle.core.repo;
 
 import java.util.logging.Logger;
 
+import org.fiteagle.api.core.MessageBusMsgFactory;
+
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryParseException;
@@ -26,6 +28,16 @@ public class QueryExecuter {
     Model rs = null;
     QueryExecution qe = QueryExecutionFactory.sparqlService(FUSEKI_SERVICE, queryString);
     rs = qe.execDescribe();
+    
+    //todo: find a better way to set our own common known prefixes (e.g. omn, wgs, ...)
+    rs.removeNsPrefix("j.0");
+    rs.removeNsPrefix("j.1");
+    rs.removeNsPrefix("j.2");
+    rs.setNsPrefix("omn", "http://fiteagle.org/ontology#");
+    rs.setNsPrefix("wgs", "http://www.w3.org/2003/01/geo/wgs84_pos#");
+    rs.setNsPrefix("foaf", "http://xmlns.com/foaf/0.1/");
+
+    //MessageBusMsgFactory.setCommonPrefixes(rs);
     return rs;
   }
   
