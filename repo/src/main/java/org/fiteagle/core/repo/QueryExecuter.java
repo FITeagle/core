@@ -1,5 +1,7 @@
 package org.fiteagle.core.repo;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import org.fiteagle.api.core.MessageBusMsgFactory;
@@ -30,9 +32,16 @@ public class QueryExecuter {
     rs = qe.execDescribe();
     
     //todo: find a better way to set our own common known prefixes (e.g. omn, wgs, ...)
-    rs.removeNsPrefix("j.0");
-    rs.removeNsPrefix("j.1");
-    rs.removeNsPrefix("j.2");
+    Map<String, String> nsPrefix = new HashMap<>();
+    nsPrefix = rs.getNsPrefixMap();
+    for(Map.Entry<String, String> entry : nsPrefix.entrySet()){
+    	if (entry.getKey().toString().contains("j.")){
+    		rs.removeNsPrefix(entry.getKey());
+    	}
+    }
+//    rs.removeNsPrefix("j.0");
+//    rs.removeNsPrefix("j.1");
+//    rs.removeNsPrefix("j.2");
     rs.setNsPrefix("omn", "http://fiteagle.org/ontology#");
     rs.setNsPrefix("wgs", "http://www.w3.org/2003/01/geo/wgs84_pos#");
     rs.setNsPrefix("foaf", "http://xmlns.com/foaf/0.1/");
