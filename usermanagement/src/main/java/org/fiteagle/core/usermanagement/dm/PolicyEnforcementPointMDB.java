@@ -50,23 +50,30 @@ public class PolicyEnforcementPointMDB implements MessageListener {
         return;
       }
       final Message message = this.context.createMessage();
-      final String id = rcvMessage.getJMSCorrelationID();
       
-      switch(methodName){
-        case PolicyEnforcementPoint.IS_REQUEST_AUTHORIZED:
-          message.setStringProperty(IMessageBus.TYPE_RESPONSE, PolicyEnforcementPoint.IS_REQUEST_AUTHORIZED);
-          String subjectUsername = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_SUBJECT_USERNAME);
-          String resourceUsername = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_RESOURCE);
-          String action = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_ACTION);
-          Boolean isAuthorized = policyEnforcementPoint.isRequestAuthorized(subjectUsername, resourceUsername, action);
-          message.setBooleanProperty(IMessageBus.TYPE_RESULT, isAuthorized);
-          break;
-      }
       
-      if(id != null){
-        message.setJMSCorrelationID(id);
+      try{
+        switch(methodName){
+          case PolicyEnforcementPoint.IS_REQUEST_AUTHORIZED:
+            message.setStringProperty(IMessageBus.TYPE_RESPONSE, PolicyEnforcementPoint.IS_REQUEST_AUTHORIZED);
+            String subjectUsername = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_SUBJECT_USERNAME);
+            String resourceUsername = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_RESOURCE);
+            String action = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_ACTION);
+            Boolean isAuthorized = policyEnforcementPoint.isRequestAuthorized(subjectUsername, resourceUsername, action);
+            message.setBooleanProperty(IMessageBus.TYPE_RESULT, isAuthorized);
+            break;
+        }
+      } catch(Exception e){
+        String exceptionName = e.getClass().getSimpleName();
+        message.setStringProperty(IMessageBus.TYPE_EXCEPTION, exceptionName+": "+e.getMessage());
+        
+      } finally{
+        final String id = rcvMessage.getJMSCorrelationID();
+        if(id != null){
+          message.setJMSCorrelationID(id);
+        }
+        this.context.createProducer().send(topic, message);
       }
-      this.context.createProducer().send(topic, message);
       
     } catch (final JMSException e) {      
         logger.log(Level.SEVERE, "Issue with JMS", e);
