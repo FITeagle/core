@@ -50,21 +50,18 @@ public class ResourceRepoHandler {
     
     if (!sparqlQuery.isEmpty()) {
       LOGGER.log(Level.INFO, "Processing SPARQL Query: " + sparqlQuery);
-      String method = sparqlQuery.split(" ")[0].toUpperCase();
-      try {
-        switch (method) {
-          case "SELECT":
-            ResultSet resultSet = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
-            resultModel = ResultSetFormatter.toModel(resultSet);
-            resultJSON = getResultSetAsJsonString(resultSet);
-            break;
-          case "DESCRIBE":
-            resultModel = QueryExecuter.executeSparqlDescribeQuery(sparqlQuery);
-            break;
-        }
-      } catch (QueryParseException e) {
-        LOGGER.log(Level.SEVERE, "Comment of message was no valid query");
+      if(sparqlQuery.toUpperCase().contains("SELECT")){
+    	  ResultSet resultSet = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
+       resultModel = ResultSetFormatter.toModel(resultSet);
+        resultJSON = getResultSetAsJsonString(resultSet); 
       }
+      else if (sparqlQuery.toUpperCase().contains("DESCRIBE")){
+    	  resultModel = QueryExecuter.executeSparqlDescribeQuery(sparqlQuery);
+      }
+      else if (sparqlQuery.toUpperCase().contains("CONSTRUCT")){
+    	  resultModel = QueryExecuter.executeSparqlConstructQuery(sparqlQuery);
+      }
+      
     } else {
       LOGGER.log(Level.SEVERE, "SPARQL Query expected, but no sparql query found!");
     }
