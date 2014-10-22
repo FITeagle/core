@@ -13,7 +13,6 @@ import org.fiteagle.api.core.MessageBusOntologyModel;
 
 import com.hp.hpl.jena.query.DatasetAccessor;
 import com.hp.hpl.jena.query.DatasetAccessorFactory;
-import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
