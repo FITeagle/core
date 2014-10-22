@@ -44,7 +44,7 @@ public class QueryExecuter {
 	    return rs;
 	  }
   
-  private static void correctNsPrefixes(Model model){
+  public static void correctNsPrefixes(Model model){
 	    //todo: find a better way to set our own common known prefixes (e.g. omn, wgs, ...)
 	    Map<String, String> nsPrefix = model.getNsPrefixMap();
 	    for(Map.Entry<String, String> entry : nsPrefix.entrySet()){
@@ -58,6 +58,16 @@ public class QueryExecuter {
 	    		}
 	    	}
 	    }
+  }
+  
+  public static void removeProblematicNsPrefixes(Model model){
+    Map<String, String> nsPrefix = model.getNsPrefixMap();
+    for(Map.Entry<String, String> entry : nsPrefix.entrySet()){
+      String currentKey = entry.getKey();
+      if(currentKey.toString().startsWith("j.")){
+        model.removeNsPrefix(currentKey);
+      }
+    }
   }
   
   public static Model executeSparqlDescribeQuery(String queryString) throws QueryParseException{

@@ -202,9 +202,9 @@ public class ResourceRepoHandler {
             DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
 
             Model currentModel = accessor.getModel();
-
+            QueryExecuter.removeProblematicNsPrefixes(currentModel);
+            
             removeExistingValuesFromModel(currentModel, modelInform);
-
             addValuesToModel(currentModel, modelInform);
 
             accessor.putModel(currentModel);
@@ -242,6 +242,7 @@ public class ResourceRepoHandler {
             DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
 
             Model currentModel = accessor.getModel();
+            QueryExecuter.removeProblematicNsPrefixes(currentModel);
 
             currentModel.removeAll(rscToRemove, null, null);
 
