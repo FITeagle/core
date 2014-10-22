@@ -8,7 +8,7 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 public class QueryExecuterTest {
 
-	//@Test(expected = QueryParseException.class)
+	@Test(expected = QueryParseException.class)
 	public void testInvalidQuery() {
 		QueryExecuter
 				.executeSparqlDescribeQuery("This is no valid SPARQL Query");
@@ -18,7 +18,7 @@ public class QueryExecuterTest {
 	public void test2() {
 		Model rs = QueryExecuter
 				.executeSparqlConstructQuery("PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> "
-						+ "PREFIX omn: <http://fiteagle.org/ontology#> "
+						+ "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
 						+ "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
 						+ "PREFIX wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#> "
 						+ "CONSTRUCT { ?testbed rdf:type omn:Testbed. ?testbed rdfs:label ?label. "
@@ -32,7 +32,7 @@ public class QueryExecuterTest {
 //	 @Test
 	  public void testListResources() {
 		  String query = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> "
-					+ "PREFIX omn: <http://open-multinet.info/ontology#> "
+					+ "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
 					+ "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
 					+ "PREFIX wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#> "
 					+ "CONSTRUCT { ?resource omn:partOfGroup <http://federation.av.tu-berlin.de/about#AV_Smart_Communication_Testbed>."

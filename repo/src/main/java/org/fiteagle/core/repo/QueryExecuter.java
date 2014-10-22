@@ -21,15 +21,10 @@ public class QueryExecuter {
   
   static{
 	  missedNsPrefixes.put("wgs", "http://www.w3.org/2003/01/geo/wgs84_pos#");
-	  missedNsPrefixes.put("motor", "http://fiteagle.org/ontology/adapter/motor#");
-	  missedNsPrefixes.put("omn","http://open-multinet.info/ontology#");
-	  missedNsPrefixes.put("omnr","http://open-multinet.info/ontology/resource#");
+	  missedNsPrefixes.put("omn","http://open-multinet.info/ontology/omn#");
 	  missedNsPrefixes.put("av","http://federation.av.tu-berlin.de/about#");
-	  missedNsPrefixes.put("mightyrobot","http://fiteagle.org/ontology/adapter/mightyrobot#");
 	  missedNsPrefixes.put("foaf","http://xmlns.com/foaf/0.1/");
 	  missedNsPrefixes.put("dc","http://purl.org/dc/elements/1.1/");
-//	  missedNsPrefixes.put("","http://fiteagleinternal#"); 
-	  
   }
   
   
@@ -53,11 +48,12 @@ public class QueryExecuter {
 	    //todo: find a better way to set our own common known prefixes (e.g. omn, wgs, ...)
 	    Map<String, String> nsPrefix = model.getNsPrefixMap();
 	    for(Map.Entry<String, String> entry : nsPrefix.entrySet()){
-	    	if (entry.getKey().toString().startsWith("j.")){
+	      String currentKey = entry.getKey();
+	    	if(currentKey.toString().startsWith("j.")){
+	    	  model.removeNsPrefix(currentKey);
 	    		for(Map.Entry<String, String> staticEntry : missedNsPrefixes.entrySet()){
-	    			if(entry.getValue().toString().equals(staticEntry.getValue().toString())){
+	    			if(currentKey.toString().equals(staticEntry.getValue().toString())){
 	    				model.setNsPrefix(staticEntry.getKey().toString(), staticEntry.getValue().toString());
-	    				model.removeNsPrefix(entry.getKey());
 	    			}
 	    		}
 	    	}
