@@ -120,7 +120,7 @@ public class ResourceRepoHandlerMDB implements MessageListener {
     private void handleInform(Model modelInform) {
 
         // Do this manually, so the fiteagle:Inform Statement can be removed from the graph later
-        StmtIterator iter = modelInform.listStatements(new SimpleSelector(null, RDF.type, MessageBusOntologyModel.propertyFiteagleInform));
+        StmtIterator iter = modelInform.listStatements(null, RDF.type, MessageBusOntologyModel.propertyFiteagleInform);
         Statement currentStatement = null;
         while (iter.hasNext()) {
             currentStatement = iter.nextStatement();
