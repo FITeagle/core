@@ -1,7 +1,5 @@
 package org.fiteagle.core.repo.dm;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -135,25 +133,13 @@ public class ResourceRepoHandlerMDB implements MessageListener {
     }
 
     private void checkForReleases(Model modelInform) {
-        List<Statement> releasesStatementsToRemove = new LinkedList<Statement>();
-
-        // Do this manually, so the fiteagle:Inform Statement can be removed from the graph later
-        StmtIterator iter = modelInform.listStatements();
-        Statement currentStatement = null;
-        while (iter.hasNext()) {
-            currentStatement = iter.nextStatement();
-
-            if (currentStatement.getPredicate().equals(MessageBusOntologyModel.methodReleases)) {
-                repository.releaseResource(currentStatement.getResource());
-                LOGGER.log(Level.INFO, this.getClass().getSimpleName() + ": removing resource: " + currentStatement.getResource());
-                releasesStatementsToRemove.add(currentStatement);
-            }
+        Statement releaseStatement = modelInform.getProperty(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodReleases);
+        while(releaseStatement != null){
+          repository.releaseResource(releaseStatement.getResource());
+          LOGGER.log(Level.INFO, "Removing resource: " + releaseStatement.getResource());
+          modelInform.remove(releaseStatement);
+          releaseStatement = modelInform.getProperty(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodReleases);
         }
-
-        for (Statement statement : releasesStatementsToRemove) {
-            modelInform.remove(statement);
-        }
-
     }
 
 }
