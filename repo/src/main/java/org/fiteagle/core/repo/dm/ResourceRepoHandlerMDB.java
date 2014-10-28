@@ -20,7 +20,6 @@ import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.core.repo.ResourceRepoHandler;
 
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.SimpleSelector;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
@@ -94,7 +93,7 @@ public class ResourceRepoHandlerMDB implements MessageListener {
   private String handleRequest(Model modelRequest, String serialization) {
     Model response = null;
     
-    StmtIterator iter = modelRequest.listStatements(new SimpleSelector(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest));
+    StmtIterator iter = modelRequest.listStatements(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest);
     Statement currentStatement = null;
     while (iter.hasNext()) {
       currentStatement = iter.nextStatement();

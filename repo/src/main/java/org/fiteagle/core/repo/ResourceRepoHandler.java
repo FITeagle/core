@@ -15,13 +15,14 @@ import com.hp.hpl.jena.query.DatasetAccessor;
 import com.hp.hpl.jena.query.DatasetAccessorFactory;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
+import com.hp.hpl.jena.rdf.model.Bag;
+import com.hp.hpl.jena.rdf.model.Container;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.SimpleSelector;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
@@ -120,7 +121,7 @@ public class ResourceRepoHandler {
     }
 
     private void processResourceInstanceRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
-        StmtIterator resourcePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null));
+        StmtIterator resourcePropertiesIterator = tripletStoreModel.listStatements(currentStatement.getSubject(), (Property) null, (RDFNode) null);
         while (resourcePropertiesIterator.hasNext()) {
             responseModel.add(resourcePropertiesIterator.next());
         }
@@ -128,19 +129,18 @@ public class ResourceRepoHandler {
 
     private void processTestbedAdapterListRequest(Model tripletStoreModel, Model responseModel, Statement currentStatement) {
         // Get contained adapter names
-        StmtIterator testbedAdapterIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), MessageBusOntologyModel.propertyFiteagleContainsAdapter,
-                (RDFNode) null));
+        StmtIterator testbedAdapterIterator = tripletStoreModel.listStatements(currentStatement.getSubject(), MessageBusOntologyModel.propertyFiteagleContainsAdapter, (RDFNode) null);
         while (testbedAdapterIterator.hasNext()) {
             Statement currentTestbedStatement = testbedAdapterIterator.next();
             responseModel.add(currentTestbedStatement);
 
-            StmtIterator adapterIterator = tripletStoreModel.listStatements(new SimpleSelector(currentTestbedStatement.getResource(), RDF.type, (RDFNode) null));
+            StmtIterator adapterIterator = tripletStoreModel.listStatements(currentTestbedStatement.getResource(), RDF.type, (RDFNode) null);
             while (adapterIterator.hasNext()) {
                 Statement currentAdapterStatement = adapterIterator.next();
                 responseModel.add(currentAdapterStatement);
 
                 // Get properties of adapter type (e.g. motor:MotorGarageAdapter)
-                StmtIterator adapterPropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentAdapterStatement.getResource(), (Property) null, (RDFNode) null));
+                StmtIterator adapterPropertiesIterator = tripletStoreModel.listStatements(currentAdapterStatement.getResource(), (Property) null, (RDFNode) null);
                 while (adapterPropertiesIterator.hasNext()) {
                     responseModel.add(adapterPropertiesIterator.next());
                 }
@@ -153,13 +153,26 @@ public class ResourceRepoHandler {
         responseModel.add(currentStatement);
 
         // Find properties of adapter instance
-        StmtIterator adapterPropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getSubject(), (Property) null, (RDFNode) null));
+        StmtIterator adapterPropertiesIterator = tripletStoreModel.listStatements(currentStatement.getSubject(), (Property) null, (RDFNode) null);
         while (adapterPropertiesIterator.hasNext()) {
-            responseModel.add(adapterPropertiesIterator.next());
+          Statement property = adapterPropertiesIterator.next();
+          responseModel.add(property);
+          if(property.getObject().canAs(Container.class) && property.getObject().canAs(Bag.class)){
+            Container container = property.getObject().as(Bag.class);
+            responseModel.add(container.listProperties());
+            NodeIterator bagItemIterator = container.iterator();
+            while(bagItemIterator.hasNext()){
+              RDFNode node = bagItemIterator.next();
+              StmtIterator bagItemPropertiesIterator = tripletStoreModel.listStatements(node.asResource(), (Property) null, (RDFNode) null);
+              while (bagItemPropertiesIterator.hasNext()) {
+                responseModel.add(bagItemPropertiesIterator.next());
+              }
+            }
+          }
         }
 
         // Find properties of adapter type
-        StmtIterator adapterTypePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(currentStatement.getResource(), (Property) null, (RDFNode) null));
+        StmtIterator adapterTypePropertiesIterator = tripletStoreModel.listStatements(currentStatement.getResource(), (Property) null, (RDFNode) null);
         while (adapterTypePropertiesIterator.hasNext()) {
             responseModel.add(adapterTypePropertiesIterator.next());
         }
@@ -170,25 +183,24 @@ public class ResourceRepoHandler {
             RDFNode implementedResource = implementedResourceTypes.next();
 
             // Get implemented resource properties
-            StmtIterator implementedResourcePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector((Resource) implementedResource, (Property) null, (RDFNode) null));
+            StmtIterator implementedResourcePropertiesIterator = tripletStoreModel.listStatements((Resource) implementedResource, (Property) null, (RDFNode) null);
             while (implementedResourcePropertiesIterator.hasNext()) {
                 responseModel.add(implementedResourcePropertiesIterator.next());
             }
 
-            StmtIterator implementedResourceLinkedPropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(null, RDFS.domain, implementedResource));
+            StmtIterator implementedResourceLinkedPropertiesIterator = tripletStoreModel.listStatements(null, RDFS.domain, implementedResource);
             while (implementedResourceLinkedPropertiesIterator.hasNext()) {
-                StmtIterator linkedPropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(implementedResourceLinkedPropertiesIterator.next().getSubject(), (Property) null,
-                        (RDFNode) null));
+                StmtIterator linkedPropertiesIterator = tripletStoreModel.listStatements(implementedResourceLinkedPropertiesIterator.next().getSubject(), (Property) null, (RDFNode) null);
                 while (linkedPropertiesIterator.hasNext()) {
                     responseModel.add(linkedPropertiesIterator.next());
                 }
             }
 
             // Get implemented resource instances
-            StmtIterator resourceTypeIterator = tripletStoreModel.listStatements(new SimpleSelector(null, RDF.type, implementedResource));
+            StmtIterator resourceTypeIterator = tripletStoreModel.listStatements(null, RDF.type, implementedResource);
             while (resourceTypeIterator.hasNext()) {
 
-                StmtIterator resourceInstancePropertiesIterator = tripletStoreModel.listStatements(new SimpleSelector(resourceTypeIterator.next().getSubject(), (Property) null, (RDFNode) null));
+                StmtIterator resourceInstancePropertiesIterator = tripletStoreModel.listStatements(resourceTypeIterator.next().getSubject(), (Property) null, (RDFNode) null);
                 while (resourceInstancePropertiesIterator.hasNext()) {
                     responseModel.add(resourceInstancePropertiesIterator.next());
                 }
@@ -263,7 +275,7 @@ public class ResourceRepoHandler {
      * @return
      */
     public String getQueryFromModel(Model model) {
-        StmtIterator iter = model.listStatements(new SimpleSelector(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest));
+        StmtIterator iter = model.listStatements(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest);
         Statement currentStatement = null;
         Statement rdfsComment = null;
         String sparqlQuery = "";
