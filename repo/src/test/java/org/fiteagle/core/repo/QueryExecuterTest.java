@@ -57,6 +57,28 @@ public class QueryExecuterTest {
 			  System.out.println(iter.next());
 		  }
 	  }
+	  
+	//	 @Test
+		  public void testgetExtensions() {
+			  String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
+			          + "PREFIX wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#> "
+			          + "PREFIX av: <http://federation.av.tu-berlin.de/about#> "
+			          + "CONSTRUCT { ?resource omn:partOfGroup av:AV_Smart_Communication_Testbed."
+			          + "?resource wgs:lat ?lat. ?resource wgs:long ?long. ?resource <http://open-multinet.info/ontology/resource/>. "
+			          + "} "
+			          + "FROM <http://localhost:3030/ds/query> "
+			          + "WHERE {?resource omn:partOfGroup av:AV_Smart_Communication_Testbed. "
+			          + "OPTIONAL {?resource <http://open-multinet.info/ontology/resource/>. } "
+			          + "}";
+			  
+			  
+			  Model rs = QueryExecuter.executeSparqlConstructQuery(query);
+			  
+			  StmtIterator iter = rs.listStatements();
+			  while(iter.hasNext()){
+				  System.out.println(iter.next());
+			  }
+		  }
 
 }
 

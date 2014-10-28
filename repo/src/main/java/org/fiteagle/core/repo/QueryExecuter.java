@@ -25,6 +25,9 @@ public class QueryExecuter {
 	  missedNsPrefixes.put("av","http://federation.av.tu-berlin.de/about#");
 	  missedNsPrefixes.put("foaf","http://xmlns.com/foaf/0.1/");
 	  missedNsPrefixes.put("dc","http://purl.org/dc/elements/1.1/");
+	  missedNsPrefixes.put("xsd", "http://www.w3.org/2001/XMLSchema#");
+	  missedNsPrefixes.put("motorgarage","http://open-multinet.info/ontology/resource/motorgarage#");
+	  missedNsPrefixes.put("motor","http://open-multinet.info/ontology/resource/motor#");
   }
   
   
