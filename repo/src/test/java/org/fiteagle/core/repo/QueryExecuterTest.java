@@ -1,5 +1,6 @@
 package org.fiteagle.core.repo;
 
+import org.fiteagle.api.core.MessageBusMsgFactory;
 import org.junit.Test;
 
 import com.hp.hpl.jena.query.QueryParseException;
@@ -79,6 +80,16 @@ public class QueryExecuterTest {
 				  System.out.println(iter.next());
 			  }
 		  }
+		  
+//	     @Test
+      public void testDescribe() {
+       String query = "DESCRIBE ?property WHERE {?property <http://www.w3.org/2000/01/rdf-schema#domain>  <http://open-multinet.info/ontology/resource/motor#Motor> . }";
+        
+        Model rs = QueryExecuter.executeSparqlDescribeQuery(query);
+        
+        String result = MessageBusMsgFactory.serializeModel(rs);
+        System.out.println(result);
+      }
 
 }
 
