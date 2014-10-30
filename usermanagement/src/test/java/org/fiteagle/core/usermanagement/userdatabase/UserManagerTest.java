@@ -82,7 +82,10 @@ public class UserManagerTest {
     createUser1();
     manager.addUser(USER1);
     CLASS1 = new Class("class1", "my first description");
+    Node node2 = new Node("second node");
+    manager.addNode(node2);
     CLASS1.addNode(defaultNode);
+    CLASS1.addNode(node2);
     manager.addClass(USER1.getUsername(), CLASS1);   
   }
   
@@ -267,6 +270,7 @@ public class UserManagerTest {
     assertEquals(manager.getClass(CLASS1).getParticipants().get(0),USER2);
     assertEquals(manager.getUser(USER2).getJoinedClasses().get(0),CLASS1);
     assertEquals(1, manager.getUser(USER2).getJoinedClasses().size());
+    assertEquals(1, manager.getAllClassesFromUser(USER2.getUsername()).size());
   }
   
   @Test
