@@ -15,9 +15,10 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.ejb.Stateless;
 import javax.naming.Context;
@@ -145,7 +146,7 @@ public class JPAUserManager implements UserManager {
   
   @Override
   public void updateUser(String username, String firstName, String lastName, String email, String affiliation,
-      String password, List<UserPublicKey> publicKeys) {
+      String password, Set<UserPublicKey> publicKeys) {
     EntityManager em = getEntityManager();
     
     User user = em.find(User.class, addDomain(username));
@@ -351,7 +352,7 @@ public class JPAUserManager implements UserManager {
     if (user.getOwnedClasses().contains(targetClass)) {
       throw new DuplicateClassException();
     }
-    List<Node> nodes = new ArrayList<>();
+    Set<Node> nodes = new HashSet<>();
     if(targetClass.getNodes().isEmpty()){
       targetClass.addNode(user.getNode());
     }
@@ -456,13 +457,13 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public List<Class> getAllClassesFromUser(String username) {
+  public Set<Class> getAllClassesFromUser(String username) {
     User u = getUser(username);
     return u.getJoinedClasses();
   }
   
   @Override
-  public List<Class> getAllClassesOwnedByUser(String username) {
+  public Set<Class> getAllClassesOwnedByUser(String username) {
     User u = getUser(username);
     return u.getOwnedClasses();
   }
@@ -531,7 +532,7 @@ public class JPAUserManager implements UserManager {
     if (identifiedUser.getPublicKeys() == null || identifiedUser.getPublicKeys().size() == 0) {
       identifiedUser.addPublicKey(new UserPublicKey(certificate.getPublicKey(), "created at "
           + System.currentTimeMillis(), keydecoder.encodePublicKey(certificate.getPublicKey())));
-      addKey(identifiedUser.getUsername(), identifiedUser.getPublicKeys().get(0));
+      addKey(identifiedUser.getUsername(), identifiedUser.getPublicKeys().iterator().next());
     }
     for(UserPublicKey oldUserPublicKey : identifiedUser.getPublicKeys()) {
       PublicKey pubKey = oldUserPublicKey.publicKey();

@@ -1,6 +1,7 @@
 package org.fiteagle.core.usermanagement.dm;
 
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -138,7 +139,7 @@ public class UserManagerMDB implements MessageListener {
             String email = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_EMAIL);
             String affiliation = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_AFFILIATION);
             password = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PASSWORD);
-            List<UserPublicKey> publicKeys = objectMapper.readValue(rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PUBLIC_KEYS), new TypeReference<List<UserPublicKey>>(){});
+            Set<UserPublicKey> publicKeys = objectMapper.readValue(rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PUBLIC_KEYS), new TypeReference<List<UserPublicKey>>(){});
             usermanager.updateUser(username, firstName, lastName, email, affiliation, password, publicKeys);
             break;
           case UserManager.SET_ROLE:

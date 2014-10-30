@@ -6,9 +6,10 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.fiteagle.api.core.usermanagement.Class;
 import org.fiteagle.api.core.usermanagement.Node;
@@ -36,8 +37,8 @@ public class UserManagerTest {
   private final static String key3String = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDKpQJGxnReKal3p7d/95G5d3RQb002gso1QJrjxFKED+1cD157FsT2bCPcWpTYdLeTFRWBDUQa91yUPdkjkvoMsL2e3ah7nugRD6QfrFki0Po9oENrbujzaExPV8SAvXSuqcCG4/pidqEqjXJlAMXrphJcoFdKSzXLJtjUwfxyEw==";
   private final static String key4String = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCQf/Ub9v6jR/8C58zC2MMakX5sOHfpl6asymHBnYBQ5xqL+P94A3lrViXRbss/G4ozBgGINvshdLAMjclmwgK7wSOcTlIAORhggU+iBM7V+YCa5Dj0gR0mMzDBxL71l9dCQ3wL+GWMI/bwoeuq+83rLes1T1Yyk7Fp27gR+P05VQ==";
       
-  protected static ArrayList<UserPublicKey> KEYS1;
-  protected static ArrayList<UserPublicKey> KEYS2; 
+  protected static Set<UserPublicKey> KEYS1;
+  protected static Set<UserPublicKey> KEYS2; 
   protected static User USER1;
   protected static User USER2;
   protected static User USER3;
@@ -50,7 +51,7 @@ public class UserManagerTest {
   private static UserManager manager;
   
   private void createUser1() {
-    KEYS1 = new ArrayList<UserPublicKey>();
+    KEYS1 = new HashSet<>();
     try {
       KEYS1.add(new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key1String), "key1", key1String));
       KEYS1.add(new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key2String), "key2", key2String));
@@ -61,7 +62,7 @@ public class UserManagerTest {
   }
   
   private void createUser2() {
-    KEYS2 = new ArrayList<UserPublicKey>(); 
+    KEYS2 = new HashSet<>();
     try {
       KEYS2.add(new UserPublicKey(KeyManagement.getInstance().decodePublicKey(key3String), "key3", key3String));
     } catch (User.NotEnoughAttributesException | InvalidKeySpecException | NoSuchAlgorithmException | CouldNotParse | IOException e) {
@@ -71,11 +72,11 @@ public class UserManagerTest {
   }
   
   private void createUser3() {
-     USER3 = new User("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", defaultNode, "mitjasPasswordHash", "mitjasPasswordSalt", new ArrayList<UserPublicKey>());    
+     USER3 = new User("test3", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", defaultNode, "mitjasPasswordHash", "mitjasPasswordSalt", new HashSet<UserPublicKey>());    
   }
   
   private void createUser4() {
-     USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", defaultNode, "mitjasPasswordHash", "mitjasPasswordSalt", new ArrayList<UserPublicKey>());
+     USER4 = new User("test4", "mitja", "nikolaus", "mitja@test.org", "mitjaAffiliation", defaultNode, "mitjasPasswordHash", "mitjasPasswordSalt", new HashSet<UserPublicKey>());
   }
   
   private void createAndAddClass1WithUser1(){
@@ -185,7 +186,7 @@ public class UserManagerTest {
   public void testAddDuplicateKey() {
     createUser1();
     manager.addUser(USER1);  
-    manager.addKey(USER1.getUsername(), KEYS1.get(0));
+    manager.addKey(USER1.getUsername(), KEYS1.iterator().next());
   }
   
   @Test(expected = DuplicatePublicKeyException.class)
@@ -199,7 +200,7 @@ public class UserManagerTest {
   @Test
   public void testDeleteKey() {
     createUser2();
-    String key = KEYS2.get(0).getDescription();
+    String key = KEYS2.iterator().next().getDescription();
     manager.addUser(USER2);
     manager.deleteKey(USER2.getUsername(), key);
     assertTrue(!manager.getUser(USER2).getPublicKeys().contains(key));
@@ -210,7 +211,7 @@ public class UserManagerTest {
     createUser2();
     manager.addUser(USER2);
     manager.renameKey(USER2.getUsername(), "key3", "my new description");
-    assertEquals("my new description", manager.getUser(USER2).getPublicKeys().get(0).getDescription());
+    assertEquals("my new description", manager.getUser(USER2).getPublicKeys().iterator().next().getDescription());
   }
   
   @Test(expected = DuplicatePublicKeyException.class)
@@ -267,8 +268,8 @@ public class UserManagerTest {
     createUser2();
     manager.addUser(USER2);
     manager.addParticipant(CLASS1.getId(), USER2.getUsername());
-    assertEquals(manager.getClass(CLASS1).getParticipants().get(0),USER2);
-    assertEquals(manager.getUser(USER2).getJoinedClasses().get(0),CLASS1);
+    assertEquals(manager.getClass(CLASS1).getParticipants().iterator().next(),USER2);
+    assertEquals(manager.getUser(USER2).getJoinedClasses().iterator().next(),CLASS1);
     assertEquals(1, manager.getUser(USER2).getJoinedClasses().size());
     assertEquals(1, manager.getAllClassesFromUser(USER2.getUsername()).size());
   }
