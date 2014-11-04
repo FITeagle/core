@@ -8,7 +8,9 @@ import java.util.Set;
 import org.fiteagle.api.core.usermanagement.PolicyEnforcementPoint;
 import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.api.core.usermanagement.UserManager;
-import org.jboss.logging.Logger;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.sun.xacml.attr.BooleanAttribute;
 import com.sun.xacml.attr.StringAttribute;
@@ -18,7 +20,7 @@ import com.sun.xacml.ctx.Subject;
 
 public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
   
-  private final static Logger log = Logger.getLogger(FiteaglePolicyEnforcementPoint.class.toString());
+  private final static Logger LOGGER = Logger.getLogger(FiteaglePolicyEnforcementPoint.class.toString());
   
   private static URI SUBJECT_ID;
   private static URI RESOURCE_ID;
@@ -30,7 +32,7 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
       RESOURCE_ID = new URI("urn:oasis:names:tc:xacml:1.0:resource:resource-id");
       ACTION_ID = new URI("urn:oasis:names:tc:xacml:1.0:action:action-id");
     } catch (URISyntaxException e) {
-      log.error(e);
+      LOGGER.log(Level.SEVERE, e.getMessage());
     }
   }
   
@@ -137,7 +139,7 @@ public class FiteaglePolicyEnforcementPoint implements PolicyEnforcementPoint {
           setAction(action),
           setEnvironment(requiresAdminRights(resource), requiresClassOwnerRights(resource)));
     } catch (URISyntaxException e) {
-      log.error(e);
+      LOGGER.log(Level.SEVERE, e.getMessage());
     }
     return request;
   }

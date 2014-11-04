@@ -44,12 +44,14 @@ import org.fiteagle.core.aaa.authentication.KeyManagement.CouldNotParse;
 import org.fiteagle.core.aaa.authentication.PasswordUtil;
 import org.fiteagle.core.aaa.authentication.x509.X509Util;
 import org.fiteagle.core.config.preferences.InterfaceConfiguration;
-import org.jboss.logging.Logger;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Stateless
 public class JPAUserManager implements UserManager {
   
-  private final static Logger log = Logger.getLogger(JPAUserManager.class.toString());
+  private final static Logger LOGGER = Logger.getLogger(JPAUserManager.class.toString());
   
   protected EntityManager entityManager;
   
@@ -70,7 +72,7 @@ public class JPAUserManager implements UserManager {
       context = new InitialContext();
       entityManager = (EntityManager) context.lookup(uriOfEntityManager);
     } catch (NamingException e) {
-      log.error(e);
+      LOGGER.log(Level.SEVERE, e.getMessage());
     }
   }
   
@@ -268,7 +270,7 @@ public class JPAUserManager implements UserManager {
       encoded = X509Util.getCertficateEncoded(cert);
     } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | UnrecoverableEntryException
         | OperatorCreationException | IOException e) {
-      log.error(e);
+      LOGGER.log(Level.SEVERE, e.getMessage());
     }
     return encoded;
   }
@@ -295,7 +297,7 @@ public class JPAUserManager implements UserManager {
     try {
       cert = createUserCertificate(addDomain(username), passphrase, KeyManagement.getInstance().generateKeyPair());
     } catch (IOException | GeneralSecurityException e) {
-      log.error(e);
+      LOGGER.log(Level.SEVERE, e.getMessage());
     }
     return cert;
   }
