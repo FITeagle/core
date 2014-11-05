@@ -84,7 +84,7 @@ public class ResourceRepoHandler {
         Model responseModel = ModelFactory.createDefaultModel();
 
         try {
-            DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+            DatasetAccessor accessor = getTripletStoreAccessor();
             Model tripletStoreModel = accessor.getModel();
 
             StmtIterator stmtIterator = modelRequests.listStatements();
@@ -211,7 +211,7 @@ public class ResourceRepoHandler {
 
     public synchronized boolean addInformToRepository(Model modelInform) {
         try {
-            DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+            DatasetAccessor accessor = getTripletStoreAccessor();
 
             Model currentModel = accessor.getModel();
             QueryExecuter.removeProblematicNsPrefixes(currentModel);
@@ -227,6 +227,14 @@ public class ResourceRepoHandler {
 
         return true;
     }
+
+	private DatasetAccessor getTripletStoreAccessor() {
+		DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+		if(accessor == null){
+			LOGGER.log(Level.SEVERE, "could not connect to fuseki service at:" +FUSEKI_SERVICE);
+		}
+		return accessor;
+	}
 
     private void removeExistingValuesFromModel(Model mainModel, Model valuesToRemove) {
         StmtIterator stmtIterator = valuesToRemove.listStatements();
@@ -251,7 +259,7 @@ public class ResourceRepoHandler {
     public synchronized boolean releaseResource(Resource rscToRemove) {
 
         try {
-            DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+            DatasetAccessor accessor = getTripletStoreAccessor();
 
             Model currentModel = accessor.getModel();
             QueryExecuter.removeProblematicNsPrefixes(currentModel);
