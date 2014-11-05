@@ -31,14 +31,14 @@ public class QueryExecuter {
   
   public static ResultSet executeSparqlSelectQuery(String queryString) throws QueryParseException{
     ResultSet rs = null;
-    QueryExecution qe = QueryExecutionFactory.sparqlService(ResourceRepoHandler.FUSEKI_SERVICE, queryString);
+    QueryExecution qe = QueryExecutionFactory.sparqlService(ResourceRepoHandler.FUSEKI_SERVICE_QUERY, queryString);
     rs = qe.execSelect();
     return rs;
   }
   
   public static Model executeSparqlConstructQuery(String queryString) throws QueryParseException{
 	    Model rs = null;
-	    QueryExecution qe = QueryExecutionFactory.sparqlService(ResourceRepoHandler.FUSEKI_SERVICE, queryString);
+	    QueryExecution qe = QueryExecutionFactory.sparqlService(ResourceRepoHandler.FUSEKI_SERVICE_QUERY, queryString);
 	    rs = qe.execConstruct();
 	    correctNsPrefixes(rs);
 
@@ -73,7 +73,7 @@ public class QueryExecuter {
   
   public static Model executeSparqlDescribeQuery(String queryString) throws QueryParseException{
     Model rs = null;
-    QueryExecution qe = QueryExecutionFactory.sparqlService(ResourceRepoHandler.FUSEKI_SERVICE, queryString);
+    QueryExecution qe = QueryExecutionFactory.sparqlService(ResourceRepoHandler.FUSEKI_SERVICE_QUERY, queryString);
     rs = qe.execDescribe();
     correctNsPrefixes(rs);
     return rs;

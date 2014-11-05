@@ -30,7 +30,9 @@ import com.hp.hpl.jena.vocabulary.RDFS;
 
 public class ResourceRepoHandler {
 
-    protected static final String FUSEKI_SERVICE = "http://localhost:3030/fiteagle/data";
+    protected static final String FUSEKI_SERVICE = "http://localhost:3030/fiteagle/";
+    protected static final String FUSEKI_SERVICE_DATA = FUSEKI_SERVICE+"data";
+    protected static final String FUSEKI_SERVICE_QUERY = FUSEKI_SERVICE+"query";
 
     private static Logger LOGGER = Logger.getLogger(ResourceRepoHandler.class.toString());
 
@@ -114,7 +116,7 @@ public class ResourceRepoHandler {
 
             }
         } catch (HttpException e) {
-            LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + ": Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
+            LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + ": Cannot connect to FUSEKI at " + FUSEKI_SERVICE_DATA);
         }
 
         return responseModel;
@@ -221,7 +223,7 @@ public class ResourceRepoHandler {
 
             accessor.putModel(currentModel);
         } catch (HttpException e) {
-            LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
+            LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE_DATA);
             return false;
         }
 
@@ -229,9 +231,9 @@ public class ResourceRepoHandler {
     }
 
 	private DatasetAccessor getTripletStoreAccessor() {
-		DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE);
+		DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE_DATA);
 		if(accessor == null){
-			LOGGER.log(Level.SEVERE, "could not connect to fuseki service at:" +FUSEKI_SERVICE);
+			LOGGER.log(Level.SEVERE, "could not connect to fuseki service at:" +FUSEKI_SERVICE_DATA);
 		}
 		return accessor;
 	}
@@ -269,7 +271,7 @@ public class ResourceRepoHandler {
             accessor.putModel(currentModel);
 
         } catch (HttpException e) {
-            LOGGER.log(Level.SEVERE, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE);
+            LOGGER.log(Level.SEVERE, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE_DATA);
             return false;
         }
 
