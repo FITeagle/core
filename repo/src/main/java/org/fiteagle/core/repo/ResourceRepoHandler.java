@@ -30,7 +30,7 @@ import com.hp.hpl.jena.vocabulary.RDFS;
 
 public class ResourceRepoHandler {
 
-    private static final String FUSEKI_SERVICE = "http://localhost:3030/ds/data";
+    protected static final String FUSEKI_SERVICE = "http://localhost:3030/fiteagle/data";
 
     private static Logger LOGGER = Logger.getLogger(ResourceRepoHandler.class.toString());
 
