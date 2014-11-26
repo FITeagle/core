@@ -13,7 +13,7 @@ import javax.servlet.ServletContextListener;
 
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusMsgFactory;
-import org.fiteagle.api.core.OntologyModels;
+import org.fiteagle.api.core.OntologyModelUtil;
 
 import com.hp.hpl.jena.rdf.model.Model;
 
@@ -32,7 +32,7 @@ public class ResourceRepoMDBSender implements ServletContextListener{
   @Override
   public void contextInitialized(ServletContextEvent sce) {
     try {
-      Model model = OntologyModels.getModel();
+      Model model = OntologyModelUtil.loadModel("ontologies/fiteagle/ontology.ttl", IMessageBus.SERIALIZATION_TURTLE);
       Model messageModel = MessageBusMsgFactory.createMsgInform(model);
       String serializedRDF = MessageBusMsgFactory.serializeModel(messageModel);
       
