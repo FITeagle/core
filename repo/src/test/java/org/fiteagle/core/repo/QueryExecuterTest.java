@@ -1,10 +1,14 @@
 package org.fiteagle.core.repo;
 
 import org.fiteagle.api.core.MessageBusMsgFactory;
+import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.junit.Test;
 
 import com.hp.hpl.jena.query.QueryParseException;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 public class QueryExecuterTest {
@@ -91,6 +95,34 @@ public class QueryExecuterTest {
         System.out.println(result);
       }
 
+      @Test
+      public void TestSelectMaxInstances(){
+    	  
+    	  ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(" SELECT ?amount WHERE {<http://federation.av.tu-berlin.de/about#MotorGarage-1> <http://open-multinet.info/ontology/omn#maxInstances> ?amount } ");
+    	  while(rs.hasNext()){
+    		  System.out.println(rs.next().getLiteral("amount").getInt());
+    	  }
+      }
+      
+     @Test
+      public void TestSelectInstances(){
+    	  ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(" SELECT ?instance WHERE {?instance a ?resourceType . <http://federation.av.tu-berlin.de/about#MotorGarage-1> a ?adapterType . ?adapterType <http://open-multinet.info/ontology/omn#implements> ?resourceType .} ");
+    	  int amount = 0;
+    	  while(rs.hasNext()){
+    		  amount++;
+    		  rs.next();
+    	  }
+    	  System.out.println(amount);
+      }
+     
+    @Test
+     public void TestSelectMaxInstancesCanBeCreated(){
+   	  
+   	  ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(" SELECT ?amount WHERE {<http://federation.av.tu-berlin.de/about#MotorGarage-1> <http://open-multinet.info/ontology/omn#maxInstancesCanBeCreated> ?amount } ");
+   	  while(rs.hasNext()){
+   		  System.out.println(rs.next().getLiteral("amount").getInt());
+   	  }
+     }
 }
 
  

@@ -49,6 +49,7 @@ public class ResourceRepoHandler {
     String sparqlQuery = getQueryFromModel(modelRequest);
     Model resultModel = null;
     String resultJSON = null;
+    String resultAsk = "";
     
     if (!sparqlQuery.isEmpty()) {
       LOGGER.log(Level.INFO, "Processing SPARQL Query: " + sparqlQuery);
@@ -63,6 +64,9 @@ public class ResourceRepoHandler {
       else if (sparqlQuery.toUpperCase().contains("CONSTRUCT")){
     	  resultModel = QueryExecuter.executeSparqlConstructQuery(sparqlQuery);
       }
+/*      else if (sparqlQuery.toUpperCase().contains("ASK")) {
+    	  resultAsk = QueryExecuter.executeSparqlAskQuery(sparqlQuery);
+      }*/
       
     } else {
       LOGGER.log(Level.SEVERE, "SPARQL Query expected, but no sparql query found!");
@@ -253,6 +257,11 @@ public class ResourceRepoHandler {
         while (stmtIterator.hasNext()) {
             Statement currentStatement = stmtIterator.nextStatement();
             if (!currentStatement.getSubject().equals(MessageBusOntologyModel.internalMessage)) {
+            	if(currentStatement.getPredicate().getLocalName().contains("maxInstances")){
+            		Model model = ModelFactory.createDefaultModel();
+            		Property maxInstancesCanBeCreated = model.createProperty(currentStatement.getPredicate().getNameSpace() + "maxInstancesCanBeCreated");
+            		mainModel.add(currentStatement.getSubject(), maxInstancesCanBeCreated, currentStatement.getObject());
+            	}
                 mainModel.add(currentStatement);
             }
         }

@@ -28,6 +28,14 @@ public class QueryExecuter {
 	  missedNsPrefixes.put("motor","http://open-multinet.info/ontology/resource/motor#");
   }
   
+  // to be continued
+/*  public static String executeSparqlAskQuery(String queryString) throws QueryParseException{
+	  
+	  QueryExecution qexec = QueryExecutionFactory.sparqlService(ResourceRepoHandler.FUSEKI_SERVICE_QUERY, queryString);
+	      
+	  boolean b = qexec.execAsk();
+	  return b? "TRUE":"FALSE";
+  }*/
   
   public static ResultSet executeSparqlSelectQuery(String queryString) throws QueryParseException{
     ResultSet rs = null;
