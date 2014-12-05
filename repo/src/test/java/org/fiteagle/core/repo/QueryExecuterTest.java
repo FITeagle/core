@@ -95,7 +95,7 @@ public class QueryExecuterTest {
         System.out.println(result);
       }
 
-      @Test
+      //@Test
       public void TestSelectMaxInstances(){
     	  
     	  ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(" SELECT ?amount WHERE {<http://federation.av.tu-berlin.de/about#MotorGarage-1> <http://open-multinet.info/ontology/omn#maxInstances> ?amount } ");
@@ -104,7 +104,7 @@ public class QueryExecuterTest {
     	  }
       }
       
-     @Test
+     //@Test
       public void TestSelectInstances(){
     	  ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(" SELECT ?instance WHERE {?instance a ?resourceType . <http://federation.av.tu-berlin.de/about#MotorGarage-1> a ?adapterType . ?adapterType <http://open-multinet.info/ontology/omn#implements> ?resourceType .} ");
     	  int amount = 0;
@@ -115,7 +115,7 @@ public class QueryExecuterTest {
     	  System.out.println(amount);
       }
      
-    @Test
+    //@Test
      public void TestSelectMaxInstancesCanBeCreated(){
    	  
    	  ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(" SELECT ?amount WHERE {<http://federation.av.tu-berlin.de/about#MotorGarage-1> <http://open-multinet.info/ontology/omn#maxInstancesCanBeCreated> ?amount } ");
