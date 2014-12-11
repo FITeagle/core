@@ -15,12 +15,10 @@
 		transaction-type="RESOURCE_LOCAL">
 		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 		<properties>
+		  <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"></property>
        <property name="hibernate.connection.url" value="jdbc:h2:mem:testing"/>
        <property name="hibernate.connection.driver_class" value="org.h2.Driver"/>
-       <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"></property>
-       <property name="hibernate.connection.username" value="test"/>
-       <property name="hibernate.connection.password" value=""/>
-			<property name="hibernate.hbm2ddl.auto" value="create" />
+ 		   <property name="hibernate.hbm2ddl.auto" value="create" />
 		</properties>
 	</persistence-unit>
 </persistence>
