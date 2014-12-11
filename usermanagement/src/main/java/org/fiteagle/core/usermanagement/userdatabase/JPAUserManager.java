@@ -53,41 +53,31 @@ public class JPAUserManager implements UserManager {
   
   private final static Logger LOGGER = Logger.getLogger(JPAUserManager.class.toString());
   
+  private final static String ENTITY_MANAGER_JNDI_NAME = "java:/fiteagle/users/entitymanager";
+  
   protected EntityManager entityManager;
   
   private static UserManager instance;
   
   public static UserManager getInstance(){
     if(instance == null){
-      instance = new JPAUserManager("java:/fiteagle/users/entitymanager");
+      instance = new JPAUserManager();
     }
     return instance;
   }
   
-  public JPAUserManager(){};
-  
-  private JPAUserManager(String uriOfEntityManager){
+  protected JPAUserManager(){
     Context context;
     try {
       context = new InitialContext();
-      entityManager = (EntityManager) context.lookup(uriOfEntityManager);
+      entityManager = (EntityManager) context.lookup(ENTITY_MANAGER_JNDI_NAME);
     } catch (NamingException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
   }
   
-  protected synchronized EntityManager getEntityManager() {
+  private synchronized EntityManager getEntityManager() {
     return entityManager;
-  }
-  
-  protected void beginTransaction(EntityManager em) {
-  }
-  
-  protected void commitTransaction(EntityManager em) {
-  }
-  
-  protected void flushTransaction(EntityManager em) {
-    em.flush();
   }
   
   @Override
@@ -545,6 +535,16 @@ public class JPAUserManager implements UserManager {
       }
     }
     throw new AuthenticationHandler.KeyDoesNotMatchException();
+  }
+  
+  protected void beginTransaction(EntityManager em) {
+  }
+  
+  protected void commitTransaction(EntityManager em) {
+  }
+  
+  protected void flushTransaction(EntityManager em) {
+    em.flush();
   }
   
   protected static String addDomain(String username) {
