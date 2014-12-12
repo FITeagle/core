@@ -7,19 +7,15 @@ import javax.persistence.Persistence;
 public class InMemoryUserManager extends JPAUserManager {
   
   private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";  
-  
-  @Override
-  protected synchronized EntityManager getEntityManager() {
-    if(entityManager == null) {
-      try {
-        java.lang.Class.forName("org.h2.Driver");
-      } catch (ClassNotFoundException e) {
-        e.printStackTrace();
-      }
-      EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME_INMEMORY);
-      entityManager = factory.createEntityManager();
+
+  protected InMemoryUserManager(){
+    try {
+      java.lang.Class.forName("org.h2.Driver");
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
     }
-    return entityManager;
+    EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME_INMEMORY);
+    entityManager = factory.createEntityManager();
   }
   
   @Override
