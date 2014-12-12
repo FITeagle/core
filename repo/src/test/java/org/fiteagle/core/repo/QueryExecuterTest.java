@@ -1,15 +1,17 @@
 package org.fiteagle.core.repo;
 
 import org.fiteagle.api.core.MessageBusMsgFactory;
-import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.junit.Test;
 
 import com.hp.hpl.jena.query.QueryParseException;
+import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.sparql.resultset.RDFInput;
 
 public class QueryExecuterTest {
 
@@ -123,6 +125,103 @@ public class QueryExecuterTest {
    		  System.out.println(rs.next().getLiteral("amount").getInt());
    	  }
      }
+     
+ 		 //@Test
+	  public void testget() {
+		  String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
+		          + "PREFIX wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#> "
+		          + "PREFIX av: <http://federation.av.tu-berlin.de/about#> "
+		          + "CONSTRUCT {"
+		          + "?motoradapter a omn:MotorGarage ."
+		          + "} "
+		          + "FROM <http://localhost:3030/ds/query> "
+		          + "WHERE { "
+		          + "OPTIONAL {av:MotorGarage-1 omn:maxInstances ?maxInstances . }"
+		          + "OPTIONAL {av:MotorGarage-1 omn:maxInstances ?reservedInstances . }"
+		          + "}";
+		  
+		  
+		  Model rs = QueryExecuter.executeSparqlConstructQuery(query);
+		  
+		  StmtIterator iter = rs.listStatements();
+		  while(iter.hasNext()){
+			  System.out.println(iter.next());
+		  }
+	  }
+//	  + "<http://federation.av.tu-berlin.de/about#MotorGarage-1> a ?adapterType ."
+//		+ "?adapterType <http://open-multinet.info/ontology/omn#implements> ?resourceType ."
+ 		 
+ 		// @Test
+ 	      public void TestSelecterhhrjt(){
+ 			 String query = "SELECT ?maxInstances ?reservedInstances ?instance WHERE {"
+ 			 		+ "OPTIONAL { ?instance a ?resourceType ."
+ 			 		+ "<http://federation.av.tu-berlin.de/about#MotorGarage-1> a ?adapterType ."
+ 			 		+ "?adapterType <http://open-multinet.info/ontology/omn#implements> ?resourceType .}"
+ 			 		+ "OPTIONAL { <http://federation.av.tu-berlin.de/about#MotorGarage-1> <http://open-multinet.info/ontology/omn#maxInstances> ?maxInstances  }"
+ 			 		+ "OPTIONAL { <http://federation.av.tu-berlin.de/about#MotorGarage-1> <http://open-multinet.info/ontology/omn#reservedInstances> ?reservedInstances } "
+ 			 		+ "}";
+ 			 
+ 	    	 ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(query);
+ 	    	 Model resultModel = ResultSetFormatter.toModel(rs);
+ 	    	StmtIterator iter = resultModel.listStatements();
+ 	    	
+ 	    	Resource maxInstSubject = null;
+ 			while(iter.hasNext()){
+ 				Statement st = iter.next();
+ 				if(st.getObject().isLiteral()){
+ 					if(st.getLiteral().toString().equals("maxInstances")){
+ 						maxInstSubject = st.getSubject();
+// 						Statement st2 = maxInstSubject.getProperty(resultModel.createProperty("<http://www.w3.org/2001/sw/DataAccess/tests/result-set#value>"));
+ 					}
+ 				}
+ 	  	  	}
+ 			iter = resultModel.listStatements();
+ 			while(iter.hasNext()){
+ 				Statement st = iter.next();
+ 				if(st.getSubject().equals(maxInstSubject) && st.getPredicate().getLocalName().toString().equals("value")){
+ 					System.out.println(st.getInt());
+ 				}
+ 	  	  	}
+ /*	    	 System.out.println(resultModel.getGraph());
+ 	    	  int amount = 0;
+ 	    	  while(rs.hasNext()){
+ 	    		  amount++;
+// 	    		  System.out.println(rs.next());
+ 	    	  }*/
+ 	    	  
+ 	      }
+ 		 
+		// @Test
+	      public void TestSelecterhhrjt1(){
+			 String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
+			 		+ "PREFIX av: <http://federation.av.tu-berlin.de/about#> "
+			 		+ "SELECT ?maxInstances ?reservedInstances ?instance WHERE {"
+			 		+ "OPTIONAL { ?instance a ?resourceType ."
+			 		+ "av:MotorGarage-1 a ?adapterType ."
+			 		+ "?adapterType omn:implements ?resourceType .}"
+			 		+ "OPTIONAL { av:MotorGarage-1 omn:maxInstances ?maxInstances  }"
+			 		+ "OPTIONAL { av:MotorGarage-1 omn:reservedInstances ?reservedInstances } "
+			 		+ "}";
+			 
+	    	 ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(query);
+	    	 Model resultModel = ResultSetFormatter.toModel(rs);
+	    	 
+	    	 ResultSet result = new RDFInput(resultModel);
+	    	 int maxInstances = 0;
+	    	 int instances = 0;
+	    	 while(result.hasNext()){
+	    		 QuerySolution qs = result.next();
+	    		 if(qs.contains("maxInstances")){
+	    			 maxInstances = qs.getLiteral("maxInstances").getInt();
+	    		 }
+	    		 if(qs.contains("instance")){
+	    			 instances = instances +1; 
+	    			 }
+	    		 }
+	    	 System.out.println("maxInstances are " + maxInstances);
+	    	 System.out.println("created instances " + instances);
+	    	 
+		 }
 }
 
  
