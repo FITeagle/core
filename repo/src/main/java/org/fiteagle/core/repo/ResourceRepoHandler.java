@@ -1,6 +1,7 @@
 package org.fiteagle.core.repo;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.logging.Level;
@@ -56,9 +57,9 @@ public class ResourceRepoHandler {
       LOGGER.log(Level.INFO, "Processing SPARQL Query: " + sparqlQuery);
       
       if (sparqlQuery.toUpperCase().contains("SELECT")) {
-        ResultSet resultSet = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
-        resultModel = ResultSetFormatter.toModel(resultSet);
-        resultJSON = getResultSetAsJsonString(resultSet); 
+        ResultSet rs = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
+        resultJSON = getResultSetAsJsonString(rs);
+        resultModel = ResultSetFormatter.toModel(rs);
         
       } else if (sparqlQuery.toUpperCase().contains("DESCRIBE")) {
         resultModel = QueryExecuter.executeSparqlDescribeQuery(sparqlQuery);
@@ -331,13 +332,14 @@ public class ResourceRepoHandler {
     return rdfString;
   }
   
-  public String getResultSetAsJsonString(ResultSet resultSet) {
+  public static String getResultSetAsJsonString(ResultSet resultSet) {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ResultSetFormatter.outputAsJSON(baos, resultSet);
     String jsonString = "";
     try {
       jsonString = baos.toString(Charset.defaultCharset().toString());
-    } catch (UnsupportedEncodingException e) {
+      baos.close();
+    } catch (IOException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
     return jsonString;
