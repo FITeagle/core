@@ -1,6 +1,6 @@
 package org.fiteagle.core.repo;
 
-import org.fiteagle.api.core.MessageBusMsgFactory;
+import org.fiteagle.api.core.MessageUtil;
 import org.junit.Test;
 
 import com.hp.hpl.jena.query.QueryParseException;
@@ -93,7 +93,7 @@ public class QueryExecuterTest {
         
         Model rs = QueryExecuter.executeSparqlDescribeQuery(query);
         
-        String result = MessageBusMsgFactory.serializeModel(rs);
+        String result = MessageUtil.serializeModel(rs);
         System.out.println(result);
       }
 

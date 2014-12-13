@@ -7,7 +7,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.jena.atlas.web.HttpException;
-import org.fiteagle.api.core.MessageBusMsgFactory;
+import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 
 import com.hp.hpl.jena.query.DatasetAccessor;
@@ -49,14 +50,19 @@ public class ResourceRepoHandler {
     Model replyModel = ModelFactory.createDefaultModel();
     String sparqlQuery = getQueryFromModel(modelRequest);
     Model resultModel = null;
+    String resultJSON = "";
     
     if (!sparqlQuery.isEmpty()) {
       LOGGER.log(Level.INFO, "Processing SPARQL Query: " + sparqlQuery);
+      
       if (sparqlQuery.toUpperCase().contains("SELECT")) {
         ResultSet resultSet = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
         resultModel = ResultSetFormatter.toModel(resultSet);
+        resultJSON = getResultSetAsJsonString(resultSet); 
+        
       } else if (sparqlQuery.toUpperCase().contains("DESCRIBE")) {
         resultModel = QueryExecuter.executeSparqlDescribeQuery(sparqlQuery);
+        
       } else if (sparqlQuery.toUpperCase().contains("CONSTRUCT")) {
         resultModel = QueryExecuter.executeSparqlConstructQuery(sparqlQuery);
       }
@@ -64,8 +70,15 @@ public class ResourceRepoHandler {
       LOGGER.log(Level.SEVERE, "SPARQL Query expected, but no sparql query found!");
     }
     
-    String resultModelSerialized = MessageBusMsgFactory.serializeModel(resultModel);
-    replyModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyResultModelTTL, resultModelSerialized);
+    switch(serialization){
+      case IMessageBus.SERIALIZATION_TURTLE:
+        String resultModelSerialized = MessageUtil.serializeModel(resultModel);
+        replyModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyResultModelTTL, resultModelSerialized);
+        break;
+      case IMessageBus.SERIALIZATION_JSONLD:
+        replyModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyJsonResult, resultJSON);
+        break;
+    }
     
     return replyModel;
   }
@@ -309,7 +322,7 @@ public class ResourceRepoHandler {
   public static String parseResultSetToModel(ResultSet resultSet) {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     Model resultModel = ResultSetFormatter.toModel(resultSet);
-    String rdfString = MessageBusMsgFactory.serializeModel(resultModel);
+    String rdfString = MessageUtil.serializeModel(resultModel);
     try {
       rdfString = baos.toString(Charset.defaultCharset().toString());
     } catch (UnsupportedEncodingException e) {

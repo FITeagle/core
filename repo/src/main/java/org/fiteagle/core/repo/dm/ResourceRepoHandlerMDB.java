@@ -15,7 +15,7 @@ import javax.jms.MessageListener;
 import javax.jms.Topic;
 
 import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageBusMsgFactory;
+import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.core.repo.ResourceRepoHandler;
 
@@ -47,7 +47,7 @@ public class ResourceRepoHandlerMDB implements MessageListener {
   public void onMessage(final Message message) {
     try {
       String messageType = message.getStringProperty(IMessageBus.METHOD_TYPE);
-      Model messageModel = MessageBusMsgFactory.getMessageRDFModel(message);
+      Model messageModel = MessageUtil.getRDFResultModel(message);
       
       if (messageType != null && messageModel != null) {
         ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, "Received a " + messageType + " message");
@@ -58,26 +58,14 @@ public class ResourceRepoHandlerMDB implements MessageListener {
         } else if (messageType.equals(IMessageBus.TYPE_REQUEST)) {
           String result = handleRequest(messageModel, message.getStringProperty(IMessageBus.SERIALIZATION));
           if (result != null) {
-            sendResponseMessage(message, result, message.getJMSCorrelationID());
+            Message responseMessage = MessageUtil.createRDFMessage(result, IMessageBus.TYPE_INFORM, IMessageBus.SERIALIZATION_DEFAULT, context);
+            this.context.createProducer().send(topic, responseMessage);
           }
         }
       }
     } catch (JMSException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
-  }
-  
-  private void sendResponseMessage(Message requestMessage, String serializedRDF, String requestID) throws JMSException {
-    final Message responseMessage = this.context.createMessage();
-    
-    responseMessage.setStringProperty(IMessageBus.METHOD_TYPE, IMessageBus.TYPE_INFORM);
-    responseMessage.setStringProperty(IMessageBus.RDF, serializedRDF);
-    responseMessage.setStringProperty(IMessageBus.SERIALIZATION, IMessageBus.SERIALIZATION_DEFAULT);
-    if (requestID != null) {
-      responseMessage.setJMSCorrelationID(requestID);
-    }
-    
-    this.context.createProducer().send(topic, responseMessage);
   }
   
   private String handleRequest(Model modelRequest, String serialization) {
@@ -92,11 +80,11 @@ public class ResourceRepoHandlerMDB implements MessageListener {
       } else {
         modelRequest.remove(currentStatement);
         responseModel = repoHandler.handleRequest(modelRequest);
-        MessageBusMsgFactory.setCommonPrefixes(responseModel);
+        MessageUtil.setCommonPrefixes(responseModel);
       }
       
       if (responseModel != null) {
-        return MessageBusMsgFactory.serializeModel(MessageBusMsgFactory.createMsgInform(responseModel));
+        return MessageUtil.serializeModel(MessageUtil.createMsgInform(responseModel));
       }
     }
     
