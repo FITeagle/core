@@ -47,17 +47,17 @@ public class ResourceRepoHandler {
   public Model handleSPARQLRequest(Model modelRequest, String serialization) {
     //TODO: serialization
     Model replyModel = ModelFactory.createDefaultModel();
-    String sparqlQuery = getQueryFromModel(modelRequest).toUpperCase();
+    String sparqlQuery = getQueryFromModel(modelRequest);
     Model resultModel = null;
     
     if (!sparqlQuery.isEmpty()) {
       LOGGER.log(Level.INFO, "Processing SPARQL Query: " + sparqlQuery);
-      if (sparqlQuery.contains("SELECT")) {
+      if (sparqlQuery.toUpperCase().contains("SELECT")) {
         ResultSet resultSet = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
         resultModel = ResultSetFormatter.toModel(resultSet);
-      } else if (sparqlQuery.contains("DESCRIBE")) {
+      } else if (sparqlQuery.toUpperCase().contains("DESCRIBE")) {
         resultModel = QueryExecuter.executeSparqlDescribeQuery(sparqlQuery);
-      } else if (sparqlQuery.contains("CONSTRUCT")) {
+      } else if (sparqlQuery.toUpperCase().contains("CONSTRUCT")) {
         resultModel = QueryExecuter.executeSparqlConstructQuery(sparqlQuery);
       }
     } else {
