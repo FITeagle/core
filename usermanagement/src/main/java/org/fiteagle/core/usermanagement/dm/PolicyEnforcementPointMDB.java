@@ -65,7 +65,7 @@ public class PolicyEnforcementPointMDB implements MessageListener {
         }
       } catch(Exception e){
         String exceptionName = e.getClass().getSimpleName();
-        message.setStringProperty(IMessageBus.TYPE_EXCEPTION, exceptionName+": "+e.getMessage());
+        message.setStringProperty(IMessageBus.TYPE_ERROR, exceptionName+": "+e.getMessage());
         
       } finally{
         final String id = rcvMessage.getJMSCorrelationID();
