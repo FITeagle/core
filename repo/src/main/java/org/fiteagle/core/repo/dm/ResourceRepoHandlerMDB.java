@@ -59,6 +59,7 @@ public class ResourceRepoHandlerMDB implements MessageListener {
           String result = handleRequest(messageModel, message.getStringProperty(IMessageBus.SERIALIZATION));
           if (result != null) {
             Message responseMessage = MessageUtil.createRDFMessage(result, IMessageBus.TYPE_INFORM, IMessageBus.SERIALIZATION_DEFAULT, context);
+            responseMessage.setJMSCorrelationID(message.getJMSCorrelationID());
             this.context.createProducer().send(topic, responseMessage);
           }
         }
