@@ -47,7 +47,6 @@ public class ResourceRepoHandler {
   }
   
   public Model handleSPARQLRequest(Model modelRequest, String serialization) {
-    //TODO: serialization
     Model replyModel = ModelFactory.createDefaultModel();
     String sparqlQuery = getQueryFromModel(modelRequest);
     Model resultModel = null;
@@ -63,9 +62,11 @@ public class ResourceRepoHandler {
         
       } else if (sparqlQuery.toUpperCase().contains("DESCRIBE")) {
         resultModel = QueryExecuter.executeSparqlDescribeQuery(sparqlQuery);
+        resultJSON = MessageUtil.serializeModel(resultModel, IMessageBus.SERIALIZATION_JSONLD);
         
       } else if (sparqlQuery.toUpperCase().contains("CONSTRUCT")) {
         resultModel = QueryExecuter.executeSparqlConstructQuery(sparqlQuery);
+        resultJSON = MessageUtil.serializeModel(resultModel, IMessageBus.SERIALIZATION_JSONLD);
       }
     } else {
       LOGGER.log(Level.SEVERE, "SPARQL Query expected, but no sparql query found!");
@@ -80,7 +81,6 @@ public class ResourceRepoHandler {
         replyModel.add(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.propertyJsonResult, resultJSON);
         break;
     }
-    
     return replyModel;
   }
   
