@@ -47,7 +47,11 @@ public class ResourceRepoHandlerMDB implements MessageListener {
   public void onMessage(final Message message) {
     try {
       String messageType = message.getStringProperty(IMessageBus.METHOD_TYPE);
-      Model messageModel = MessageUtil.getRDFResultModel(message);
+      String rdfString = MessageUtil.getRDFResult(message);
+      if(rdfString == null ){
+        return;
+      }
+      Model messageModel = MessageUtil.parseSerializedModel(rdfString);
       
       if (messageType != null && messageModel != null) {
         ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, "Received a " + messageType + " message");
