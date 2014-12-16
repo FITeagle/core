@@ -4,7 +4,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.inject.Inject;
@@ -15,11 +14,12 @@ import javax.jms.MessageListener;
 import javax.jms.Topic;
 
 import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.MessageBusOntologyModel;
+import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.core.repo.ResourceRepoHandler;
 
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
@@ -36,7 +36,7 @@ public class ResourceRepoHandlerMDB implements MessageListener {
   
   @Inject
   private JMSContext context;
-  @Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
+  @javax.annotation.Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
   private Topic topic;
   
   @PostConstruct
@@ -47,25 +47,19 @@ public class ResourceRepoHandlerMDB implements MessageListener {
   public void onMessage(final Message message) {
     try {
       String messageType = message.getStringProperty(IMessageBus.METHOD_TYPE);
+      String serialization = message.getStringProperty(IMessageBus.SERIALIZATION);
       String rdfString = MessageUtil.getRDFResult(message);
-      if(rdfString == null ){
-        return;
-      }
-      Model messageModel = MessageUtil.parseSerializedModel(rdfString);
       
-      if (messageType != null && messageModel != null) {
-        ResourceRepoHandlerMDB.LOGGER.log(Level.INFO, "Received a " + messageType + " message");
+      if (messageType != null && rdfString != null) {
+        Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
         
         if (messageType.equals(IMessageBus.TYPE_INFORM)) {
+          LOGGER.log(Level.INFO, "Received a " + messageType + " message");
           handleInform(messageModel);
           
         } else if (messageType.equals(IMessageBus.TYPE_REQUEST)) {
-          String result = handleRequest(messageModel, message.getStringProperty(IMessageBus.SERIALIZATION));
-          if (result != null) {
-            Message responseMessage = MessageUtil.createRDFMessage(result, IMessageBus.TYPE_INFORM, IMessageBus.SERIALIZATION_DEFAULT, context);
-            responseMessage.setJMSCorrelationID(message.getJMSCorrelationID());
-            this.context.createProducer().send(topic, responseMessage);
-          }
+          LOGGER.log(Level.INFO, "Received a " + messageType + " message");
+          handleRequest(messageModel, message.getStringProperty(IMessageBus.SERIALIZATION), message.getJMSCorrelationID());
         }
       }
     } catch (JMSException e) {
@@ -73,29 +67,30 @@ public class ResourceRepoHandlerMDB implements MessageListener {
     }
   }
   
-  private String handleRequest(Model modelRequest, String serialization) {
-    Model responseModel = null;
+  private void handleRequest(Model requestModel, String serialization, String requestID) throws JMSException {
+    Resource messageResource = requestModel.getResource(MessageBusOntologyModel.internalMessage.getURI());
     
-    StmtIterator iter = modelRequest.listStatements(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest);
-    while (iter.hasNext()) {
-      Statement currentStatement = iter.nextStatement();
+    if (messageResource.hasProperty(MessageBusOntologyModel.propertySparqlQuery)) {
       
-      if (currentStatement.getSubject().hasProperty(MessageBusOntologyModel.propertySparqlQuery)) {
-        responseModel = repoHandler.handleSPARQLRequest(modelRequest, serialization);
-      } else {
-        modelRequest.remove(currentStatement);
-        responseModel = repoHandler.handleRequest(modelRequest);
-        MessageUtil.setCommonPrefixes(responseModel);
-      }
+      String serializedResponse = repoHandler.handleSPARQLRequest(requestModel, serialization);
       
-      if (responseModel != null) {
-        return MessageUtil.serializeModel(MessageUtil.createMsgInform(responseModel));
+      Message responseMessage = null;
+      if(messageResource.hasProperty(MessageBusOntologyModel.methodRestores)){
+        Model replyModel = MessageUtil.parseSerializedModel(serializedResponse);
+        replyModel.add(messageResource.getProperty(MessageBusOntologyModel.methodRestores));
+        serializedResponse = MessageUtil.serializeModel(replyModel);
+        responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_CREATE, serialization, context);
       }
+      else{
+        responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, serialization, context);
+        responseMessage.setJMSCorrelationID(requestID);
+      }
+      context.createProducer().send(topic, responseMessage);
+    } else {
+      LOGGER.log(Level.SEVERE, "No SPARQL query found");
     }
-    
-    return null;
   }
-  
+
   private void handleInform(Model modelInform) {
     StmtIterator iter = modelInform.listStatements(null, RDF.type, MessageBusOntologyModel.propertyFiteagleInform);
     if (iter.hasNext()) {
