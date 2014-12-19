@@ -1,6 +1,7 @@
 package org.fiteagle.core.repo;
 
 import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.core.repo.ResourceRepoHandler.ResourceRepositoryException;
 import org.junit.Test;
 
 import com.hp.hpl.jena.query.QueryParseException;
@@ -15,14 +16,13 @@ import com.hp.hpl.jena.sparql.resultset.RDFInput;
 
 public class QueryExecuterTest {
 
-	@Test(expected = QueryParseException.class)
-	public void testInvalidQuery() {
-		QueryExecuter
-				.executeSparqlDescribeQuery("This is no valid SPARQL Query");
+	@Test(expected = ResourceRepositoryException.class)
+	public void testInvalidQuery() throws ResourceRepositoryException {
+		QueryExecuter.executeSparqlDescribeQuery("This is no valid SPARQL Query");
 	}
 
 //	@Test
-	public void test2() {
+	public void test2() throws ResourceRepositoryException {
 		Model rs = QueryExecuter
 				.executeSparqlConstructQuery("PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> "
 						+ "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
@@ -37,7 +37,7 @@ public class QueryExecuterTest {
 	}
 	
 //	 @Test
-	  public void testListResources() {
+	  public void testListResources() throws ResourceRepositoryException {
 		  String query = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> "
 					+ "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
 					+ "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
@@ -66,7 +66,7 @@ public class QueryExecuterTest {
 	  }
 	  
 	//	 @Test
-		  public void testgetExtensions() {
+		  public void testgetExtensions() throws ResourceRepositoryException {
 			  String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
 			          + "PREFIX wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#> "
 			          + "PREFIX av: <http://federation.av.tu-berlin.de/about#> "
@@ -88,7 +88,7 @@ public class QueryExecuterTest {
 		  }
 		  
 //	     @Test
-      public void testDescribe() {
+      public void testDescribe() throws ResourceRepositoryException {
        String query = "DESCRIBE ?property WHERE {?property <http://www.w3.org/2000/01/rdf-schema#domain>  <http://open-multinet.info/ontology/resource/motor#Motor> . }";
         
         Model rs = QueryExecuter.executeSparqlDescribeQuery(query);
@@ -98,7 +98,7 @@ public class QueryExecuterTest {
       }
 
       //@Test
-      public void TestSelectMaxInstances(){
+      public void TestSelectMaxInstances() throws ResourceRepositoryException{
     	  
     	  ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(" SELECT ?amount WHERE {<http://federation.av.tu-berlin.de/about#MotorGarage-1> <http://open-multinet.info/ontology/omn#maxInstances> ?amount } ");
     	  while(rs.hasNext()){
@@ -107,7 +107,7 @@ public class QueryExecuterTest {
       }
       
      //@Test
-      public void TestSelectInstances(){
+      public void TestSelectInstances() throws ResourceRepositoryException{
     	  ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(" SELECT ?instance WHERE {?instance a ?resourceType . <http://federation.av.tu-berlin.de/about#MotorGarage-1> a ?adapterType . ?adapterType <http://open-multinet.info/ontology/omn#implements> ?resourceType .} ");
     	  int amount = 0;
     	  while(rs.hasNext()){
@@ -118,7 +118,7 @@ public class QueryExecuterTest {
       }
      
     //@Test
-     public void TestSelectMaxInstancesCanBeCreated(){
+     public void TestSelectMaxInstancesCanBeCreated() throws QueryParseException, ResourceRepositoryException{
    	  
    	  ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(" SELECT ?amount WHERE {<http://federation.av.tu-berlin.de/about#MotorGarage-1> <http://open-multinet.info/ontology/omn#maxInstancesCanBeCreated> ?amount } ");
    	  while(rs.hasNext()){
@@ -127,7 +127,7 @@ public class QueryExecuterTest {
      }
      
  		 //@Test
-	  public void testget() {
+	  public void testget() throws ResourceRepositoryException {
 		  String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
 		          + "PREFIX wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#> "
 		          + "PREFIX av: <http://federation.av.tu-berlin.de/about#> "
@@ -152,7 +152,7 @@ public class QueryExecuterTest {
 //		+ "?adapterType <http://open-multinet.info/ontology/omn#implements> ?resourceType ."
  		 
  		// @Test
- 	      public void TestSelecterhhrjt(){
+ 	      public void TestSelecterhhrjt() throws ResourceRepositoryException{
  			 String query = "SELECT ?maxInstances ?reservedInstances ?instance WHERE {"
  			 		+ "OPTIONAL { ?instance a ?resourceType ."
  			 		+ "<http://federation.av.tu-berlin.de/about#MotorGarage-1> a ?adapterType ."
@@ -192,7 +192,7 @@ public class QueryExecuterTest {
  	      }
  		 
 		// @Test
-	      public void TestSelecterhhrjt1(){
+	      public void TestSelecterhhrjt1() throws ResourceRepositoryException{
 			 String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
 			 		+ "PREFIX av: <http://federation.av.tu-berlin.de/about#> "
 			 		+ "SELECT ?maxInstances ?reservedInstances ?instance WHERE {"

@@ -19,7 +19,6 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.vocabulary.RDF;
 
 public class ResourceRepoHandler {
   
@@ -38,7 +37,7 @@ public class ResourceRepoHandler {
     return instance;
   }
   
-  public String handleSPARQLRequest(Model requestModel, String serialization) {
+  public String handleSPARQLRequest(Model requestModel, String serialization) throws ResourceRepositoryException {
     String sparqlQuery = getQueryFromModel(requestModel);
     Model resultModel = null;
     String resultJSON = "";
@@ -68,7 +67,7 @@ public class ResourceRepoHandler {
     return null;
   }
   
-  public synchronized boolean addInformToRepository(Model modelInform) {
+  public synchronized boolean addInformToRepository(Model modelInform) throws ResourceRepositoryException {
     try {
       DatasetAccessor accessor = getTripletStoreAccessor();
       
@@ -80,17 +79,16 @@ public class ResourceRepoHandler {
       
       accessor.putModel(currentModel);
     } catch (HttpException e) {
-      LOGGER.log(Level.SEVERE, this.getClass().getSimpleName() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE_DATA);
-      return false;
+      throw new ResourceRepositoryException("Could not connect to fuseki service at:" + FUSEKI_SERVICE_DATA);
     }
     
     return true;
   }
   
-  private DatasetAccessor getTripletStoreAccessor() {
+  private DatasetAccessor getTripletStoreAccessor() throws ResourceRepositoryException {
     DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE_DATA);
     if (accessor == null) {
-      LOGGER.log(Level.SEVERE, "Could not connect to fuseki service at:" + FUSEKI_SERVICE_DATA);
+      throw new ResourceRepositoryException("Could not connect to fuseki service at:" + FUSEKI_SERVICE_DATA);
     }
     return accessor;
   }
@@ -115,7 +113,7 @@ public class ResourceRepoHandler {
     }
   }
   
-  public synchronized boolean releaseResource(Resource rscToRemove) {
+  public synchronized boolean releaseResource(Resource rscToRemove) throws ResourceRepositoryException {
     try {
       DatasetAccessor accessor = getTripletStoreAccessor();
       
@@ -127,29 +125,22 @@ public class ResourceRepoHandler {
       accessor.putModel(currentModel);
       
     } catch (HttpException e) {
-      LOGGER.log(Level.SEVERE, this.toString() + " : Cannot connect to FUSEKI at " + FUSEKI_SERVICE_DATA);
-      return false;
+      throw new ResourceRepositoryException("Could not connect to fuseki service at:" + FUSEKI_SERVICE_DATA);
     }
     return true;
   }
   
-  public String getQueryFromModel(Model model) {
-    StmtIterator iter = model.listStatements(null, RDF.type, MessageBusOntologyModel.propertyFiteagleRequest);
-    Statement currentStatement = null;
-    Statement rdfsComment = null;
-    String sparqlQuery = "";
-    while (iter.hasNext()) {
-      currentStatement = iter.nextStatement();
-      rdfsComment = currentStatement.getSubject().getProperty(MessageBusOntologyModel.propertySparqlQuery);
-      if (rdfsComment != null) {
-        sparqlQuery = rdfsComment.getObject().toString();
-        break;
-      }
+  public String getQueryFromModel(Model model) throws ResourceRepositoryException {
+    String query = null;
+    Resource message = model.getResource(MessageBusOntologyModel.internalMessage.getURI());
+    Statement st = message.getProperty(MessageBusOntologyModel.propertySparqlQuery);
+    if(st != null){
+      query =  st.getObject().toString();
     }
-    if (sparqlQuery.isEmpty()) {
-      LOGGER.log(Level.SEVERE, "SPARQL Query expected, but no sparql query found!");
+    if (query == null || query.isEmpty()) {
+      throw new ResourceRepositoryException("SPARQL Query expected, but no sparql query found!");
     }
-    return sparqlQuery;
+    return query;
   }
   
   public static String getResultSetAsJsonString(ResultSet resultSet) {
@@ -163,6 +154,15 @@ public class ResourceRepoHandler {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
     return jsonString;
+  }
+  
+  public static class ResourceRepositoryException extends Exception {
+    
+    private static final long serialVersionUID = 8213556984621316215L;
+
+    public ResourceRepositoryException(String message){
+      super(message);
+    }
   }
   
 }

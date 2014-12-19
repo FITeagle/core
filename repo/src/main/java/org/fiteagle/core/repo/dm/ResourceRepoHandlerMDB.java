@@ -17,6 +17,7 @@ import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.core.repo.ResourceRepoHandler;
+import org.fiteagle.core.repo.ResourceRepoHandler.ResourceRepositoryException;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Resource;
@@ -68,26 +69,23 @@ public class ResourceRepoHandlerMDB implements MessageListener {
   }
   
   private void handleRequest(Model requestModel, String serialization, String requestID) throws JMSException {
-    Resource messageResource = requestModel.getResource(MessageBusOntologyModel.internalMessage.getURI());
-    
-    if (messageResource.hasProperty(MessageBusOntologyModel.propertySparqlQuery)) {
-      
+    Message responseMessage = null;
+    try{
       String serializedResponse = repoHandler.handleSPARQLRequest(requestModel, serialization);
-      
-      Message responseMessage = null;
+      Resource messageResource = requestModel.getResource(MessageBusOntologyModel.internalMessage.getURI());
       if(messageResource.hasProperty(MessageBusOntologyModel.methodRestores)){
         Model replyModel = MessageUtil.parseSerializedModel(serializedResponse);
         replyModel.add(messageResource.getProperty(MessageBusOntologyModel.methodRestores));
         serializedResponse = MessageUtil.serializeModel(replyModel);
-        responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_CREATE, serialization, context);
+        responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_CREATE, serialization, null, context);
       }
       else{
-        responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, serialization, context);
-        responseMessage.setJMSCorrelationID(requestID);
+        responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, serialization, requestID, context);
       }
+    } catch(ResourceRepositoryException e){
+      responseMessage = MessageUtil.createErrorMessage(e.getMessage(), requestID, context);
+    } finally{
       context.createProducer().send(topic, responseMessage);
-    } else {
-      LOGGER.log(Level.SEVERE, "No SPARQL query found");
     }
   }
 
@@ -97,14 +95,22 @@ public class ResourceRepoHandlerMDB implements MessageListener {
       Statement currentStatement = iter.nextStatement();
       modelInform.remove(currentStatement);
       checkForReleases(modelInform);
-      repoHandler.addInformToRepository(modelInform);
+      try {
+        repoHandler.addInformToRepository(modelInform);
+      } catch (ResourceRepositoryException e) {
+        LOGGER.log(Level.SEVERE, e.getMessage());
+      }
     }
   }
   
   private void checkForReleases(Model modelInform) {
     Statement releaseStatement = modelInform.getProperty(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodReleases);
     while (releaseStatement != null) {
-      repoHandler.releaseResource(releaseStatement.getResource());
+      try {
+        repoHandler.releaseResource(releaseStatement.getResource());
+      } catch (ResourceRepositoryException e) {
+        LOGGER.log(Level.SEVERE, e.getMessage());
+      }
       LOGGER.log(Level.INFO, "Removing resource: " + releaseStatement.getResource());
       modelInform.remove(releaseStatement);
       releaseStatement = modelInform.getProperty(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodReleases);
