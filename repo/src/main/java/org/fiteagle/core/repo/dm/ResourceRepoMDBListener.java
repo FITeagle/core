@@ -16,6 +16,7 @@ import javax.jms.Topic;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.api.core.MessageUtil.ParsingException;
 import org.fiteagle.core.repo.ResourceRepoHandler;
 import org.fiteagle.core.repo.ResourceRepoHandler.ResourceRepositoryException;
 
@@ -82,7 +83,7 @@ public class ResourceRepoMDBListener implements MessageListener {
       else{
         responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, serialization, requestID, context);
       }
-    } catch(ResourceRepositoryException e){
+    } catch(ResourceRepositoryException | ParsingException e){
       responseMessage = MessageUtil.createErrorMessage(e.getMessage(), requestID, context);
     } finally{
       context.createProducer().send(topic, responseMessage);
@@ -96,7 +97,7 @@ public class ResourceRepoMDBListener implements MessageListener {
       modelInform.remove(currentStatement);
       checkForReleases(modelInform);
       try {
-        repoHandler.addInformToRepository(modelInform);
+        repoHandler.updateRepositoryModel(modelInform);
       } catch (ResourceRepositoryException e) {
         LOGGER.log(Level.SEVERE, e.getMessage());
       }

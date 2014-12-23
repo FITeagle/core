@@ -1,18 +1,13 @@
 package org.fiteagle.core.repo;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.charset.Charset;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.jena.atlas.web.HttpException;
 import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.api.core.MessageUtil.ParsingException;
 
-import com.hp.hpl.jena.query.DatasetAccessor;
-import com.hp.hpl.jena.query.DatasetAccessorFactory;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -21,10 +16,6 @@ import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 public class ResourceRepoHandler {
-  
-  protected static final String FUSEKI_SERVICE = "http://localhost:3030/fiteagle/";
-  protected static final String FUSEKI_SERVICE_DATA = FUSEKI_SERVICE + "data";
-  protected static final String FUSEKI_SERVICE_QUERY = FUSEKI_SERVICE + "query";
   
   private static Logger LOGGER = Logger.getLogger(ResourceRepoHandler.class.toString());
   
@@ -37,8 +28,8 @@ public class ResourceRepoHandler {
     return instance;
   }
   
-  public String handleSPARQLRequest(Model requestModel, String serialization) throws ResourceRepositoryException {
-    String sparqlQuery = getQueryFromModel(requestModel);
+  public String handleSPARQLRequest(Model requestModel, String serialization) throws ResourceRepositoryException, ParsingException {
+    String sparqlQuery = MessageUtil.getSPARQLQueryFromModel(requestModel);
     Model resultModel = null;
     String resultJSON = "";
     
@@ -46,7 +37,7 @@ public class ResourceRepoHandler {
     
     if (sparqlQuery.toUpperCase().contains("SELECT")) {
       ResultSet rs = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
-      resultJSON = getResultSetAsJsonString(rs);
+      resultJSON = MessageUtil.parseResultSetToJson(rs);
       resultModel = ResultSetFormatter.toModel(rs);
       
     } else if (sparqlQuery.toUpperCase().contains("DESCRIBE")) {
@@ -60,100 +51,45 @@ public class ResourceRepoHandler {
     
     switch(serialization){
       case IMessageBus.SERIALIZATION_TURTLE:
-        return MessageUtil.serializeModel(resultModel);
+        return MessageUtil.serializeModel(resultModel, IMessageBus.SERIALIZATION_TURTLE);
       case IMessageBus.SERIALIZATION_JSONLD:
         return resultJSON;
     }
-    return null;
+    throw new ResourceRepositoryException("Unsupported serialization type: "+serialization);
   }
   
-  public synchronized boolean addInformToRepository(Model modelInform) throws ResourceRepositoryException {
-    try {
-      DatasetAccessor accessor = getTripletStoreAccessor();
-      
-      Model currentModel = accessor.getModel();
-      QueryExecuter.removeProblematicNsPrefixes(currentModel);
-      
-      removeExistingValuesFromModel(currentModel, modelInform);
-      addValuesToModel(currentModel, modelInform);
-      
-      accessor.putModel(currentModel);
-    } catch (HttpException e) {
-      throw new ResourceRepositoryException("Could not connect to fuseki service at:" + FUSEKI_SERVICE_DATA);
+  public void releaseResource(Resource resourceToRemove) throws ResourceRepositoryException {
+    String resource =  "<"+resourceToRemove.getURI()+"> ?anyPredicate ?anyObject .";
+    
+    String updateString = "DELETE { "+resource+" }" + "WHERE { "+resource+" }";
+    
+    QueryExecuter.executeSparqlUpdateQuery(updateString);
+  }
+  
+  public void updateRepositoryModel(Model modelInform) throws ResourceRepositoryException {
+    StmtIterator iter = modelInform.listStatements();
+    while(iter.hasNext()){
+      removeExistingValue(iter.next());
+    }
+    insertDataFromModel(modelInform);    
+  }
+  
+  private void insertDataFromModel(Model model) throws ResourceRepositoryException{
+    for(Entry<String, String> p : model.getNsPrefixMap().entrySet()){
+      model.removeNsPrefix(p.getKey());
     }
     
-    return true;
+    String updateString = "INSERT DATA { "+MessageUtil.serializeModel(model)+" }";
+    
+    QueryExecuter.executeSparqlUpdateQuery(updateString);
   }
   
-  private DatasetAccessor getTripletStoreAccessor() throws ResourceRepositoryException {
-    DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(FUSEKI_SERVICE_DATA);
-    if (accessor == null) {
-      throw new ResourceRepositoryException("Could not connect to fuseki service at:" + FUSEKI_SERVICE_DATA);
-    }
-    return accessor;
-  }
-  
-  private void removeExistingValuesFromModel(Model mainModel, Model valuesToRemove) {
-    StmtIterator stmtIterator = valuesToRemove.listStatements();
-    while (stmtIterator.hasNext()) {
-      Statement currentStatement = stmtIterator.nextStatement();
-      if (!currentStatement.getSubject().equals(MessageBusOntologyModel.internalMessage)) {
-        mainModel.removeAll(currentStatement.getSubject(), currentStatement.getPredicate(), null);
-      }
-    }
-  }
-  
-  private void addValuesToModel(Model mainModel, Model valuesToAdd) {
-    StmtIterator stmtIterator = valuesToAdd.listStatements();
-    while (stmtIterator.hasNext()) {
-      Statement currentStatement = stmtIterator.nextStatement();
-      if (!currentStatement.getSubject().equals(MessageBusOntologyModel.internalMessage)) {
-        mainModel.add(currentStatement);
-      }
-    }
-  }
-  
-  public synchronized boolean releaseResource(Resource rscToRemove) throws ResourceRepositoryException {
-    try {
-      DatasetAccessor accessor = getTripletStoreAccessor();
-      
-      Model currentModel = accessor.getModel();
-      QueryExecuter.removeProblematicNsPrefixes(currentModel);
-      
-      currentModel.removeAll(rscToRemove, null, null);
-      
-      accessor.putModel(currentModel);
-      
-    } catch (HttpException e) {
-      throw new ResourceRepositoryException("Could not connect to fuseki service at:" + FUSEKI_SERVICE_DATA);
-    }
-    return true;
-  }
-  
-  public String getQueryFromModel(Model model) throws ResourceRepositoryException {
-    String query = null;
-    Resource message = model.getResource(MessageBusOntologyModel.internalMessage.getURI());
-    Statement st = message.getProperty(MessageBusOntologyModel.propertySparqlQuery);
-    if(st != null){
-      query =  st.getObject().toString();
-    }
-    if (query == null || query.isEmpty()) {
-      throw new ResourceRepositoryException("SPARQL Query expected, but no sparql query found!");
-    }
-    return query;
-  }
-  
-  public static String getResultSetAsJsonString(ResultSet resultSet) {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    ResultSetFormatter.outputAsJSON(baos, resultSet);
-    String jsonString = "";
-    try {
-      jsonString = baos.toString(Charset.defaultCharset().toString());
-      baos.close();
-    } catch (IOException e) {
-      LOGGER.log(Level.SEVERE, e.getMessage());
-    }
-    return jsonString;
+  private void removeExistingValue(Statement statement) throws ResourceRepositoryException{
+    String existingValue = "<"+statement.getSubject().getURI()+"> <"+statement.getPredicate().getURI()+"> ?anyObject .";
+          
+    String updateString = "DELETE { "+existingValue+" }" + "WHERE { "+existingValue+" }";
+
+    QueryExecuter.executeSparqlUpdateQuery(updateString);
   }
   
   public static class ResourceRepositoryException extends Exception {
