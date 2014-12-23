@@ -25,13 +25,13 @@ import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
 
-@MessageDriven(name = "ResourceRepoHandlerMDB", activationConfig = {
+@MessageDriven(name = "ResourceRepoMDBListener", activationConfig = {
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
     @ActivationConfigProperty(propertyName = "destination", propertyValue = IMessageBus.TOPIC_CORE),
     @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
-public class ResourceRepoHandlerMDB implements MessageListener {
+public class ResourceRepoMDBListener implements MessageListener {
   
-  private static Logger LOGGER = Logger.getLogger(ResourceRepoHandlerMDB.class.toString());
+  private static Logger LOGGER = Logger.getLogger(ResourceRepoMDBListener.class.toString());
   
   private ResourceRepoHandler repoHandler;
   
