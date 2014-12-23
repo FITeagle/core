@@ -35,5 +35,6 @@
         <module>aaa</module>
         <module>repo</module>
         <module>bus</module>
+        <module>reservation</module>
 	</modules>
 </project>
