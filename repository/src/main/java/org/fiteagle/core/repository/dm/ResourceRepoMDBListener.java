@@ -16,8 +16,8 @@ import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.MessageUtil.ParsingException;
-import org.fiteagle.core.repository.ResourceRepoHandler;
-import org.fiteagle.core.repository.ResourceRepoHandler.ResourceRepositoryException;
+import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Resource;
@@ -62,7 +62,7 @@ public class ResourceRepoMDBListener implements MessageListener {
   private void handleRequest(Model requestModel, String serialization, String requestID) throws JMSException {
     Message responseMessage = null;
     try {
-      String serializedResponse = ResourceRepoHandler.handleSPARQLRequest(requestModel, serialization);
+      String serializedResponse = TripletStoreAccessor.handleSPARQLRequest(requestModel, serialization);
       Resource messageResource = requestModel.getResource(MessageBusOntologyModel.internalMessage.getURI());
       if (messageResource.hasProperty(MessageBusOntologyModel.methodRestores)) {
         Model replyModel = MessageUtil.parseSerializedModel(serializedResponse);
@@ -82,7 +82,7 @@ public class ResourceRepoMDBListener implements MessageListener {
   private void handleInform(Model modelInform) {
     checkForReleases(modelInform);
     try {
-      ResourceRepoHandler.updateRepositoryModel(modelInform);
+      TripletStoreAccessor.updateRepositoryModel(modelInform);
     } catch (ResourceRepositoryException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
@@ -92,7 +92,7 @@ public class ResourceRepoMDBListener implements MessageListener {
     Statement releaseStatement = modelInform.getProperty(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodReleases);
     while (releaseStatement != null) {
       try {
-        ResourceRepoHandler.releaseResource(releaseStatement.getResource());
+        TripletStoreAccessor.releaseResource(releaseStatement.getResource());
       } catch (ResourceRepositoryException e) {
         LOGGER.log(Level.SEVERE, e.getMessage());
       }

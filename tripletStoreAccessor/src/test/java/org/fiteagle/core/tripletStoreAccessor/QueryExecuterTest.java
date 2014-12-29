@@ -1,8 +1,8 @@
-package org.fiteagle.core.repo;
+package org.fiteagle.core.tripletStoreAccessor;
 
 import org.fiteagle.api.core.MessageUtil;
-import org.fiteagle.core.repository.QueryExecuter;
-import org.fiteagle.core.repository.ResourceRepoHandler.ResourceRepositoryException;
+import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
+import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 import org.junit.Test;
 
 import com.hp.hpl.jena.query.QueryParseException;

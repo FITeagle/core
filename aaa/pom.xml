@@ -2,6 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<name>FITeagle :: Core :: AAA</name>
+	<groupId>org.fiteagle.core</groupId>
 	<artifactId>aaa</artifactId>
 	<packaging>jar</packaging>
 
@@ -13,13 +14,8 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.fiteagle</groupId>
+			<groupId>org.fiteagle.core</groupId>
 			<artifactId>config</artifactId>
-			<version>0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.fiteagle</groupId>
-			<artifactId>api</artifactId>
 			<version>0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>

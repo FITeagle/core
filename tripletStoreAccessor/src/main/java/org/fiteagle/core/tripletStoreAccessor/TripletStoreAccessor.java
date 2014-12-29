@@ -1,4 +1,4 @@
-package org.fiteagle.core.repository;
+package org.fiteagle.core.tripletStoreAccessor;
 
 import java.util.Map.Entry;
 import java.util.logging.Level;
@@ -15,9 +15,9 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
-public class ResourceRepoHandler {
+public class TripletStoreAccessor {
   
-  private static Logger LOGGER = Logger.getLogger(ResourceRepoHandler.class.toString());
+  private static Logger LOGGER = Logger.getLogger(TripletStoreAccessor.class.toString());
   
   public static String handleSPARQLRequest(Model requestModel, String serialization) throws ResourceRepositoryException, ParsingException {
     String sparqlQuery = MessageUtil.getSPARQLQueryFromModel(requestModel);
