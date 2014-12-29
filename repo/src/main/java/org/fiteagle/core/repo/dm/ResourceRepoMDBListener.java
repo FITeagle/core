@@ -3,7 +3,6 @@ package org.fiteagle.core.repo.dm;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.inject.Inject;
@@ -23,8 +22,6 @@ import org.fiteagle.core.repo.ResourceRepoHandler.ResourceRepositoryException;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.vocabulary.RDF;
 
 @MessageDriven(name = "ResourceRepoMDBListener", activationConfig = {
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -34,17 +31,10 @@ public class ResourceRepoMDBListener implements MessageListener {
   
   private static Logger LOGGER = Logger.getLogger(ResourceRepoMDBListener.class.toString());
   
-  private ResourceRepoHandler repoHandler;
-  
   @Inject
   private JMSContext context;
   @javax.annotation.Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
   private Topic topic;
-  
-  @PostConstruct
-  private void startUp() {
-    repoHandler = ResourceRepoHandler.getInstance();
-  }
   
   public void onMessage(final Message message) {
     try {
@@ -61,7 +51,7 @@ public class ResourceRepoMDBListener implements MessageListener {
           
         } else if (messageType.equals(IMessageBus.TYPE_REQUEST)) {
           LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-          handleRequest(messageModel, message.getStringProperty(IMessageBus.SERIALIZATION), message.getJMSCorrelationID());
+          handleRequest(messageModel, serialization, message.getJMSCorrelationID());
         }
       }
     } catch (JMSException e) {
@@ -71,36 +61,30 @@ public class ResourceRepoMDBListener implements MessageListener {
   
   private void handleRequest(Model requestModel, String serialization, String requestID) throws JMSException {
     Message responseMessage = null;
-    try{
-      String serializedResponse = repoHandler.handleSPARQLRequest(requestModel, serialization);
+    try {
+      String serializedResponse = ResourceRepoHandler.handleSPARQLRequest(requestModel, serialization);
       Resource messageResource = requestModel.getResource(MessageBusOntologyModel.internalMessage.getURI());
-      if(messageResource.hasProperty(MessageBusOntologyModel.methodRestores)){
+      if (messageResource.hasProperty(MessageBusOntologyModel.methodRestores)) {
         Model replyModel = MessageUtil.parseSerializedModel(serializedResponse);
         replyModel.add(messageResource.getProperty(MessageBusOntologyModel.methodRestores));
         serializedResponse = MessageUtil.serializeModel(replyModel);
         responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_CREATE, serialization, null, context);
-      }
-      else{
+      } else {
         responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, serialization, requestID, context);
       }
-    } catch(ResourceRepositoryException | ParsingException e){
+    } catch (ResourceRepositoryException | ParsingException e) {
       responseMessage = MessageUtil.createErrorMessage(e.getMessage(), requestID, context);
-    } finally{
+    } finally {
       context.createProducer().send(topic, responseMessage);
     }
   }
-
+  
   private void handleInform(Model modelInform) {
-    StmtIterator iter = modelInform.listStatements(null, RDF.type, MessageBusOntologyModel.propertyFiteagleInform);
-    if (iter.hasNext()) {
-      Statement currentStatement = iter.nextStatement();
-      modelInform.remove(currentStatement);
-      checkForReleases(modelInform);
-      try {
-        repoHandler.updateRepositoryModel(modelInform);
-      } catch (ResourceRepositoryException e) {
-        LOGGER.log(Level.SEVERE, e.getMessage());
-      }
+    checkForReleases(modelInform);
+    try {
+      ResourceRepoHandler.updateRepositoryModel(modelInform);
+    } catch (ResourceRepositoryException e) {
+      LOGGER.log(Level.SEVERE, e.getMessage());
     }
   }
   
@@ -108,7 +92,7 @@ public class ResourceRepoMDBListener implements MessageListener {
     Statement releaseStatement = modelInform.getProperty(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodReleases);
     while (releaseStatement != null) {
       try {
-        repoHandler.releaseResource(releaseStatement.getResource());
+        ResourceRepoHandler.releaseResource(releaseStatement.getResource());
       } catch (ResourceRepositoryException e) {
         LOGGER.log(Level.SEVERE, e.getMessage());
       }
@@ -117,5 +101,4 @@ public class ResourceRepoMDBListener implements MessageListener {
       releaseStatement = modelInform.getProperty(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodReleases);
     }
   }
-  
 }

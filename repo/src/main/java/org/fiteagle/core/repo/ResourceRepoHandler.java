@@ -19,16 +19,7 @@ public class ResourceRepoHandler {
   
   private static Logger LOGGER = Logger.getLogger(ResourceRepoHandler.class.toString());
   
-  private static ResourceRepoHandler instance;
-  
-  public static synchronized ResourceRepoHandler getInstance() {
-    if (instance == null){
-      instance = new ResourceRepoHandler();
-    }
-    return instance;
-  }
-  
-  public String handleSPARQLRequest(Model requestModel, String serialization) throws ResourceRepositoryException, ParsingException {
+  public static String handleSPARQLRequest(Model requestModel, String serialization) throws ResourceRepositoryException, ParsingException {
     String sparqlQuery = MessageUtil.getSPARQLQueryFromModel(requestModel);
     Model resultModel = null;
     String resultJSON = "";
@@ -58,7 +49,7 @@ public class ResourceRepoHandler {
     throw new ResourceRepositoryException("Unsupported serialization type: "+serialization);
   }
   
-  public void releaseResource(Resource resourceToRemove) throws ResourceRepositoryException {
+  public static void releaseResource(Resource resourceToRemove) throws ResourceRepositoryException {
     String resource =  "<"+resourceToRemove.getURI()+"> ?anyPredicate ?anyObject .";
     
     String updateString = "DELETE { "+resource+" }" + "WHERE { "+resource+" }";
@@ -66,7 +57,7 @@ public class ResourceRepoHandler {
     QueryExecuter.executeSparqlUpdateQuery(updateString);
   }
   
-  public void updateRepositoryModel(Model modelInform) throws ResourceRepositoryException {
+  public static void updateRepositoryModel(Model modelInform) throws ResourceRepositoryException {
     StmtIterator iter = modelInform.listStatements();
     while(iter.hasNext()){
       removeExistingValue(iter.next());
@@ -74,7 +65,7 @@ public class ResourceRepoHandler {
     insertDataFromModel(modelInform);    
   }
   
-  private void insertDataFromModel(Model model) throws ResourceRepositoryException{
+  private static void insertDataFromModel(Model model) throws ResourceRepositoryException{
     for(Entry<String, String> p : model.getNsPrefixMap().entrySet()){
       model.removeNsPrefix(p.getKey());
     }
@@ -84,7 +75,7 @@ public class ResourceRepoHandler {
     QueryExecuter.executeSparqlUpdateQuery(updateString);
   }
   
-  private void removeExistingValue(Statement statement) throws ResourceRepositoryException{
+  private static void removeExistingValue(Statement statement) throws ResourceRepositoryException{
     String existingValue = "<"+statement.getSubject().getURI()+"> <"+statement.getPredicate().getURI()+"> ?anyObject .";
           
     String updateString = "DELETE { "+existingValue+" }" + "WHERE { "+existingValue+" }";
