@@ -1,7 +1,8 @@
 package org.fiteagle.core.repo;
 
 import org.fiteagle.api.core.MessageUtil;
-import org.fiteagle.core.repo.ResourceRepoHandler.ResourceRepositoryException;
+import org.fiteagle.core.repository.QueryExecuter;
+import org.fiteagle.core.repository.ResourceRepoHandler.ResourceRepositoryException;
 import org.junit.Test;
 
 import com.hp.hpl.jena.query.QueryParseException;

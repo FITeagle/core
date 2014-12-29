@@ -1,4 +1,4 @@
-package org.fiteagle.core.repo.dm;
+package org.fiteagle.core.repository.dm;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,8 +16,8 @@ import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.MessageUtil.ParsingException;
-import org.fiteagle.core.repo.ResourceRepoHandler;
-import org.fiteagle.core.repo.ResourceRepoHandler.ResourceRepositoryException;
+import org.fiteagle.core.repository.ResourceRepoHandler;
+import org.fiteagle.core.repository.ResourceRepoHandler.ResourceRepositoryException;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Resource;

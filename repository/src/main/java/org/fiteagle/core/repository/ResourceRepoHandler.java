@@ -1,4 +1,4 @@
-package org.fiteagle.core.repo;
+package org.fiteagle.core.repository;
 
 import java.util.Map.Entry;
 import java.util.logging.Level;

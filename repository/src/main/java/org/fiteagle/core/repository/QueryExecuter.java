@@ -1,11 +1,11 @@
-package org.fiteagle.core.repo;
+package org.fiteagle.core.repository;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
 import org.apache.jena.atlas.web.HttpException;
-import org.fiteagle.core.repo.ResourceRepoHandler.ResourceRepositoryException;
+import org.fiteagle.core.repository.ResourceRepoHandler.ResourceRepositoryException;
 
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
