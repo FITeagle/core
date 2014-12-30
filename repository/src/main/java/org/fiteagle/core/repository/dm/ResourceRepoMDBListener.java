@@ -50,8 +50,11 @@ public class ResourceRepoMDBListener implements MessageListener {
           handleInform(messageModel);
           
         } else if (messageType.equals(IMessageBus.TYPE_REQUEST)) {
-          LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-          handleRequest(messageModel, serialization, message.getJMSCorrelationID());
+          Resource messageResource = messageModel.getResource(MessageBusOntologyModel.internalMessage.getURI());
+          if (messageResource.getProperty(MessageBusOntologyModel.requestType) != null && messageResource.getProperty(MessageBusOntologyModel.requestType).getObject().toString().equals(IMessageBus.REQUEST_TYPE_SPARQL_QUERY)) {
+            LOGGER.log(Level.INFO, "Received a " + messageType + " message");
+            handleRequest(messageModel,messageResource, serialization, message.getJMSCorrelationID());
+          }
         }
       }
     } catch (JMSException e) {
@@ -59,30 +62,28 @@ public class ResourceRepoMDBListener implements MessageListener {
     }
   }
   
-  private void handleRequest(Model requestModel, String serialization, String requestID) throws JMSException {
+  private void handleRequest(Model requestModel, Resource messageResource, String serialization, String requestID) throws JMSException {
     Message responseMessage = null;
-    try {
-      Resource messageResource = requestModel.getResource(MessageBusOntologyModel.internalMessage.getURI());
-      if(messageResource.getProperty(MessageBusOntologyModel.requestType).getObject().toString().equals(IMessageBus.REQUEST_TYPE_SPARQL_QUERY)){
-        
+      try {
         String serializedResponse = TripletStoreAccessor.handleSPARQLRequest(requestModel, serialization);
         
         if (messageResource.hasProperty(MessageBusOntologyModel.methodRestores)) {
           Model replyModel = MessageUtil.parseSerializedModel(serializedResponse);
           replyModel.add(messageResource.getProperty(MessageBusOntologyModel.methodRestores));
           serializedResponse = MessageUtil.serializeModel(replyModel);
-          responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_CREATE, serialization, null, context);
+          responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_CREATE, serialization,
+              null, context);
         } else {
-          responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, serialization, requestID, context);
+          responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, serialization,
+              requestID, context);
         }
+      } catch (ResourceRepositoryException | ParsingException e) {
+        responseMessage = MessageUtil.createErrorMessage(e.getMessage(), requestID, context);
+      } finally {
+        context.createProducer().send(topic, responseMessage);
       }
-    } catch (ResourceRepositoryException | ParsingException e) {
-      responseMessage = MessageUtil.createErrorMessage(e.getMessage(), requestID, context);
-    } finally {
-      context.createProducer().send(topic, responseMessage);
-    }
   }
-  
+
   private void handleInform(Model modelInform) {
     checkForReleases(modelInform);
     try {
