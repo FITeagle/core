@@ -62,15 +62,19 @@ public class ResourceRepoMDBListener implements MessageListener {
   private void handleRequest(Model requestModel, String serialization, String requestID) throws JMSException {
     Message responseMessage = null;
     try {
-      String serializedResponse = TripletStoreAccessor.handleSPARQLRequest(requestModel, serialization);
       Resource messageResource = requestModel.getResource(MessageBusOntologyModel.internalMessage.getURI());
-      if (messageResource.hasProperty(MessageBusOntologyModel.methodRestores)) {
-        Model replyModel = MessageUtil.parseSerializedModel(serializedResponse);
-        replyModel.add(messageResource.getProperty(MessageBusOntologyModel.methodRestores));
-        serializedResponse = MessageUtil.serializeModel(replyModel);
-        responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_CREATE, serialization, null, context);
-      } else {
-        responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, serialization, requestID, context);
+      if(messageResource.getProperty(MessageBusOntologyModel.requestType).getObject().toString().equals(IMessageBus.REQUEST_TYPE_SPARQL_QUERY)){
+        
+        String serializedResponse = TripletStoreAccessor.handleSPARQLRequest(requestModel, serialization);
+        
+        if (messageResource.hasProperty(MessageBusOntologyModel.methodRestores)) {
+          Model replyModel = MessageUtil.parseSerializedModel(serializedResponse);
+          replyModel.add(messageResource.getProperty(MessageBusOntologyModel.methodRestores));
+          serializedResponse = MessageUtil.serializeModel(replyModel);
+          responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_CREATE, serialization, null, context);
+        } else {
+          responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, serialization, requestID, context);
+        }
       }
     } catch (ResourceRepositoryException | ParsingException e) {
       responseMessage = MessageUtil.createErrorMessage(e.getMessage(), requestID, context);
