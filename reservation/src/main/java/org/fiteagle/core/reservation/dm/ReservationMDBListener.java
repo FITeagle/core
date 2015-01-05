@@ -1,5 +1,6 @@
 package org.fiteagle.core.reservation.dm;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,6 +44,8 @@ public class ReservationMDBListener implements MessageListener {
   private static String componentManagerId = "component_manager_id";
   private static String URN = "urn";
   private static String EndTime = "endTime";
+  private static String OMN = "http://open-multinet.info/ontology/omn#";
+  
   
   @Inject
   private JMSContext context;
@@ -78,10 +81,19 @@ public class ReservationMDBListener implements MessageListener {
     LOGGER.log(Level.INFO, "handling reservation request ...");
     Message responseMessage = null;
     Model resultModel = ModelFactory.createDefaultModel();
-    final List<String> sliversList = new LinkedList<>();
-    final Map<String, String> allocateParameters = new HashMap<>();
-    
-    this.parseReservationParameters(allocateParameters, requestModel);
+    //final List<String> sliversList = new LinkedList<>();
+    //final Map<String, String> allocateParameters = new HashMap<>();
+    final Map<String, String> reservedSlivers = new HashMap<>();
+   this.handleReservation(requestModel, reservedSlivers);
+   this.reserve(requestModel);
+   
+
+   for (Map.Entry<String, String> sliver : reservedSlivers.entrySet()) {
+     Resource sliversResource = resultModel.createResource(sliver.getKey());
+     sliversResource.addProperty(resultModel.createProperty(OMN + "reservation_status"), sliver.getValue());
+     //rdfList.addProperty(resultModel.createProperty(sliver.getKey()), sliver.getValue());
+   }
+ /*   this.parseReservationParameters(allocateParameters, requestModel);
     if (isReservationAvailable(allocateParameters.get(componentManagerId))) {
       Model reservationModel = this.createReserveModel(allocateParameters, sliversList);
       this.reserve(reservationModel);
@@ -94,7 +106,8 @@ public class ReservationMDBListener implements MessageListener {
       for (String createdSlivers : sliversList){ 
         rdfList.addProperty(resultModel.createProperty(createdSlivers), "sliver");
       }
-    }
+    }*/
+  
     String serializedResponse = MessageUtil.serializeModel(resultModel);
     responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, serialization,
         requestID, context);
@@ -102,12 +115,49 @@ public class ReservationMDBListener implements MessageListener {
     context.createProducer().send(topic, responseMessage);
   }
   
-  private void parseReservationParameters(Map<String, String> allocateParameters, Model requestModel) {
-    StmtIterator iterator = requestModel.listStatements();
+  private void handleReservation(Model requestModel, Map<String, String> reservedSlivers){
+    //RDFList rdfList = resultModel.createList();
+    StmtIterator iterator = requestModel.listStatements(null, RDF.type, "http://open-multinet.info/ontology/omn#sliver");
+    LOGGER.log(Level.INFO, "handle reservation ...");
     while (iterator.hasNext()) {
-      Statement st = iterator.next();
-      LOGGER.log(Level.INFO, st.getPredicate().getLocalName() + " " + st.getObject());
-      allocateParameters.put(st.getPredicate().getLocalName().toString(), st.getObject().toString());
+      Resource sliver = iterator.next().getSubject();
+      Statement st = sliver.getProperty(requestModel.createProperty("http://open-multinet.info/ontology/omn#reserve_Instance_from"));
+      String componentManagerId = st.getObject().toString();
+      LOGGER.log(Level.INFO, "componentManagerId " + componentManagerId);
+      if(this.isReservationAvailable(componentManagerId)){
+        LOGGER.log(Level.INFO,"reservation is available");
+        LOGGER.log(Level.INFO, "sliver is " + sliver.getURI());
+        //rdfList.addProperty(resultModel.createProperty(sliver.getURI()), "geni_allocated");
+        reservedSlivers.put(sliver.getURI(), "geni_allocated");
+      }
+      else{
+        requestModel.remove(sliver, null, null);
+        //rdfList.addProperty(resultModel.createProperty(sliver.getURI()), "geni_not_allocated");
+        reservedSlivers.put(sliver.getURI(), "geni_not_allocated");
+      }
+    }
+  }
+  
+  private void parseReservationParameters(Map<String, String> allocateParameters, Model requestModel) {
+   // StmtIterator sliceIter = requestModel.listStatements(null, RDF.type, "http://open-multinet.info/ontology/omn#slice");
+    
+    
+    StmtIterator iterator = requestModel.listStatements(null, RDF.type, "http://open-multinet.info/ontology/omn#sliver");
+    List<Resource> slivers = new ArrayList<>();
+    while (iterator.hasNext()) {
+      Resource sliver = iterator.next().getSubject();
+      slivers.add(sliver);
+      
+//      Statement st = iterator.next();
+//      LOGGER.log(Level.INFO, st.getPredicate().getLocalName() + " " + st.getObject());
+//      allocateParameters.put(st.getPredicate().getLocalName().toString(), st.getObject().toString());
+    }
+    
+    for(Resource sliver : slivers){
+      Statement st = sliver.getProperty(requestModel.createProperty("http://open-multinet.info/ontology/omn#reserve_Instance_from"));
+      String componentManagerId = st.getObject().toString();
+      
+  
     }
   }
   
