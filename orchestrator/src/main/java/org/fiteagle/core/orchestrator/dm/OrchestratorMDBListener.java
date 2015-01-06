@@ -54,7 +54,7 @@ public class OrchestratorMDBListener implements MessageListener {
       
       if (messageType != null && rdfString != null) {
         Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
-        if (messageType.equals(IMessageBus.TYPE_CREATE)) {
+        if (messageType.equals(IMessageBus.TYPE_CONFIGURE)) {
           LOGGER.log(Level.INFO, "Received a " + messageType + " message");
           handleCreateRequest(messageModel, serialization, message.getJMSCorrelationID());
         }
@@ -74,7 +74,7 @@ public class OrchestratorMDBListener implements MessageListener {
     Message responseMessage = null;
     Model resultModel = ModelFactory.createDefaultModel();
 
-    StmtIterator iterator = requestModel.listStatements(null, RDF.type, OMN + "SLICE");
+    StmtIterator iterator = requestModel.listStatements(null, RDF.type, OMN + "slice");
     while(iterator.hasNext()){
       Resource slice = iterator.next().getSubject();
       LOGGER.log(Level.INFO, "trying to provision this URN " + slice.getURI());
