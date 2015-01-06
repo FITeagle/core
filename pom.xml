@@ -30,10 +30,12 @@
 	</dependencies>
 
 	<modules>
-        <module>usermanagement</module>
         <module>config</module>
         <module>aaa</module>
-        <module>repo</module>
+        <module>usermanagement</module>
         <module>bus</module>
+        <module>tripletStoreAccessor</module>
+        <module>repository</module>
+        <module>reservation</module>
 	</modules>
 </project>

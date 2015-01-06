@@ -13,14 +13,13 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.fiteagle</groupId>
+			<groupId>org.fiteagle.core</groupId>
 			<artifactId>aaa</artifactId>
 			<version>0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.hibernate.javax.persistence</groupId>
 			<artifactId>hibernate-jpa-2.1-api</artifactId>
-			<version>1.0.0.Final</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -28,11 +27,6 @@
 			<artifactId>h2</artifactId>
 			<version>1.4.178</version>
 			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-			<version>2.2.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.hibernate</groupId>

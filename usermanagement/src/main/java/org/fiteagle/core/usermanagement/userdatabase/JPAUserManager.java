@@ -16,19 +16,23 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.ejb.Stateless;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import net.iharder.Base64;
 
 import org.bouncycastle.operator.OperatorCreationException;
 import org.fiteagle.api.core.usermanagement.Class;
+import org.fiteagle.api.core.usermanagement.Node;
+import org.fiteagle.api.core.usermanagement.Task;
 import org.fiteagle.api.core.usermanagement.User;
 import org.fiteagle.api.core.usermanagement.User.Role;
 import org.fiteagle.api.core.usermanagement.UserManager;
@@ -41,66 +45,65 @@ import org.fiteagle.core.aaa.authentication.PasswordUtil;
 import org.fiteagle.core.aaa.authentication.x509.X509Util;
 import org.fiteagle.core.config.preferences.InterfaceConfiguration;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 @Stateless
 public class JPAUserManager implements UserManager {
   
-  @PersistenceContext(unitName = "usersDB")
-  EntityManager entityManager;
+  private final static Logger LOGGER = Logger.getLogger(JPAUserManager.class.toString());
   
-  private static final String PERSISTENCE_UNIT_NAME_INMEMORY = "users_inmemory";  
-  private static UserManager inMemoryInstance;
+  private final static String ENTITY_MANAGER_JNDI_NAME = "java:/fiteagle/users/entitymanager";
   
-  public static UserManager getInMemoryInstance() {
-    if (inMemoryInstance == null) {
-      inMemoryInstance = new JPAUserManager();
+  protected EntityManager entityManager;
+  
+  private static UserManager instance;
+  
+  public static UserManager getInstance(){
+    if(instance == null){
+      instance = new JPAUserManager();
     }
-    return inMemoryInstance;
+    return instance;
+  }
+  
+  protected JPAUserManager(){
+    Context context;
+    try {
+      context = new InitialContext();
+      entityManager = (EntityManager) context.lookup(ENTITY_MANAGER_JNDI_NAME);
+    } catch (NamingException e) {
+      LOGGER.log(Level.SEVERE, e.getMessage());
+    }
   }
   
   private synchronized EntityManager getEntityManager() {
-    if(entityManager == null) {
-      try {
-        java.lang.Class.forName("org.h2.Driver");
-      } catch (ClassNotFoundException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
-      EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME_INMEMORY);
-      entityManager = factory.createEntityManager();
-    }
     return entityManager;
   }
   
-  private void beginTransaction(EntityManager em) {
-    if (this == inMemoryInstance) {
-      em.getTransaction().begin();
-    }
-  }
-  
-  private void commitTransaction(EntityManager em) {
-    if (this == inMemoryInstance) {
-      em.getTransaction().commit();
-    }
-  }
-  
   @Override
-  public void add(User user) {
+  public void addUser(User user) {
     EntityManager em = getEntityManager();
     
-    user.setUsername(addDomain(user.getUsername()));
-    
+    String username = addDomain(user.getUsername());
+    user.setUsername(username);
     List<User> users = getAllUsers();
     for (User u : users) {
-      if (u.getUsername().equals(user.getUsername())) {
+      if (u.getUsername().equals(username)) {
         throw new DuplicateUsernameException();
       }
       if (u.getEmail().equals(user.getEmail())) {
         throw new DuplicateEmailException();
       }
     }
-    
+    if(user.getNode() == null){
+      user.setNode(Node.defaultNode);
+    }
+    Node node = em.find(Node.class, user.getNode().getId());
+    if (node == null) {
+      throw new NodeNotFoundException();
+    }
     beginTransaction(em);
-    em.persist(user);
+    node.addUser(user);
     commitTransaction(em);
   }
   
@@ -120,7 +123,7 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public void delete(User user) {
+  public void deleteUser(User user) {
     EntityManager em = getEntityManager();
     user.setUsername(addDomain(user.getUsername()));
     beginTransaction(em);
@@ -129,13 +132,13 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public void delete(String username) {
-    delete(getUser(username));
+  public void deleteUser(String username) {
+    deleteUser(getUser(username));
   }
   
   @Override
-  public void update(String username, String firstName, String lastName, String email, String affiliation,
-      String password, List<UserPublicKey> publicKeys) {
+  public void updateUser(String username, String firstName, String lastName, String email, String affiliation,
+      String password, Set<UserPublicKey> publicKeys) {
     EntityManager em = getEntityManager();
     
     User user = em.find(User.class, addDomain(username));
@@ -243,8 +246,8 @@ public class JPAUserManager implements UserManager {
   public boolean verifyCredentials(String username, String password) throws NoSuchAlgorithmException, IOException,
       UserNotFoundException {
     username = addDomain(username);
-    User User = getUser(username);
-    return verifyPassword(password, User.hash(), User.salt());
+    User user = getUser(username);
+    return verifyPassword(password, user.getPasswordHash(), user.getPasswordSalt());
   }
   
   private String createUserCertificate(String username, PublicKey publicKey) {
@@ -257,8 +260,7 @@ public class JPAUserManager implements UserManager {
       encoded = X509Util.getCertficateEncoded(cert);
     } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | UnrecoverableEntryException
         | OperatorCreationException | IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      LOGGER.log(Level.SEVERE, e.getMessage());
     }
     return encoded;
   }
@@ -285,8 +287,7 @@ public class JPAUserManager implements UserManager {
     try {
       cert = createUserCertificate(addDomain(username), passphrase, KeyManagement.getInstance().generateKeyPair());
     } catch (IOException | GeneralSecurityException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      LOGGER.log(Level.SEVERE, e.getMessage());
     }
     return cert;
   }
@@ -324,35 +325,6 @@ public class JPAUserManager implements UserManager {
     
   }
   
-  private boolean verifyUserSignedCertificate(User identifiedUser, X509Certificate certificate) throws IOException,
-      InvalidKeySpecException, NoSuchAlgorithmException, CouldNotParse {
-    boolean verified = false;
-    KeyManagement keydecoder = KeyManagement.getInstance();
-    if (identifiedUser.getPublicKeys() == null || identifiedUser.getPublicKeys().size() == 0) {
-      identifiedUser.addPublicKey(new UserPublicKey(certificate.getPublicKey(), "created at "
-          + System.currentTimeMillis(), keydecoder.encodePublicKey(certificate.getPublicKey())));
-      addKey(identifiedUser.getUsername(), identifiedUser.getPublicKeys().get(0));
-    }
-    for (UserPublicKey oldUserPublicKey : identifiedUser.getPublicKeys()) {
-      PublicKey pubKey = oldUserPublicKey.publicKey();
-      
-      verified = AuthenticationHandler.getInstance().verifyCertificateWithPublicKey(certificate, pubKey);
-      if (verified) {
-        return true;
-      }
-    }
-    throw new AuthenticationHandler.KeyDoesNotMatchException();
-  }
-  
-  private String addDomain(String username) {
-    InterfaceConfiguration configuration = null;
-    if (!username.contains("@")) {
-      configuration = InterfaceConfiguration.getInstance();
-      username = username + "@" + configuration.getDomain();
-    }
-    return username;
-  }
-  
   @Override
   public List<User> getAllUsers() {
     EntityManager em = getEntityManager();
@@ -369,22 +341,35 @@ public class JPAUserManager implements UserManager {
     if (user == null) {
       throw new UserNotFoundException();
     }
-    if (user.classesOwned().contains(targetClass)) {
+    if (user.getOwnedClasses().contains(targetClass)) {
       throw new DuplicateClassException();
     }
+    Set<Node> nodes = new HashSet<>();
+    if(targetClass.getNodes().isEmpty()){
+      targetClass.addNode(user.getNode());
+    }
+    for(Node node : targetClass.getNodes()){
+      nodes.add(getNode(node.getId()));
+    }
     beginTransaction(em);
-    user.addOwnedClass(targetClass);
+    targetClass.setNodes(nodes);
+    targetClass.setOwner(user);
+    user.addOwnedClass(targetClass);    
+    for(Node n : nodes){
+      n.addClass(targetClass);
+    }
     commitTransaction(em);
+    flushTransaction(em);
     return targetClass;
   }
   
   @Override
-  public Class get(Class targetClass) {
-    return get(targetClass.getId());
+  public Class getClass(Class targetClass) {
+    return getClass(targetClass.getId());
   }
   
   @Override
-  public Class get(long id) {
+  public Class getClass(long id) {
     EntityManager em = getEntityManager();
     Class targetClass = em.find(Class.class, id);
     if (targetClass == null) {
@@ -394,7 +379,7 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public void delete(Class targetClass) {
+  public void deleteClass(Class targetClass) {
 	EntityManager em = getEntityManager();
     User user = em.find(User.class, addDomain(targetClass.getOwner().getUsername()));
     if (user == null) {
@@ -406,20 +391,47 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public void delete(long id) {
-    delete(get(id));
+  public void deleteClass(long id) {
+    deleteClass(getClass(id));
   }
 
+  @Override
+  public Task addTask(long id, Task task) {
+    EntityManager em = getEntityManager();
+    Class targetClass = em.find(Class.class, id);
+    if (targetClass == null) {
+      throw new FiteagleClassNotFoundException();
+    }
+    beginTransaction(em);
+    targetClass.addTask(task);
+    commitTransaction(em);
+    flushTransaction(em);
+    return task;
+  }
+  
+  @Override
+  public void removeTask(long classId, long taskId) {
+    EntityManager em = getEntityManager();
+    Class targetClass = em.find(Class.class, classId);
+    if (targetClass == null) {
+      throw new FiteagleClassNotFoundException();
+    }
+    Task task = em.find(Task.class, taskId);
+    if(task == null){
+      throw new TaskNotFoundException();
+    }
+    beginTransaction(em);
+    targetClass.removeTask(task);
+    commitTransaction(em);
+  }
+  
   @Override
   public void addParticipant(long id, String username){
     User participant = getUser(username);
     EntityManager em = getEntityManager();
-    Class targetCourse = em.find(Class.class, id);
-    if(targetCourse == null){
-      throw new FiteagleClassNotFoundException();
-    }
+    Class targetClass = getClass(id);
     beginTransaction(em);
-    targetCourse.addParticipant(participant);
+    targetClass.addParticipant(participant);
     commitTransaction(em);
   }
   
@@ -437,15 +449,15 @@ public class JPAUserManager implements UserManager {
   }
   
   @Override
-  public List<Class> getAllClassesFromUser(String username) {
+  public Set<Class> getAllClassesFromUser(String username) {
     User u = getUser(username);
-    return u.joinedClasses();
+    return u.getJoinedClasses();
   }
   
   @Override
-  public List<Class> getAllClassesOwnedByUser(String username) {
+  public Set<Class> getAllClassesOwnedByUser(String username) {
     User u = getUser(username);
-    return u.classesOwned();
+    return u.getOwnedClasses();
   }
   
   @Override
@@ -454,6 +466,35 @@ public class JPAUserManager implements UserManager {
     Query query = em.createQuery("SELECT c FROM Class c");
     @SuppressWarnings("unchecked")
     List<Class> resultList = (List<Class>) query.getResultList();
+    return resultList;
+  }
+  
+  @Override
+  public Node addNode(Node node) {
+    EntityManager em = getEntityManager();
+    beginTransaction(em);
+    em.persist(node);
+    commitTransaction(em);
+    flushTransaction(em);
+    return node;
+  }
+  
+  @Override
+  public Node getNode(long id) throws NodeNotFoundException {
+    EntityManager em = getEntityManager();
+    Node node = em.find(Node.class, id);
+    if(node == null) {
+      throw new NodeNotFoundException();
+    }
+    return node;
+  }
+  
+  @Override
+  public List<Node> getAllNodes() {
+    EntityManager em = getEntityManager();
+    Query query = em.createQuery("SELECT n FROM Node n");
+    @SuppressWarnings("unchecked")
+    List<Node> resultList = (List<Node>) query.getResultList();
     return resultList;
   }
   
@@ -468,9 +509,51 @@ public class JPAUserManager implements UserManager {
       query.executeUpdate();
       query = em.createQuery("DELETE FROM User");
       query.executeUpdate();
+      query = em.createQuery("DELETE FROM Node");
+      query.executeUpdate();
       commitTransaction(em);
     } catch(Exception e){
       System.out.println(e.getMessage());
     }
   }
+  
+  private boolean verifyUserSignedCertificate(User identifiedUser, X509Certificate certificate) throws IOException,
+    InvalidKeySpecException, NoSuchAlgorithmException, CouldNotParse {
+    boolean verified = false;
+    KeyManagement keydecoder = KeyManagement.getInstance();
+    if (identifiedUser.getPublicKeys() == null || identifiedUser.getPublicKeys().size() == 0) {
+      identifiedUser.addPublicKey(new UserPublicKey(certificate.getPublicKey(), "created at "
+          + System.currentTimeMillis(), keydecoder.encodePublicKey(certificate.getPublicKey())));
+      addKey(identifiedUser.getUsername(), identifiedUser.getPublicKeys().iterator().next());
+    }
+    for(UserPublicKey oldUserPublicKey : identifiedUser.getPublicKeys()) {
+      PublicKey pubKey = oldUserPublicKey.publicKey();
+    
+      verified = AuthenticationHandler.getInstance().verifyCertificateWithPublicKey(certificate, pubKey);
+      if (verified) {
+        return true;
+      }
+    }
+    throw new AuthenticationHandler.KeyDoesNotMatchException();
+  }
+  
+  protected void beginTransaction(EntityManager em) {
+  }
+  
+  protected void commitTransaction(EntityManager em) {
+  }
+  
+  protected void flushTransaction(EntityManager em) {
+    em.flush();
+  }
+  
+  protected static String addDomain(String username) {
+    InterfaceConfiguration configuration = null;
+    if (!username.contains("@")) {
+      configuration = InterfaceConfiguration.getInstance();
+      username = username + "@" + configuration.getDomain();
+    }
+    return username;
+  }
+  
 }

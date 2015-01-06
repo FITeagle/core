@@ -9,9 +9,8 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.sun.xacml.PDP;
 import com.sun.xacml.PDPConfig;
@@ -23,7 +22,7 @@ import com.sun.xacml.finder.impl.FilePolicyModule;
 
 public class PolicyDecisionPoint {
   
-  private Logger log = LoggerFactory.getLogger(getClass());
+  private final static Logger LOGGER = Logger.getLogger(PolicyDecisionPoint.class.toString());
   
   private static PolicyDecisionPoint instance = new PolicyDecisionPoint();
   
@@ -39,7 +38,7 @@ public class PolicyDecisionPoint {
 
     if(url.getPath().contains("war")){
       //TODO: not the best solution
-      log.info("Loading Policy.xml from war");
+      LOGGER.info("Loading Policy.xml from war");
       try {
         InputStream is = url.openStream();
         BufferedReader input = new BufferedReader(new InputStreamReader(is));
@@ -58,7 +57,7 @@ public class PolicyDecisionPoint {
         
         pathToPolicy = "Policy.xml";
       } catch (IOException e) {
-       log.error(e.getMessage());
+        LOGGER.log(Level.SEVERE, e.getMessage());
       }
     }
     
