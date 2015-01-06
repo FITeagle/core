@@ -19,8 +19,7 @@ public class TripletStoreAccessor {
   
   private static Logger LOGGER = Logger.getLogger(TripletStoreAccessor.class.toString());
   
-  public static String handleSPARQLRequest(Model requestModel, String serialization) throws ResourceRepositoryException, ParsingException {
-    String sparqlQuery = MessageUtil.getSPARQLQueryFromModel(requestModel);
+  public static String handleSPARQLRequest(String sparqlQuery, String serialization) throws ResourceRepositoryException, ParsingException {
     Model resultModel = null;
     String resultJSON = "";
     

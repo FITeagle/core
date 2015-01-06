@@ -12,12 +12,10 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.OntologyModelUtil;
 
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.vocabulary.RDF;
 
 /**
  * This Class sends the ontology Model over message bus on startup
@@ -35,13 +33,11 @@ public class ResourceRepoMDBSender implements ServletContextListener{
   public void contextInitialized(ServletContextEvent sce) {
     try {
       Model model = OntologyModelUtil.loadModel("ontologies/fiteagle/ontology.ttl", IMessageBus.SERIALIZATION_TURTLE);
-      model.add(MessageBusOntologyModel.internalMessage, RDF.type, MessageBusOntologyModel.propertyFiteagleInform);
       String serializedRDF = MessageUtil.serializeModel(model);
       
-      final Message eventMessage = this.context.createMessage();
+      final Message eventMessage = this.context.createTextMessage(serializedRDF);
       
       eventMessage.setStringProperty(IMessageBus.METHOD_TYPE, IMessageBus.TYPE_INFORM);
-      eventMessage.setStringProperty(IMessageBus.RDF, serializedRDF);
       eventMessage.setStringProperty(IMessageBus.SERIALIZATION, IMessageBus.SERIALIZATION_DEFAULT);
       LOGGER.log(Level.INFO, "Sending Ontology Model as Inform Message");
       this.context.createProducer().send(topic, eventMessage);

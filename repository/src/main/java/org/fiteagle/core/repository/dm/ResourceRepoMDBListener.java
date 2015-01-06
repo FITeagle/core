@@ -13,15 +13,12 @@ import javax.jms.MessageListener;
 import javax.jms.Topic;
 
 import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.MessageUtil.ParsingException;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.Statement;
 
 @MessageDriven(name = "ResourceRepoMDBListener", activationConfig = {
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -49,12 +46,9 @@ public class ResourceRepoMDBListener implements MessageListener {
           LOGGER.log(Level.INFO, "Received a " + messageType + " message");
           handleInform(messageModel);
           
-        } else if (messageType.equals(IMessageBus.TYPE_REQUEST)) {
-          Resource messageResource = messageModel.getResource(MessageBusOntologyModel.internalMessage.getURI());
-          if (messageResource.getProperty(MessageBusOntologyModel.requestType) != null && messageResource.getProperty(MessageBusOntologyModel.requestType).getObject().toString().equals(IMessageBus.REQUEST_TYPE_SPARQL_QUERY)) {
-            LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-            handleRequest(messageModel,messageResource, serialization, message.getJMSCorrelationID());
-          }
+        } else if (messageType.equals(IMessageBus.TYPE_GET)) {
+          LOGGER.log(Level.INFO, "Received a " + messageType + " message");
+          handleRequest(message, serialization, message.getJMSCorrelationID());
         }
       }
     } catch (JMSException e) {
@@ -62,21 +56,21 @@ public class ResourceRepoMDBListener implements MessageListener {
     }
   }
   
-  private void handleRequest(Model requestModel, Resource messageResource, String serialization, String requestID) throws JMSException {
+  private void handleRequest(Message message, String serialization, String requestID) throws JMSException {
     Message responseMessage = null;
       try {
-        String serializedResponse = TripletStoreAccessor.handleSPARQLRequest(requestModel, serialization);
+        String serializedResponse = TripletStoreAccessor.handleSPARQLRequest(MessageUtil.getSPARQLQuery(message), serialization);
         
-        if (messageResource.hasProperty(MessageBusOntologyModel.methodRestores)) {
-          Model replyModel = MessageUtil.parseSerializedModel(serializedResponse);
-          replyModel.add(messageResource.getProperty(MessageBusOntologyModel.methodRestores));
-          serializedResponse = MessageUtil.serializeModel(replyModel);
-          responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_CREATE, serialization,
-              null, context);
-        } else {
-          responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, serialization,
+//        if (messageResource.hasProperty(MessageBusOntologyModel.methodRestores)) {
+//          Model replyModel = MessageUtil.parseSerializedModel(serializedResponse);
+//          replyModel.add(messageResource.getProperty(MessageBusOntologyModel.methodRestores));
+//          serializedResponse = MessageUtil.serializeModel(replyModel);
+//          responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_CREATE, null, serialization,
+//              null, context);
+//        } else {
+          responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization,
               requestID, context);
-        }
+//        }
       } catch (ResourceRepositoryException | ParsingException e) {
         responseMessage = MessageUtil.createErrorMessage(e.getMessage(), requestID, context);
       } finally {
@@ -85,7 +79,6 @@ public class ResourceRepoMDBListener implements MessageListener {
   }
 
   private void handleInform(Model modelInform) {
-    checkForReleases(modelInform);
     try {
       TripletStoreAccessor.updateRepositoryModel(modelInform);
     } catch (ResourceRepositoryException e) {
@@ -93,17 +86,4 @@ public class ResourceRepoMDBListener implements MessageListener {
     }
   }
   
-  private void checkForReleases(Model modelInform) {
-    Statement releaseStatement = modelInform.getProperty(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodReleases);
-    while (releaseStatement != null) {
-      try {
-        TripletStoreAccessor.releaseResource(releaseStatement.getResource());
-      } catch (ResourceRepositoryException e) {
-        LOGGER.log(Level.SEVERE, e.getMessage());
-      }
-      LOGGER.log(Level.INFO, "Removing resource: " + releaseStatement.getResource());
-      modelInform.remove(releaseStatement);
-      releaseStatement = modelInform.getProperty(MessageBusOntologyModel.internalMessage, MessageBusOntologyModel.methodReleases);
-    }
-  }
 }

@@ -44,7 +44,7 @@ public class PolicyEnforcementPointMDB implements MessageListener {
   @Override
   public void onMessage(final Message rcvMessage) {
     try {
-      String methodName = rcvMessage.getStringProperty(IMessageBus.TYPE_REQUEST);
+      String methodName = rcvMessage.getStringProperty(IMessageBus.TYPE_GET);
       logger.info("Received a message: "+methodName);
       if(methodName == null){
         return;
@@ -55,7 +55,6 @@ public class PolicyEnforcementPointMDB implements MessageListener {
       try{
         switch(methodName){
           case PolicyEnforcementPoint.IS_REQUEST_AUTHORIZED:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, PolicyEnforcementPoint.IS_REQUEST_AUTHORIZED);
             String subjectUsername = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_SUBJECT_USERNAME);
             String resourceUsername = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_RESOURCE);
             String action = rcvMessage.getStringProperty(PolicyEnforcementPoint.TYPE_PARAMETER_ACTION);
