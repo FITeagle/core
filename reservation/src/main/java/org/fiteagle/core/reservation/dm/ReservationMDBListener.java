@@ -15,6 +15,7 @@ import javax.jms.MessageListener;
 import javax.jms.Topic;
 
 import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
@@ -84,11 +85,11 @@ public class ReservationMDBListener implements MessageListener {
   
   private void handleReservation(Model requestModel, Map<String, String> reservedSlivers) {
     
-    StmtIterator iterator = requestModel.listStatements(null, RDF.type, OMN + "sliver");
     LOGGER.log(Level.INFO, "handle reservation ...");
+    StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classReservation);
     while (iterator.hasNext()) {
       Resource sliver = iterator.next().getSubject();
-      Statement st = sliver.getProperty(requestModel.createProperty(OMN + "reserve_Instance_from"));
+      Statement st = sliver.getProperty(MessageBusOntologyModel.reserveInstanceFrom);
       String componentManagerId = st.getObject().toString();
       LOGGER.log(Level.INFO, "componentManagerId " + componentManagerId);
       if (this.isReservationAvailable(componentManagerId)) {
