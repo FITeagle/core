@@ -54,9 +54,8 @@ public class MessageBusLoggerWS implements MessageListener {
     queue.remove(session);
   }
   
-  private static void sendAll(String msg) {
+  private static void sendToAllSessions(String msg) {
     try {
-      /* Send the new rate to all open WebSocket sessions */
       ArrayList<Session> closedSessions = new ArrayList<Session>();
       for (Session session : queue) {
         if (!session.isOpen()) {
@@ -74,36 +73,42 @@ public class MessageBusLoggerWS implements MessageListener {
   
   public void onMessage(final Message message) {
     try {
-      String result = messageToJson(message);
-      sendAll(result);
+      String serializedResult = parseToJSON(message);
+      sendToAllSessions(serializedResult);
     } catch (JMSException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
   }
   
-  private String messageToJson(Message message) throws JMSException {
-    JsonObjectBuilder job = Json.createObjectBuilder();
+  private String parseToJSON(Message message) throws JMSException {
+    JsonObjectBuilder builder = Json.createObjectBuilder();
     try {
-      
-      if (message.getJMSMessageID() == null) {
-        job.add("MessageID", "N.A.");
-      } else {
-        job.add("MessageID", message.getJMSMessageID());
+      if(message.getBody(String.class) == null){
+        builder.add("body", "N.A.");
+      }
+      else{
+        builder.add("body", message.getBody(String.class));
+      }
+      if (message.getStringProperty(IMessageBus.METHOD_TARGET) == null) {
+        builder.add(IMessageBus.METHOD_TARGET, "N.A.");
+      }
+      else {
+        builder.add("JMSCorrelationID", message.getJMSCorrelationID());
       }
       if (message.getJMSCorrelationID() == null) {
-        job.add("JMSCorrelationID", "N.A.");
-      } else {
-        job.add("JMSCorrelationID", message.getJMSCorrelationID());
+        builder.add("JMSCorrelationID", "N.A.");
       }
-      for (@SuppressWarnings("unchecked")
-      Enumeration<String> properties = message.getPropertyNames(); properties.hasMoreElements();) {
+      else {
+        builder.add("JMSCorrelationID", message.getJMSCorrelationID());
+      }
+      for (@SuppressWarnings("unchecked") Enumeration<String> properties = message.getPropertyNames(); properties.hasMoreElements();) {
         String currentProperty = properties.nextElement();
-        job.add(currentProperty, message.getStringProperty(currentProperty));
+        builder.add(currentProperty, message.getStringProperty(currentProperty));
       }
     } catch (Error e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
-    JsonObject model = job.build();
+    JsonObject model = builder.build();
     StringWriter stWriter = new StringWriter();
     try (JsonWriter jsonWriter = Json.createWriter(stWriter)) {
       jsonWriter.writeObject(model);
