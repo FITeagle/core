@@ -27,7 +27,7 @@ public class TripletStoreAccessorTest {
       }
     }
     assertNotNull(result);
-    Model resultModel = MessageUtil.parseSerializedModel(result);
+    Model resultModel = MessageUtil.parseSerializedModel(result, IMessageBus.SERIALIZATION_TURTLE);
     assertNotNull(resultModel);
   }
   

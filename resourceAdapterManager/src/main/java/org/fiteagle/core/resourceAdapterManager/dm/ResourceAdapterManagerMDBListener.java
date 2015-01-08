@@ -41,7 +41,7 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
       String messageType = message.getStringProperty(IMessageBus.METHOD_TYPE);
       LOGGER.log(Level.INFO, "Received a " + messageType + " message");
       String serialization = message.getStringProperty(IMessageBus.SERIALIZATION);
-      String rdfString = MessageUtil.getRDFResult(message);
+      String rdfString = MessageUtil.getStringBody(message);
       
       if (messageType != null && rdfString != null) {
         if (messageType.equals(IMessageBus.TYPE_CREATE)) {

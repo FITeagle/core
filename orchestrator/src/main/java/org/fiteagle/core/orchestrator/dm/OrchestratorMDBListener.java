@@ -1,7 +1,5 @@
 package org.fiteagle.core.orchestrator.dm;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,19 +13,12 @@ import javax.jms.MessageListener;
 import javax.jms.Topic;
 
 import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
-import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
 
@@ -50,7 +41,7 @@ public class OrchestratorMDBListener implements MessageListener {
     try {
       String messageType = message.getStringProperty(IMessageBus.METHOD_TYPE);
       String serialization = message.getStringProperty(IMessageBus.SERIALIZATION);
-      String rdfString = MessageUtil.getRDFResult(message);
+      String rdfString = MessageUtil.getStringBody(message);
       
       if (messageType != null && rdfString != null) {
         Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
@@ -80,7 +71,7 @@ public class OrchestratorMDBListener implements MessageListener {
       LOGGER.log(Level.INFO, "trying to provision this URN " + slice.getURI());
     }
     
-    String serializedResponse = MessageUtil.serializeModel(resultModel);
+    String serializedResponse = MessageUtil.serializeModel(resultModel, serialization);
     responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization,
         requestID, context);
     LOGGER.log(Level.INFO, " a reply is sent to SFA ...");

@@ -69,7 +69,7 @@ public class TripletStoreAccessor {
       model.removeNsPrefix(p.getKey());
     }
     
-    String updateString = "INSERT DATA { "+MessageUtil.serializeModel(model)+" }";
+    String updateString = "INSERT DATA { "+MessageUtil.serializeModel(model, IMessageBus.SERIALIZATION_TURTLE)+" }";
     
     QueryExecuter.executeSparqlUpdateQuery(updateString);
   }

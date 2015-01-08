@@ -1,5 +1,6 @@
 package org.fiteagle.core.tripletStoreAccessor;
 
+import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
@@ -94,7 +95,7 @@ public class QueryExecuterTest {
         
         Model rs = QueryExecuter.executeSparqlDescribeQuery(query);
         
-        String result = MessageUtil.serializeModel(rs);
+        String result = MessageUtil.serializeModel(rs, IMessageBus.SERIALIZATION_TURTLE);
         System.out.println(result);
       }
 

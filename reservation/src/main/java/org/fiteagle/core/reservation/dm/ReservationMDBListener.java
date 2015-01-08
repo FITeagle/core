@@ -50,7 +50,7 @@ public class ReservationMDBListener implements MessageListener {
     try {
       String messageType = message.getStringProperty(IMessageBus.METHOD_TYPE);
       String serialization = message.getStringProperty(IMessageBus.SERIALIZATION);
-      String rdfString = MessageUtil.getRDFResult(message);
+      String rdfString = MessageUtil.getStringBody(message);
       
       if (messageType != null && rdfString != null) {
         Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
@@ -77,7 +77,7 @@ public class ReservationMDBListener implements MessageListener {
       Resource sliversResource = resultModel.createResource(sliver.getKey());
       sliversResource.addProperty(resultModel.createProperty(OMN + "reservation_status"), sliver.getValue());
     }
-    String serializedResponse = MessageUtil.serializeModel(resultModel);
+    String serializedResponse = MessageUtil.serializeModel(resultModel, serialization);
     responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
     LOGGER.log(Level.INFO, " a reply is sent to SFA ...");
     context.createProducer().send(topic, responseMessage);
