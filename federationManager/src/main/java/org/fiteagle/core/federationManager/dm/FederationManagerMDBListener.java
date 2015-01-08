@@ -82,6 +82,7 @@ public class FederationManagerMDBListener implements MessageListener {
     } catch (ResourceRepositoryException | ParsingException e) {
       Message message = MessageUtil.createErrorMessage(e.getMessage(), requestID, context);
       context.createProducer().send(topic, message);
+      return;
     }
     Model federationModel = MessageUtil.parseSerializedModel(serializedFederationModel, serialization);
     Message message = MessageUtil.createRDFMessage(federationModel, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
