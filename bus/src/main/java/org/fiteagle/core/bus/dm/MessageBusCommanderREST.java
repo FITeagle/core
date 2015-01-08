@@ -41,7 +41,7 @@ public class MessageBusCommanderREST {
 		LOGGER.log(Level.INFO, "Received REST message: " + command);
 
 		final Message message = senderBean.createMessage();
-		message.setStringProperty(IMessageBus.TYPE_REQUEST, command);
+		message.setStringProperty(IMessageBus.TYPE_GET, command);
 		message.setJMSCorrelationID(UUID.randomUUID().toString());
 
 		senderBean.sendMessage(message);

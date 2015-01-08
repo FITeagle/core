@@ -2,9 +2,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<name>FITeagle :: Core :: Reservation</name>
+	<name>FITeagle :: Core :: Orchestrator</name>
 	<groupId>org.fiteagle.core</groupId>
-	<artifactId>reservation</artifactId>
+	<artifactId>orchestrator</artifactId>
 	<version>0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
 
@@ -23,7 +23,7 @@
   </dependencies>
 
 	<build>
-		<finalName>${project.artifactId}</finalName>
+		<finalName>orchestrator</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.wildfly.plugins</groupId>
@@ -38,6 +38,4 @@
 	</build>
 
 </project>
-
-
 

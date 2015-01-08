@@ -105,7 +105,7 @@ public class UserManagerMDB implements MessageListener {
     }
     
     try {
-      String methodName = rcvMessage.getStringProperty(IMessageBus.TYPE_REQUEST);
+      String methodName = rcvMessage.getStringProperty(IMessageBus.TYPE_GET);
       logger.info("Received a message: "+methodName);
 
       final Message message = this.context.createMessage();
@@ -115,24 +115,20 @@ public class UserManagerMDB implements MessageListener {
       try{
         switch(methodName){
           case UserManager.GET_ALL_USERS: 
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_USERS);
             List<User> users = usermanager.getAllUsers();
             final String usersJSON = objectMapper.writeValueAsString(users);
             message.setStringProperty(IMessageBus.TYPE_RESULT, usersJSON);
             break;          
           case UserManager.GET_USER:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_USER);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             User user = usermanager.getUser(username);
             message.setStringProperty(IMessageBus.TYPE_RESULT, objectMapper.writeValueAsString(user));
             break;
           case UserManager.ADD_USER:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.ADD_USER);
             String userJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USER_JSON);
             usermanager.addUser(objectMapper.readValue(userJSON, User.class));
             break;
           case UserManager.UPDATE_USER:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.UPDATE_USER);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             String firstName = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_FIRSTNAME);
             String lastName = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_LASTNAME);
@@ -143,93 +139,78 @@ public class UserManagerMDB implements MessageListener {
             usermanager.updateUser(username, firstName, lastName, email, affiliation, password, publicKeys);
             break;
           case UserManager.SET_ROLE:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.SET_ROLE);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             Role role = Role.valueOf(rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_ROLE));
             usermanager.setRole(username, role);
             break;
           case UserManager.ADD_PUBLIC_KEY:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.ADD_PUBLIC_KEY);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             UserPublicKey publicKey = objectMapper.readValue(rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PUBLIC_KEY), UserPublicKey.class);
             usermanager.addKey(username, publicKey);
             break;
           case UserManager.DELETE_PUBLIC_KEY:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.DELETE_PUBLIC_KEY);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             description = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PUBLIC_KEY_DESCRIPTION);
             usermanager.deleteKey(username, description);
             break;
           case UserManager.RENAME_PUBLIC_KEY:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.RENAME_PUBLIC_KEY);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             description = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PUBLIC_KEY_DESCRIPTION);
             String newDescription = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PUBLIC_KEY_DESCRIPTION_NEW);
             usermanager.renameKey(username, description, newDescription);
             break;
           case UserManager.DELETE_USER:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.DELETE_USER);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             usermanager.deleteUser(username);
             break;
           case UserManager.CREATE_USER_CERT_AND_PRIVATE_KEY:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.CREATE_USER_CERT_AND_PRIVATE_KEY);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             String passphrase = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PASSPHRASE);
             result = usermanager.createUserKeyPairAndCertificate(username, passphrase);
             message.setStringProperty(IMessageBus.TYPE_RESULT, result);
             break;
           case UserManager.GET_USER_CERT_FOR_PUBLIC_KEY:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_USER_CERT_FOR_PUBLIC_KEY);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             description = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PUBLIC_KEY_DESCRIPTION);
             result = usermanager.createUserCertificateForPublicKey(username, description);
             message.setStringProperty(IMessageBus.TYPE_RESULT, result);
             break;
           case UserManager.GET_ALL_CLASSES_FROM_USER:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_CLASSES_FROM_USER);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             result = objectMapper.writeValueAsString(usermanager.getAllClassesFromUser(username));
             message.setStringProperty(IMessageBus.TYPE_RESULT, result);
             break;
           case UserManager.GET_ALL_CLASSES_OWNED_BY_USER:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_CLASSES_OWNED_BY_USER);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             result = objectMapper.writeValueAsString(usermanager.getAllClassesOwnedByUser(username));
             message.setStringProperty(IMessageBus.TYPE_RESULT, result);
             break;
           case UserManager.SIGN_UP_FOR_CLASS:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.SIGN_UP_FOR_CLASS);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             classId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_CLASS_ID);
             usermanager.addParticipant(classId, username);
             break;
           case UserManager.LEAVE_CLASS:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.LEAVE_CLASS);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             classId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_CLASS_ID);
             usermanager.removeParticipant(classId, username);
             break;
           case UserManager.GET_CLASS:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_CLASS);
             classId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_CLASS_ID);
             result = objectMapper.writeValueAsString(usermanager.getClass(classId));
             message.setStringProperty(IMessageBus.TYPE_RESULT, result);
             break;
           case UserManager.ADD_CLASS:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.ADD_CLASS);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             String classJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_CLASS_JSON);
             classId = usermanager.addClass(username, objectMapper.readValue(classJSON, org.fiteagle.api.core.usermanagement.Class.class)).getId();
             message.setLongProperty(IMessageBus.TYPE_RESULT, classId);
             break;
           case UserManager.DELETE_CLASS:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.DELETE_CLASS);
             classId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_CLASS_ID);
             usermanager.deleteClass(classId);
             break;
           case UserManager.ADD_TASK:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.ADD_TASK);
             String taskJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_TASK_JSON);
             Task task = objectMapper.readValue(taskJSON, Task.class);
             classId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_CLASS_ID);
@@ -237,18 +218,15 @@ public class UserManagerMDB implements MessageListener {
             message.setLongProperty(IMessageBus.TYPE_RESULT, taskId);
             break;
           case UserManager.REMOVE_TASK:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.REMOVE_TASK);
             taskId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_TASK_ID);
             classId = rcvMessage.getLongProperty(UserManager.TYPE_PARAMETER_CLASS_ID);
             usermanager.removeTask(classId, taskId);
             break;
           case UserManager.GET_ALL_CLASSES:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_CLASSES);
             result = objectMapper.writeValueAsString(usermanager.getAllClasses());
             message.setStringProperty(IMessageBus.TYPE_RESULT, result);
             break;
           case UserManager.VERIFY_CREDENTIALS:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.VERIFY_CREDENTIALS);
             username = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_USERNAME);
             password = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_PASSWORD);
             Boolean resultBoolean;
@@ -256,13 +234,11 @@ public class UserManagerMDB implements MessageListener {
             message.setBooleanProperty(IMessageBus.TYPE_RESULT, resultBoolean);
             break;
           case UserManager.ADD_NODE:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.ADD_NODE);
             String nodeJSON = rcvMessage.getStringProperty(UserManager.TYPE_PARAMETER_NODE_JSON);
             nodeId = usermanager.addNode(objectMapper.readValue(nodeJSON, Node.class)).getId();
             message.setLongProperty(IMessageBus.TYPE_RESULT, nodeId);
             break;
           case UserManager.GET_ALL_NODES:
-            message.setStringProperty(IMessageBus.TYPE_RESPONSE, UserManager.GET_ALL_NODES);
             result = objectMapper.writeValueAsString(usermanager.getAllNodes());
             message.setStringProperty(IMessageBus.TYPE_RESULT, result);
             break;
