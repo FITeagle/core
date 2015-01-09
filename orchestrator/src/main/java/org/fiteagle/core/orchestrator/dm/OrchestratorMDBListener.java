@@ -1,5 +1,6 @@
 package org.fiteagle.core.orchestrator.dm;
 
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,8 +14,11 @@ import javax.jms.MessageListener;
 import javax.jms.Topic;
 
 import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.core.orchestrator.provision.HandleProvision;
+import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
@@ -47,11 +51,11 @@ public class OrchestratorMDBListener implements MessageListener {
         Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
         if (messageType.equals(IMessageBus.TYPE_CONFIGURE)) {
           LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-          handleCreateRequest(messageModel, serialization, message.getJMSCorrelationID());
+          handleConfigureRequest(messageModel, serialization, message.getJMSCorrelationID());
         }
         if (messageType.equals(IMessageBus.TYPE_DELETE)) {
           LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-          handleReleaseRequest(messageModel, serialization, message.getJMSCorrelationID());
+          handleDeleteRequest(messageModel, serialization, message.getJMSCorrelationID());
         }
       }
     } catch (JMSException e) {
@@ -59,16 +63,35 @@ public class OrchestratorMDBListener implements MessageListener {
     }
   }
   
-  private void handleCreateRequest(Model requestModel, String serialization, String requestID)
+  private void handleConfigureRequest(Model requestModel, String serialization, String requestID)
       throws JMSException {
     LOGGER.log(Level.INFO, "handling provision request ...");
     Message responseMessage = null;
     Model resultModel = ModelFactory.createDefaultModel();
 
-    StmtIterator iterator = requestModel.listStatements(null, RDF.type, OMN + "slice");
+    StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classGroup);
     while(iterator.hasNext()){
+      Model createModel = ModelFactory.createDefaultModel();
       Resource slice = iterator.next().getSubject();
       LOGGER.log(Level.INFO, "trying to provision this URN " + slice.getURI());
+      Map<String, Object> reservations = null;
+      try {
+        reservations = HandleProvision.getReservations(slice.getURI());
+      } catch (ResourceRepositoryException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      try {
+        createModel = HandleProvision.createRequest(reservations);
+      } catch (ResourceRepositoryException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      LOGGER.log(Level.INFO, createModel.getGraph().toString());
+      String serializedModel = MessageUtil.serializeModel(createModel, IMessageBus.SERIALIZATION_TURTLE);
+      LOGGER.log(Level.INFO, "message contains " + serializedModel);
+      sendMessage(serializedModel, IMessageBus.TYPE_CREATE, IMessageBus.TARGET_ADAPTER);
+      LOGGER.log(Level.INFO, "create message is sent to resource adapter");
     }
     
     String serializedResponse = MessageUtil.serializeModel(resultModel, serialization);
@@ -78,7 +101,7 @@ public class OrchestratorMDBListener implements MessageListener {
     context.createProducer().send(topic, responseMessage);
   }
   
-  private void handleReleaseRequest(Model requestModel, String serialization, String requestID)
+  private void handleDeleteRequest(Model requestModel, String serialization, String requestID)
       throws JMSException {
     LOGGER.log(Level.INFO, "handling provision request ...");
 //    Message responseMessage = null;
@@ -91,6 +114,25 @@ public class OrchestratorMDBListener implements MessageListener {
 //        requestID, context);
 //    LOGGER.log(Level.INFO, " a reply is sent to SFA ...");
 //    context.createProducer().send(topic, responseMessage);
+  }
+  
+ 
+  private void sendMessage(String model, String methodType, String methodTarget) {
+    final Message request = MessageUtil.createRDFMessage(model, methodType, methodTarget, IMessageBus.SERIALIZATION_TURTLE, null, context);
+    context.createProducer().send(topic, request);
+/*    Message rcvMessage = MessageUtil.waitForResult(request, context, topic);
+    String resultString = MessageUtil.getStringBody(rcvMessage);
+    
+    if(MessageUtil.getMessageType(rcvMessage).equals(IMessageBus.TYPE_ERROR)){
+      if(resultString.equals(Response.Status.REQUEST_TIMEOUT.name())){
+        throw new TimeoutException("Sent message ("+ methodType + ") (Target: "+methodTarget+"): "+MessageUtil.getStringBody(request));
+      }
+      throw new RuntimeException(resultString);
+    }
+    else{
+      LOGGER.log(Level.INFO, "Received reply");
+      return MessageUtil.parseSerializedModel(resultString, IMessageBus.SERIALIZATION_TURTLE);
+    }*/
   }
   
 }
