@@ -8,7 +8,6 @@ import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.inject.Inject;
 import javax.jms.JMSContext;
-import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
@@ -34,7 +33,6 @@ import com.hp.hpl.jena.vocabulary.RDF;
 public class OrchestratorMDBListener implements MessageListener {
   
   private static Logger LOGGER = Logger.getLogger(OrchestratorMDBListener.class.toString());
-  private static String OMN = "http://open-multinet.info/ontology/omn#";
   
   @Inject
   private JMSContext context;
@@ -42,29 +40,23 @@ public class OrchestratorMDBListener implements MessageListener {
   private Topic topic;
   
   public void onMessage(final Message message) {
-    try {
-      String messageType = message.getStringProperty(IMessageBus.METHOD_TYPE);
-      String serialization = message.getStringProperty(IMessageBus.SERIALIZATION);
-      String rdfString = MessageUtil.getStringBody(message);
-      
-      if (messageType != null && rdfString != null) {
-        Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
-        if (messageType.equals(IMessageBus.TYPE_CONFIGURE)) {
-          LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-          handleConfigureRequest(messageModel, serialization, message.getJMSCorrelationID());
-        }
-        if (messageType.equals(IMessageBus.TYPE_DELETE)) {
-          LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-          handleDeleteRequest(messageModel, serialization, message.getJMSCorrelationID());
-        }
+    String messageType = MessageUtil.getMessageType(message);
+    String serialization = MessageUtil.getMessageSerialization(message);
+    String rdfString = MessageUtil.getStringBody(message);
+    LOGGER.log(Level.INFO, "Received a " + messageType + " message");
+    
+    if (messageType != null && rdfString != null) {
+      Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
+      if (messageType.equals(IMessageBus.TYPE_CONFIGURE)) {
+        handleConfigureRequest(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
       }
-    } catch (JMSException e) {
-      LOGGER.log(Level.SEVERE, e.getMessage());
+      if (messageType.equals(IMessageBus.TYPE_DELETE)) {
+        handleDeleteRequest(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
+      }
     }
   }
   
-  private void handleConfigureRequest(Model requestModel, String serialization, String requestID)
-      throws JMSException {
+  private void handleConfigureRequest(Model requestModel, String serialization, String requestID) {
     LOGGER.log(Level.INFO, "handling provision request ...");
     Message responseMessage = null;
     Model resultModel = ModelFactory.createDefaultModel();
@@ -101,8 +93,7 @@ public class OrchestratorMDBListener implements MessageListener {
     context.createProducer().send(topic, responseMessage);
   }
   
-  private void handleDeleteRequest(Model requestModel, String serialization, String requestID)
-      throws JMSException {
+  private void handleDeleteRequest(Model requestModel, String serialization, String requestID) {
     LOGGER.log(Level.INFO, "handling provision request ...");
 //    Message responseMessage = null;
 //    Model resultModel = ModelFactory.createDefaultModel();

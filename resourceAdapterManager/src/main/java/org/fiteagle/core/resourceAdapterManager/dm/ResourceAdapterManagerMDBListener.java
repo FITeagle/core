@@ -7,7 +7,6 @@ import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.inject.Inject;
 import javax.jms.JMSContext;
-import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
@@ -37,31 +36,27 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
   private Topic topic;
   
   public void onMessage(final Message message) {
-    try {
-      String messageType = message.getStringProperty(IMessageBus.METHOD_TYPE);
-      LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-      String serialization = message.getStringProperty(IMessageBus.SERIALIZATION);
-      String rdfString = MessageUtil.getStringBody(message);
-      
-      if (messageType != null && rdfString != null) {
-        if (messageType.equals(IMessageBus.TYPE_CREATE)) {
-          Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
-          handleCreate(messageModel, serialization, message.getJMSCorrelationID());
-          
-        } else if (messageType.equals(IMessageBus.TYPE_GET)) {
-          handleGet(message, serialization, message.getJMSCorrelationID());
-          
-        } else if (messageType.equals(IMessageBus.TYPE_DELETE)) {
-          Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
-          handleDelete(messageModel);
-        }
+    String messageType = MessageUtil.getMessageType(message);
+    String serialization = MessageUtil.getMessageSerialization(message);
+    String rdfString = MessageUtil.getStringBody(message);
+    LOGGER.log(Level.INFO, "Received a " + messageType + " message");
+    
+    if (messageType != null && rdfString != null) {
+      if (messageType.equals(IMessageBus.TYPE_CREATE)) {
+        Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
+        handleCreate(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
+        
+      } else if (messageType.equals(IMessageBus.TYPE_GET)) {
+        handleGet(message, serialization, MessageUtil.getJMSCorrelationID(message));
+        
+      } else if (messageType.equals(IMessageBus.TYPE_DELETE)) {
+        Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
+        handleDelete(messageModel);
       }
-    } catch (JMSException e) {
-      LOGGER.log(Level.SEVERE, e.getMessage());
     }
   }
-  
-  private void handleGet(Message message, String serialization, String requestID) throws JMSException {
+
+  private void handleGet(Message message, String serialization, String requestID) {
     Message responseMessage = null;
     try {
       String serializedResponse = TripletStoreAccessor.handleSPARQLRequest(MessageUtil.getSPARQLQuery(message), serialization);

@@ -9,7 +9,6 @@ import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.inject.Inject;
 import javax.jms.JMSContext;
-import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
@@ -47,21 +46,17 @@ public class ReservationMDBListener implements MessageListener {
   private Topic topic;
   
   public void onMessage(final Message message) {
-    try {
-      String messageType = message.getStringProperty(IMessageBus.METHOD_TYPE);
-      String serialization = message.getStringProperty(IMessageBus.SERIALIZATION);
-      String rdfString = MessageUtil.getStringBody(message);
+    String messageType = MessageUtil.getMessageType(message);
+    String serialization = MessageUtil.getMessageSerialization(message);
+    String rdfString = MessageUtil.getStringBody(message);
+    LOGGER.log(Level.INFO, "Received a " + messageType + " message");
+    
+    if (messageType != null && rdfString != null) {      
+      Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
       
-      if (messageType != null && rdfString != null) {
-        Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
-        
-        if (messageType.equals(IMessageBus.TYPE_CREATE)) {
-          LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-          handleCreate(messageModel, serialization, message.getJMSCorrelationID());
-        }
+      if (messageType.equals(IMessageBus.TYPE_CREATE)) {        
+        handleCreate(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
       }
-    } catch (JMSException e) {
-      LOGGER.log(Level.SEVERE, e.getMessage());
     }
   }
   

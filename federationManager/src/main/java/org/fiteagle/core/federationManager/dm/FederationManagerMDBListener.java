@@ -7,7 +7,6 @@ import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.inject.Inject;
 import javax.jms.JMSContext;
-import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
@@ -58,20 +57,15 @@ public class FederationManagerMDBListener implements MessageListener {
       + "WHERE {?testbed rdf:type omn:Testbed. "
       + "OPTIONAL {?testbed rdfs:label ?label. ?testbed rdfs:seeAlso ?seeAlso. ?testbed wgs:long ?long. ?testbed wgs:lat ?lat. } }";
   
-  
   public void onMessage(final Message message) {
-    try {
-      String messageType = message.getStringProperty(IMessageBus.METHOD_TYPE);
-      String serialization = message.getStringProperty(IMessageBus.SERIALIZATION);
-      LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-      
-      if (messageType != null) {
-        if (messageType.equals(IMessageBus.TYPE_GET)) {
-          handleGet(serialization, message.getJMSCorrelationID());
-        }
+    String messageType = MessageUtil.getMessageType(message);
+    String serialization = MessageUtil.getMessageSerialization(message);
+    LOGGER.log(Level.INFO, "Received a " + messageType + " message");
+    
+    if (messageType != null) {
+      if (messageType.equals(IMessageBus.TYPE_GET)) {
+        handleGet(serialization, MessageUtil.getJMSCorrelationID(message));
       }
-    } catch (JMSException e) {
-      LOGGER.log(Level.SEVERE, e.getMessage());
     }
   }
   
