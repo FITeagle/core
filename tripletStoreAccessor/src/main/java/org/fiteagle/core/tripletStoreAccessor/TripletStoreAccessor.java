@@ -48,6 +48,13 @@ public class TripletStoreAccessor {
     throw new ResourceRepositoryException("Unsupported serialization type: "+serialization);
   }
   
+  public static void deleteRDFgraph(Model modelToDelete) throws ResourceRepositoryException {
+    StmtIterator iterator = modelToDelete.listStatements();
+    while(iterator.hasNext()){
+      removeExistingValue(iterator.next());
+    }
+  }
+  
   public static void releaseResource(Resource resourceToRemove) throws ResourceRepositoryException {
     String resource =  "<"+resourceToRemove.getURI()+"> ?anyPredicate ?anyObject .";
     
