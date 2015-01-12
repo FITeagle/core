@@ -3,7 +3,9 @@ package org.fiteagle.core.orchestrator.provision;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
+import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.query.QuerySolution;
@@ -11,11 +13,12 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
 
 public class HandleProvision {
   
-  public static final Map<String, Object> getReservations(String group) throws ResourceRepositoryException{
+  public static final  Map<String, Object> getReservations(String group) throws ResourceRepositoryException{
     final Map<String, Object> reservations = new HashMap<>();
     
     String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
@@ -46,33 +49,47 @@ public class HandleProvision {
     return createModel;
   }
 
-  private static String getResourceAdapterName(Object componentManagerId) throws ResourceRepositoryException{
+  private static Resource getResourceAdapterName(Object componentManagerId) throws ResourceRepositoryException{
     String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
         + "SELECT ?resourceAdapter WHERE { "
         + "<" + componentManagerId + "> a ?resourceAdapter ."
         + "?resourceName omn:implementedBy ?resourceAdapter" 
         + "}";
     ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(query);
-    String resourceName = "";
+    Resource resourceName = null;
     while(rs.hasNext()){
       QuerySolution qs = rs.next();
-      resourceName = qs.getResource("resourceAdapter").getURI();
+      resourceName = qs.getResource("resourceAdapter");
     }
     return resourceName;
   }
   
-  private static String getResourceName (Object componentManangerId) throws ResourceRepositoryException{
+  private static Resource getResourceName (Object componentManangerId) throws ResourceRepositoryException{
     String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
         + "SELECT ?resourceName WHERE { "
         + "<" + componentManangerId + "> a ?class ." 
         + "?resourceName omn:implementedBy ?class "
         + "}";
     ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(query);
-    String resourceName = "";
+    Resource resourceName = null;
     while(rs.hasNext()){
       QuerySolution qs = rs.next();
-      resourceName = qs.getResource("resourceName").getURI();
+      resourceName = qs.getResource("resourceName");
     }
     return resourceName;
+  }
+  
+  public static void reservationToRemove(Model model, Map<String, Object> reservationsMap) throws ResourceRepositoryException{
+    StmtIterator iterator = model.listStatements();
+    while(iterator.hasNext()){
+      Resource instance = iterator.next().getSubject();
+      if(instance.hasProperty(RDF.type)){
+        Model modelToDelete = ModelFactory.createDefaultModel();
+        Resource resource = modelToDelete.createResource(instance.getURI());
+        resource.addProperty(RDF.type, MessageBusOntologyModel.classReservation);
+        resource.addProperty(MessageBusOntologyModel.reserveInstanceFrom, reservationsMap.get(instance.getURI()).toString());
+        TripletStoreAccessor.deleteRDFgraph(modelToDelete);
+      }
+    }
   }
 }
