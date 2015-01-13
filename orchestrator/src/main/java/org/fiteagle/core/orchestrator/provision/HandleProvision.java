@@ -2,11 +2,13 @@ package org.fiteagle.core.orchestrator.provision;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
+import org.jboss.resteasy.logging.Logger;
 
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
@@ -24,7 +26,7 @@ public class HandleProvision {
     String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
         + "SELECT ?reservationId ?componentManagerId WHERE { "
         + "<" + group + "> a omn:Group ." 
-        + "?sliver omn:partOf \"" + group +"\" . "
+        + "?reservationId omn:partOf \"" + group +"\" . "
         + "?reservationId omn:reserveInstanceFrom ?componentManagerId "
         + "}";
     ResultSet rs  = QueryExecuter.executeSparqlSelectQuery(query);
@@ -32,8 +34,14 @@ public class HandleProvision {
     while(rs.hasNext()){
       QuerySolution qs = rs.next();
       if (qs.contains("reservationId") && qs.contains("componentManagerId")) {
+        System.out.println("a sliver is found");
+        System.out.println("reservation " + qs.getResource("reservationId").getURI() + " componentManagerId " + qs.getLiteral("componentManagerId").getString());
          reservations.put(qs.getResource("reservationId").getURI(), qs.getLiteral("componentManagerId").getString());
       }
+    }
+    System.out.println("The reservations map contains");
+    for (Map.Entry<String, Object> instance : reservations.entrySet()) {
+      System.out.println(instance.getKey() + " " + instance.getValue());
     }
     return reservations;
   }
