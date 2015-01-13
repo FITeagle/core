@@ -57,9 +57,16 @@ public class ReservationMDBListener implements MessageListener {
       if (messageType.equals(IMessageBus.TYPE_CREATE)) {        
         handleCreate(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
       }
+      if (messageType.equals(IMessageBus.TYPE_GET)) {
+        handleGet(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
+      }
     }
   }
-  
+
+  private void handleGet(Model messageModel, String serialization, String jmsCorrelationID) {
+
+  }
+
   private void handleCreate(Model requestModel, String serialization, String requestID) {
     LOGGER.log(Level.INFO, "handling reservation request ...");
     Message responseMessage = null;
