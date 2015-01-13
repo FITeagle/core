@@ -20,8 +20,8 @@ import com.hp.hpl.jena.vocabulary.RDF;
 
 public class HandleProvision {
   
-  public static final  Map<String, Object> getReservations(String group) throws ResourceRepositoryException{
-    final Map<String, Object> reservations = new HashMap<>();
+  public static final  Map<String, String> getReservations(String group) throws ResourceRepositoryException{
+    final Map<String, String> reservations = new HashMap<>();
     
     String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
         + "SELECT ?reservationId ?componentManagerId WHERE { "
@@ -40,15 +40,15 @@ public class HandleProvision {
       }
     }
     System.out.println("The reservations map contains");
-    for (Map.Entry<String, Object> instance : reservations.entrySet()) {
+    for (Map.Entry<String, String> instance : reservations.entrySet()) {
       System.out.println(instance.getKey() + " " + instance.getValue());
     }
     return reservations;
   }
   
-  public static Model createRequest(final Map<String, Object> reservations) throws ResourceRepositoryException{
+  public static Model createRequest(final Map<String, String> reservations) throws ResourceRepositoryException{
     Model createModel = ModelFactory.createDefaultModel();
-    for (Map.Entry<String, Object> instance : reservations.entrySet()) {
+    for (Map.Entry<String, String> instance : reservations.entrySet()) {
       Resource resourceAdapter = createModel.createResource(instance.getValue().toString());
       resourceAdapter.addProperty(RDF.type, getResourceAdapterName(instance.getValue()));
       Resource resource = createModel.createResource(instance.getKey());
@@ -87,7 +87,7 @@ public class HandleProvision {
     return resourceName;
   }
   
-  public static void reservationToRemove(Model model, Map<String, Object> reservationsMap) throws ResourceRepositoryException{
+  public static void removeReservations(Model model, Map<String, String> reservationsMap) throws ResourceRepositoryException{
     StmtIterator iterator = model.listStatements();
     while(iterator.hasNext()){
       Resource instance = iterator.next().getSubject();

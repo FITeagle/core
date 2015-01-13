@@ -27,9 +27,7 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
 
-import javax.ws.rs.core.Response;
-
-@MessageDriven(name = "OrchestratorMDBListener", activationConfig = {
+@MessageDriven(activationConfig = {
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
     @ActivationConfigProperty(propertyName = "destination", propertyValue = IMessageBus.TOPIC_CORE),
     @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = MessageFilters.FILTER_ORCHESTRATOR),
@@ -46,57 +44,71 @@ public class OrchestratorMDBListener implements MessageListener {
   public void onMessage(final Message message) {
     String messageType = MessageUtil.getMessageType(message);
     String serialization = MessageUtil.getMessageSerialization(message);
-    String rdfString = MessageUtil.getStringBody(message);
+    String messageBody = MessageUtil.getStringBody(message);
     LOGGER.log(Level.INFO, "Received a " + messageType + " message");
     
-    if (messageType != null && rdfString != null) {
-      Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
+    if (messageType != null && messageBody != null) {
       if (messageType.equals(IMessageBus.TYPE_CONFIGURE)) {
+        Model messageModel = MessageUtil.parseSerializedModel(messageBody, serialization);
         handleConfigureRequest(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
       }
-      if (messageType.equals(IMessageBus.TYPE_DELETE)) {
+      else if (messageType.equals(IMessageBus.TYPE_DELETE)) {
+        Model messageModel = MessageUtil.parseSerializedModel(messageBody, serialization);
         handleDeleteRequest(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
+      }
+      else if (messageType.equals(IMessageBus.TYPE_INFORM)) {
+        handleInform(messageBody, MessageUtil.getJMSCorrelationID(message));
       }
     }
   }
   
+  private void handleInform(String body, String requestID){
+    if(requests.keySet().contains(requestID)){
+      LOGGER.log(Level.INFO, "Orchestrator received a reply");
+      Model model = MessageUtil.parseSerializedModel(body, IMessageBus.SERIALIZATION_TURTLE);
+        
+      try {
+        HandleProvision.removeReservations(model, requests.get(requestID).getReservations());
+        TripletStoreAccessor.updateRepositoryModel(model);
+      } catch (ResourceRepositoryException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      
+      LOGGER.log(Level.INFO, "Reservation is deleted from Database");
+      
+       String serializedResponse = MessageUtil.serializeModel(model, IMessageBus.SERIALIZATION_TURTLE);
+       Message responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, IMessageBus.SERIALIZATION_TURTLE, requests.get(requestID).getRequestID(), context);
+       LOGGER.log(Level.INFO, " a reply is sent to SFA ...");
+       context.createProducer().send(topic, responseMessage);
+    }
+  }
+  
   private void handleConfigureRequest(Model requestModel, String serialization, String requestID) {
-    LOGGER.log(Level.INFO, "handling provision request ...");
-    Message responseMessage = null;
-    Model resultModel = ModelFactory.createDefaultModel();
-    
+    LOGGER.log(Level.INFO, "handling configure request ...");
     StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classGroup);
     while (iterator.hasNext()) {
       Model createModel = ModelFactory.createDefaultModel();
       Resource slice = iterator.next().getSubject();
       LOGGER.log(Level.INFO, "trying to provision this URN " + slice.getURI());
-      Map<String, Object> reservations = null;
+      
       try {
-        reservations = HandleProvision.getReservations(slice.getURI());
+        Map<String, String> reservations = HandleProvision.getReservations(slice.getURI());
         createModel = HandleProvision.createRequest(reservations);
         LOGGER.log(Level.INFO, createModel.getGraph().toString());
         String serializedModel = MessageUtil.serializeModel(createModel, IMessageBus.SERIALIZATION_TURTLE);
         LOGGER.log(Level.INFO, "message contains " + serializedModel);
-        Model receivedModel = sendMessage(serializedModel, IMessageBus.TYPE_CREATE, IMessageBus.TARGET_ADAPTER);
-        HandleProvision.reservationToRemove(receivedModel, reservations);
-        TripletStoreAccessor.updateRepositoryModel(receivedModel);
-        LOGGER.log(Level.INFO, "Reservation is deleted from Database");
+        sendMessage(serializedModel, IMessageBus.TYPE_CREATE, IMessageBus.TARGET_ADAPTER, reservations, requestID);
+
       } catch (ResourceRepositoryException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
       }
     }
-    
-    /*
-     * String serializedResponse = MessageUtil.serializeModel(resultModel, serialization); responseMessage =
-     * MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID,
-     * context); LOGGER.log(Level.INFO, " a reply is sent to SFA ..."); context.createProducer().send(topic,
-     * responseMessage);
-     */
   }
   
   private void handleDeleteRequest(Model requestModel, String serialization, String requestID) {
-    LOGGER.log(Level.INFO, "handling provision request ...");
+    LOGGER.log(Level.INFO, "handling delete request ...");
     // Message responseMessage = null;
     // Model resultModel = ModelFactory.createDefaultModel();
     
@@ -107,23 +119,31 @@ public class OrchestratorMDBListener implements MessageListener {
     // context.createProducer().send(topic, responseMessage);
   }
   
-  private Model sendMessage(String model, String methodType, String methodTarget) {
-    final Message request = MessageUtil.createRDFMessage(model, methodType, methodTarget,
-        IMessageBus.SERIALIZATION_TURTLE, null, context);
+  private static Map<String, Request> requests = new HashMap<String, OrchestratorMDBListener.Request>();
+  
+  private void sendMessage(String model, String methodType, String methodTarget, Map<String, String> reservations, String initialRequestID) {
+    final Message request = MessageUtil.createRDFMessage(model, methodType, methodTarget, IMessageBus.SERIALIZATION_TURTLE, null, context);
+    Request r = new Request(reservations, initialRequestID);
+    requests.put(MessageUtil.getJMSCorrelationID(request), r);
     context.createProducer().send(topic, request);
     LOGGER.log(Level.INFO, methodType + " message is sent to resource adapter");
-    Message rcvMessage = MessageUtil.waitForResult(request, context, topic);
-    String resultString = MessageUtil.getStringBody(rcvMessage);
+  }
+  
+  public static class Request{
+    private Map<String, String> reservations;
+    private String requestID;
     
-    if (MessageUtil.getMessageType(rcvMessage).equals(IMessageBus.TYPE_ERROR)) {
-      if (resultString.equals(Response.Status.REQUEST_TIMEOUT.name())) {
-        throw new MessageUtil.TimeoutException("Sent message (" + methodType + ") (Target: " + methodTarget + "): "
-            + MessageUtil.getStringBody(request));
-      }
-      throw new RuntimeException(resultString);
-    } else {
-      LOGGER.log(Level.INFO, "Orchestratro received a reply");
-      return MessageUtil.parseSerializedModel(resultString, IMessageBus.SERIALIZATION_TURTLE);
+    public Request(Map<String, String> reservations, String requestID){
+      this.reservations = reservations;
+      this.requestID = requestID;
+    }
+    
+    protected Map<String, String> getReservations() {
+      return reservations;
+    }
+
+    protected String getRequestID() {
+      return requestID;
     }
   }
   
