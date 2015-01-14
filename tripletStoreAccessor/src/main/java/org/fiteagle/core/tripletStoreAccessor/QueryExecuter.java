@@ -51,6 +51,17 @@ public class QueryExecuter {
     return rs;
   }
   
+  public static boolean executeSparqlAskQuery(String queryString) throws ResourceRepositoryException {
+	  boolean result = false;
+	  try{
+		  QueryExecution qe = QueryExecutionFactory.sparqlService(FUSEKI_SERVICE_QUERY, queryString);
+		  result = qe.execAsk();
+	  } catch(QueryExceptionHTTP | QueryParseException e){
+	      throw new ResourceRepositoryException(e.getMessage());
+	    }
+	  return result;
+  }
+  
   public static Model executeSparqlConstructQuery(String queryString) throws ResourceRepositoryException {
     Model resultModel = null;
     try{

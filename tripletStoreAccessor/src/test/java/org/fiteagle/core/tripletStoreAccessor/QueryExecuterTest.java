@@ -1,6 +1,7 @@
 package org.fiteagle.core.tripletStoreAccessor;
 
 import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
@@ -224,6 +225,15 @@ public class QueryExecuterTest {
 	    	 System.out.println("created instances " + instances);
 	    	 
 		 }
+	      
+	      @Test
+	      public void isSliverURNallocated() throws ResourceRepositoryException{
+	    	  String sliverURN = "wall2.ilabt.iminds.be+sliver+123";
+	    	  String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
+	    	  		+ "ASK WHERE { <" + sliverURN + "> a omn:Reservation }";
+	    	  boolean result = QueryExecuter.executeSparqlAskQuery(query);
+	    	  System.out.println(result);
+	      }
 }
 
  
