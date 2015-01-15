@@ -1,9 +1,7 @@
 package org.fiteagle.core.tripletStoreAccessor;
 
 import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
-import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 import org.junit.Test;
 
@@ -226,7 +224,7 @@ public class QueryExecuterTest {
 	    	 
 		 }
 	      
-	      @Test
+//	      @Test
 	      public void isSliverURNallocated() throws ResourceRepositoryException{
 	    	  String sliverURN = "wall2.ilabt.iminds.be+sliver+123";
 	    	  String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
