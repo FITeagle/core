@@ -83,8 +83,8 @@ public class ReservationMDBListener implements MessageListener {
     Message responseMessage = null;
     Model resultModel = ModelFactory.createDefaultModel();
     final Map<String, String> reservedSlivers = new HashMap<>();
-    this.handleReservation(requestModel, reservedSlivers);
-    this.reserve(requestModel);
+    Model reservationModel = this.handleReservation(requestModel, reservedSlivers);
+    this.reserve(reservationModel);
     
     for (Map.Entry<String, String> sliver : reservedSlivers.entrySet()) {
       Resource sliversResource = resultModel.createResource(sliver.getKey());
@@ -96,9 +96,10 @@ public class ReservationMDBListener implements MessageListener {
     context.createProducer().send(topic, responseMessage);
   }
   
-  private void handleReservation(Model requestModel, Map<String, String> reservedSlivers) throws ResourceRepositoryException {
+  private Model handleReservation(Model requestModel, Map<String, String> reservedSlivers) throws ResourceRepositoryException {
     
     LOGGER.log(Level.INFO, "handle reservation ...");
+    Model reservationModel = ModelFactory.createDefaultModel();
     StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classReservation);
     while (iterator.hasNext()) {
       Resource sliver = iterator.next().getSubject();
@@ -110,16 +111,41 @@ public class ReservationMDBListener implements MessageListener {
         LOGGER.log(Level.INFO, "sliver is " + sliver.getURI());
         String sliverURN = setSliverURN(sliver.getURI());
         reservedSlivers.put(sliverURN, "geni_allocated");
-        addSliverURNtoModel(requestModel);
+        addSliverURNtoReservationModel(reservationModel, requestModel, sliverURN, sliver.getURI());
+        addSliceURNtoReservationModel(reservationModel, requestModel);
       } else {
         requestModel.remove(sliver, null, null);
         reservedSlivers.put(sliver.getURI(), "geni_not_allocated");
       }
     }
+    return reservationModel;
   }
   
-  private void addSliverURNtoModel(Model requestModel){
-	  
+  private void addSliceURNtoReservationModel(Model reservationModel, Model requestModel){
+	  StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classGroup);
+	  Resource slice = null;
+	  while(iterator.hasNext()){
+		  Statement statement = iterator.next();
+		  slice = statement.getSubject();
+	  }
+	  Resource sliceURN = reservationModel.createResource(slice.getURI());
+	  StmtIterator iter = slice.listProperties();
+	  while(iter.hasNext()){
+		  Statement statement = iter.next();
+		  sliceURN.addProperty(statement.getPredicate(), statement.getObject());
+	  }
+  }
+  
+  private void addSliverURNtoReservationModel(Model reservationModel, Model requestModel, String sliverURN, String sliver){
+	  Resource newSliverURN = reservationModel.createResource(sliverURN);
+	  StmtIterator iterator = requestModel.listStatements();
+	  while (iterator.hasNext()) {
+		  Statement statement = iterator.next();
+		  Resource helpingResource = statement.getSubject();
+		  if(helpingResource.getURI().equals(sliver)){
+			  newSliverURN.addProperty(statement.getPredicate(), statement.getObject());
+		  }
+	  }
   }
   
   private String setSliverURN(String sliver) throws ResourceRepositoryException{
