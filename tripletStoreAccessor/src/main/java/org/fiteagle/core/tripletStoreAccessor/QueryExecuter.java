@@ -26,6 +26,7 @@ public class QueryExecuter {
   private static Map<String, String> missedNsPrefixes = new HashMap<>();
   
   protected static final String FUSEKI_SERVICE = "http://localhost:3030/fiteagle/";
+  protected static final String FUSEKI_SERVICE_DATA = FUSEKI_SERVICE + "data";
   protected static final String FUSEKI_SERVICE_QUERY = FUSEKI_SERVICE + "query";
   protected static final String FUSEKI_SERVICE_UPDATE = FUSEKI_SERVICE + "update";
   

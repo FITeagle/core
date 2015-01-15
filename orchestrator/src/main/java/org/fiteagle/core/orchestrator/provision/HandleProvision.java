@@ -96,7 +96,7 @@ public class HandleProvision {
         Resource resource = modelToDelete.createResource(instance.getURI());
         resource.addProperty(RDF.type, MessageBusOntologyModel.classReservation);
         resource.addProperty(MessageBusOntologyModel.reserveInstanceFrom, reservationsMap.get(instance.getURI()).toString());
-        TripletStoreAccessor.deleteRDFgraph(modelToDelete);
+        TripletStoreAccessor.deleteModel(modelToDelete);
       }
     }
   }

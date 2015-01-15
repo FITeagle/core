@@ -82,7 +82,7 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
     try {
       StmtIterator iter = model.listStatements();
       while(iter.hasNext()){
-        TripletStoreAccessor.releaseResource(iter.next().getSubject());
+        TripletStoreAccessor.deleteResource(iter.next().getSubject());
       }      
     } catch (ResourceRepositoryException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
