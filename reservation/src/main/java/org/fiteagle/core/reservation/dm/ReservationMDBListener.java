@@ -2,6 +2,7 @@ package org.fiteagle.core.reservation.dm;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,7 +56,12 @@ public class ReservationMDBListener implements MessageListener {
       Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
       
       if (messageType.equals(IMessageBus.TYPE_CREATE)) {        
-        handleCreate(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
+        try {
+			handleCreate(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
+		} catch (ResourceRepositoryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
       }
       if (messageType.equals(IMessageBus.TYPE_GET)) {
         handleGet(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
@@ -67,7 +73,7 @@ public class ReservationMDBListener implements MessageListener {
 
   }
 
-  private void handleCreate(Model requestModel, String serialization, String requestID) {
+  private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException {
     LOGGER.log(Level.INFO, "handling reservation request ...");
     Message responseMessage = null;
     Model resultModel = ModelFactory.createDefaultModel();
@@ -85,7 +91,7 @@ public class ReservationMDBListener implements MessageListener {
     context.createProducer().send(topic, responseMessage);
   }
   
-  private void handleReservation(Model requestModel, Map<String, String> reservedSlivers) {
+  private void handleReservation(Model requestModel, Map<String, String> reservedSlivers) throws ResourceRepositoryException {
     
     LOGGER.log(Level.INFO, "handle reservation ...");
     StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classReservation);
@@ -97,12 +103,36 @@ public class ReservationMDBListener implements MessageListener {
       if (this.isReservationAvailable(componentManagerId)) {
         LOGGER.log(Level.INFO, "reservation is available");
         LOGGER.log(Level.INFO, "sliver is " + sliver.getURI());
-        reservedSlivers.put(sliver.getURI(), "geni_allocated");
+        String sliverURN = setSliverURN(sliver.getURI());
+        reservedSlivers.put(sliverURN, "geni_allocated");
+        addSliverURNtoModel(requestModel);
       } else {
         requestModel.remove(sliver, null, null);
         reservedSlivers.put(sliver.getURI(), "geni_not_allocated");
       }
     }
+  }
+  
+  private void addSliverURNtoModel(Model requestModel){
+	  
+  }
+  
+  private String setSliverURN(String sliver) throws ResourceRepositoryException{
+	  String sliverURN = "";
+	  Random random = new Random();
+	  while(true){
+		  sliverURN = sliver + random.nextInt();
+		  if(!sliverURNallocated(sliverURN)){
+			  break;
+		  }
+	  }
+	  return sliverURN;
+  }
+  
+  private boolean sliverURNallocated(String sliverURN) throws ResourceRepositoryException{
+	String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
+	  		+ "ASK WHERE { <" + sliverURN + "> a omn:Reservation }";
+	return QueryExecuter.executeSparqlAskQuery(query);
   }
   
   private boolean isReservationAvailable(String componentManagerId) {
