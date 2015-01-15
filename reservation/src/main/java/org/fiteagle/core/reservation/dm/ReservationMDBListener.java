@@ -70,7 +70,12 @@ public class ReservationMDBListener implements MessageListener {
   }
 
   private void handleGet(Model messageModel, String serialization, String jmsCorrelationID) {
-
+    Message responseMessage = null;
+    Model resultModel = ModelFactory.createDefaultModel();
+    final Map<String, String> reservedSlivers = new HashMap<>();
+    String serializedResponse = MessageUtil.serializeModel(resultModel, serialization);
+    responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, jmsCorrelationID, context);
+    context.createProducer().send(topic, responseMessage);
   }
 
   private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException {
