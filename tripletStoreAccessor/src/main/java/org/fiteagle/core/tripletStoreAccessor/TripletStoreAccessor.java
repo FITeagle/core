@@ -93,7 +93,7 @@ public class TripletStoreAccessor {
     QueryExecuter.executeSparqlUpdateQuery(updateString);
   }
 
-  private static void removeStatement(Statement statement) throws ResourceRepositoryException{
+  public static void removeStatement(Statement statement) throws ResourceRepositoryException{
     String existingValue = "";
     if(statement.getObject().isResource()){
       existingValue = "<"+statement.getSubject().getURI()+"> <"+statement.getPredicate().getURI()+"> <"+statement.getResource().getURI()+"> .";
@@ -107,7 +107,7 @@ public class TripletStoreAccessor {
     QueryExecuter.executeSparqlUpdateQuery(updateString);
   }
   
-  private static void removePropertyValue(Resource subject, Resource predicate) throws ResourceRepositoryException{
+  public static void removePropertyValue(Resource subject, Resource predicate) throws ResourceRepositoryException{
     String existingValue = "<"+subject.getURI()+"> <"+predicate.getURI()+"> ?anyObject .";
           
     String updateString = "DELETE { "+existingValue+" }" + "WHERE { "+existingValue+" }";
