@@ -114,7 +114,7 @@ public class ReservationMDBListener implements MessageListener {
         reservedSlivers.put(sliverURN, IGeni.GENI_ALLOCATED);
         addSliverURNtoReservationModel(reservationModel, requestModel, sliverURN, sliver.getURI());  
       } else {
-        reservedSlivers.put(sliver.getURI(), "geni_not_allocated");
+        reservedSlivers.put(sliver.getURI(), IGeni.GENI_NOT_ALLOCATED);
       }
     }
     addSliceURNtoReservationModel(reservationModel, requestModel, reservedSlivers);
