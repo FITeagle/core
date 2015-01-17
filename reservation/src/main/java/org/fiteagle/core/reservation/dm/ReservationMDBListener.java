@@ -14,6 +14,7 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
+import org.fiteagle.api.core.IGeni;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageFilters;
@@ -100,6 +101,7 @@ public class ReservationMDBListener implements MessageListener {
     
     LOGGER.log(Level.INFO, "handle reservation ...");
     Model reservationModel = ModelFactory.createDefaultModel();
+    
     StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classReservation);
     while (iterator.hasNext()) {
       Resource sliver = iterator.next().getSubject();
@@ -108,20 +110,18 @@ public class ReservationMDBListener implements MessageListener {
       LOGGER.log(Level.INFO, "componentManagerId " + componentManagerId);
       if (this.isReservationAvailable(componentManagerId)) {
         LOGGER.log(Level.INFO, "reservation is available");
-        LOGGER.log(Level.INFO, "sliver is " + sliver.getURI());
         String sliverURN = setSliverURN(sliver.getURI());
-        reservedSlivers.put(sliverURN, "geni_allocated");
-        addSliverURNtoReservationModel(reservationModel, requestModel, sliverURN, sliver.getURI());
-        addSliceURNtoReservationModel(reservationModel, requestModel);
+        reservedSlivers.put(sliverURN, IGeni.GENI_ALLOCATED);
+        addSliverURNtoReservationModel(reservationModel, requestModel, sliverURN, sliver.getURI());  
       } else {
-        requestModel.remove(sliver, null, null);
         reservedSlivers.put(sliver.getURI(), "geni_not_allocated");
       }
     }
+    addSliceURNtoReservationModel(reservationModel, requestModel, reservedSlivers);
     return reservationModel;
   }
   
-  private void addSliceURNtoReservationModel(Model reservationModel, Model requestModel){
+  private void addSliceURNtoReservationModel(Model reservationModel, Model requestModel, Map<String, String> reservedSlivers){
 	  StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classGroup);
 	  Resource slice = null;
 	  while(iterator.hasNext()){
@@ -133,6 +133,11 @@ public class ReservationMDBListener implements MessageListener {
 	  while(iter.hasNext()){
 		  Statement statement = iter.next();
 		  sliceURN.addProperty(statement.getPredicate(), statement.getObject());
+	  }
+	  for(Map.Entry<String, String> slivers : reservedSlivers.entrySet()){
+		  if(slivers.getValue().equals(IGeni.GENI_ALLOCATED)){
+			  sliceURN.addProperty(MessageBusOntologyModel.hasReservation, slivers.getKey());  
+		  }
 	  }
   }
   
