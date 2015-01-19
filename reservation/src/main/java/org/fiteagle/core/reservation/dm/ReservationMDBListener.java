@@ -14,6 +14,7 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
+import com.hp.hpl.jena.rdf.model.*;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageFilters;
@@ -24,11 +25,6 @@ import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepos
 
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
 
 @MessageDriven(name = "ReservationMDBListener", activationConfig = {
@@ -72,10 +68,33 @@ public class ReservationMDBListener implements MessageListener {
   private void handleGet(Model messageModel, String serialization, String jmsCorrelationID) {
     Message responseMessage = null;
     Model resultModel = ModelFactory.createDefaultModel();
+
+    //get Slice URN or Sliver URNS
+
+    ResIterator iterator = messageModel.listResourcesWithProperty(RDF.type,MessageBusOntologyModel.classGroup);
+    if(iterator.hasNext()){
+      //should be only one resource
+      Resource r = iterator.nextResource();
+      String uri =  r.getURI();
+      String queryAssociatedReservations = buildQueryForGroupReservations(uri);
+
+    }else{
+      iterator =  messageModel.listResourcesWithProperty(RDF.type,MessageBusOntologyModel.classReservation);
+      while(iterator.hasNext()){
+        Resource r = iterator.nextResource();
+        System.out.println("ssss");
+      }
+    }
     final Map<String, String> reservedSlivers = new HashMap<>();
     String serializedResponse = MessageUtil.serializeModel(resultModel, serialization);
     responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, jmsCorrelationID, context);
     context.createProducer().send(topic, responseMessage);
+  }
+
+  private String buildQueryForGroupReservations(String uri) {
+    String query  = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "+
+                    "SELECT ";
+    return uri;
   }
 
   private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException {
