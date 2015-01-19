@@ -80,8 +80,22 @@ public class ReservationMDBListener implements MessageListener {
       //should be only one resource
       Resource r = iterator.nextResource();
       String uri =  r.getURI();
-      String queryAssociatedReservations = buildQueryForGroupReservations(uri);
+      String queryAssociatedReservations  ="";
+      try {
+         queryAssociatedReservations = buildQueryForGroupReservations(uri);
+         ResultSet rs = QueryExecuter.executeSparqlSelectQuery(queryAssociatedReservations);
+         while(rs.hasNext()){
+           QuerySolution qs = rs.next();
+           Resource result = qs.get("?reservationId").asResource();
+           Resource resource = resultModel.createResource(result.getURI(), MessageBusOntologyModel.classReservation);
+           resource.addProperty(MessageBusOntologyModel.hasState,qs.get("?state"));
+           resource.addProperty(MessageBusOntologyModel.endTime, qs.get("?endTime"));
 
+         }
+      } catch (ResourceRepositoryException e) {
+        e.printStackTrace();
+      }
+      System.out.println(queryAssociatedReservations);
     }else{
       iterator =  messageModel.listResourcesWithProperty(RDF.type,MessageBusOntologyModel.classReservation);
       while(iterator.hasNext()){
@@ -95,10 +109,15 @@ public class ReservationMDBListener implements MessageListener {
     context.createProducer().send(topic, responseMessage);
   }
 
-  private String buildQueryForGroupReservations(String uri) {
+  private String buildQueryForGroupReservations(String uri) throws ResourceRepositoryException {
     String query  = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "+
-                    "SELECT ";
-    return uri;
+                    "SELECT ?reservationId ?state ?endTime WHERE {\n" +
+            "?reservationId  omn:partOfGroup \""+uri+"\".\n" +
+            "?reservationId omn:hasState ?state .\n" +
+            "?reservationId omn:endTime  ?endTime\n" +
+            "}";
+    return query;
+
   }
 
   private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException {
