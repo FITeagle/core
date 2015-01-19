@@ -1,6 +1,8 @@
 package org.fiteagle.core.orchestrator.dm;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -105,24 +107,54 @@ public class OrchestratorMDBListener implements MessageListener {
 		final Model modelCreate = ModelFactory.createDefaultModel();
 		Map<String, Group> groups = new HashMap<>();
 
-		StmtIterator iterator = requestModel.listStatements(null, RDF.type,
+		StmtIterator groupIterator = requestModel.listStatements(null, RDF.type,
 				MessageBusOntologyModel.classGroup);
-		while (iterator.hasNext()) {
-			Resource slice = iterator.next().getSubject();
+		while (groupIterator.hasNext()) {
+			Resource group = groupIterator.next().getSubject();
 			LOGGER.log(Level.INFO,
-					"trying to provision this URN " + slice.getURI());
+					"trying to provision this URN " + group.getURI());
 
 			try {
 				final Map<String, ReservationDetails> reservations = HandleProvision
-						.getReservations(slice.getURI());
+						.getGroupReservations(group.getURI());
 
 				HandleProvision.addToCreateRequest(reservations, modelCreate);
 				Group reservationsGroup = new Group(reservations);
-				groups.put(slice.getURI(), reservationsGroup);
+				groups.put(group.getURI(), reservationsGroup);
 			} catch (ResourceRepositoryException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+		
+		StmtIterator reservationIterator = requestModel.listStatements(null, RDF.type,
+				MessageBusOntologyModel.classReservation);
+//		final List<String> groupsList = new LinkedList<>();
+		while (reservationIterator.hasNext()) {
+			Resource reservation = reservationIterator.next().getSubject();
+			LOGGER.log(Level.INFO,
+					"trying to provision this URN " + reservation.getURI());
+			
+			try {
+				final Map<String, ReservationDetails> reservations = new HashMap<>();
+				ReservationDetails reservationDetails = HandleProvision.getReservationDetails(reservation.getURI());
+				if(reservationDetails != null){
+					reservations.put(reservation.getURI(), reservationDetails);
+				}
+				else {
+					// null TODO: do sth
+				}
+				// TODO
+				HandleProvision.addToCreateRequest(reservations, modelCreate);
+				
+				Group reservationsGroup = new Group(reservations);
+				String groupURI = HandleProvision.getGroupURI(reservation.getURI());
+				groups.put(groupURI, reservationsGroup);
+			} catch (ResourceRepositoryException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		}
 
 		String serializedModel = MessageUtil.serializeModel(modelCreate,
@@ -194,6 +226,10 @@ public class OrchestratorMDBListener implements MessageListener {
 
 		public Map<String, ReservationDetails> getReservations() {
 			return this.reservations;
+		}
+		
+		public void setReservations(String reservation, ReservationDetails reservationDetails){
+			this.reservations.put(reservation, reservationDetails);
 		}
 	}
 

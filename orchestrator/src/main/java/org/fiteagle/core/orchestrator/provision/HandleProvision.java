@@ -28,7 +28,7 @@ import com.hp.hpl.jena.vocabulary.RDF;
 
 public class HandleProvision {
 
-	public static final Map<String, ReservationDetails> getReservations(
+	public static final Map<String, ReservationDetails> getGroupReservations(
 			String group) throws ResourceRepositoryException {
 		final Map<String, ReservationDetails> reservations = new HashMap<>();
 
@@ -61,6 +61,37 @@ public class HandleProvision {
 		}
 		return reservations;
 	}
+	
+	public static final ReservationDetails getReservationDetails(
+			String reservation) throws ResourceRepositoryException {
+
+		String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
+				+ "SELECT ?group ?componentManagerId WHERE { " + "<"
+				+ reservation + "> a omn:Reservation . "
+				+ "<" + reservation + "> omn:partOfGroup ?group . "
+				+ "<" + reservation + "> omn:reserveInstanceFrom ?componentManagerId "
+				+ "}";
+		ResultSet rs = QueryExecuter.executeSparqlSelectQuery(query);
+
+		if (rs.hasNext()) {
+			QuerySolution qs = rs.next();
+
+			if (qs.contains("group")
+					&& qs.contains("componentManagerId")) {
+
+				System.out.println("the sliver is found");
+				System.out.println("reservation "
+						+ " componentManagerId "
+						+ qs.getLiteral("componentManagerId").getString());
+
+				ReservationDetails reservationDetails = new ReservationDetails(
+						qs.getLiteral("componentManagerId").getString(),
+						IGeni.GENI_ALLOCATED);
+				return reservationDetails;
+			}
+		}
+		return null;
+	}
 
 	public static void addToCreateRequest(
 			final Map<String, ReservationDetails> reservations,
@@ -81,6 +112,27 @@ public class HandleProvision {
 		}
 	}
 
+	public static String getGroupURI(String reservation) throws ResourceRepositoryException{
+		String groupURI = "";
+		String groupQuery = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
+				+ "CONSTRUCT { "
+				+ "?group a omn:Group ."
+				+ " } "
+				+ "FROM <http://localhost:3030/ds/query> "
+				+ "WHERE {?group a omn:Group . "
+				+ "?group omn:hasReservation \""
+				+ reservation
+				+ "\" . "
+				+ "}";
+
+		Model model = QueryExecuter.executeSparqlDescribeQuery(groupQuery);
+		StmtIterator iter = model.listStatements();
+		while(iter.hasNext()){
+			groupURI = iter.next().getSubject().getURI();
+		}
+		return groupURI;
+	}
+	
 	private static Resource getResourceAdapterName(Object componentManagerId)
 			throws ResourceRepositoryException {
 
