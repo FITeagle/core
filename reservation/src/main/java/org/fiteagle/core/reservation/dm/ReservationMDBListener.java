@@ -14,6 +14,11 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
+
+import com.hp.hpl.jena.rdf.model.*;
+
+import org.fiteagle.api.core.IGeni;
+
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageFilters;
@@ -24,11 +29,6 @@ import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepos
 
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
 
 @MessageDriven(name = "ReservationMDBListener", activationConfig = {
@@ -72,10 +72,52 @@ public class ReservationMDBListener implements MessageListener {
   private void handleGet(Model messageModel, String serialization, String jmsCorrelationID) {
     Message responseMessage = null;
     Model resultModel = ModelFactory.createDefaultModel();
+
+    //get Slice URN or Sliver URNS
+
+    ResIterator iterator = messageModel.listResourcesWithProperty(RDF.type,MessageBusOntologyModel.classGroup);
+    if(iterator.hasNext()){
+      //should be only one resource
+      Resource r = iterator.nextResource();
+      String uri =  r.getURI();
+      String queryAssociatedReservations  ="";
+      try {
+         queryAssociatedReservations = buildQueryForGroupReservations(uri);
+         ResultSet rs = QueryExecuter.executeSparqlSelectQuery(queryAssociatedReservations);
+         while(rs.hasNext()){
+           QuerySolution qs = rs.next();
+           Resource result = qs.get("?reservationId").asResource();
+           Resource resource = resultModel.createResource(result.getURI(), MessageBusOntologyModel.classReservation);
+           resource.addProperty(MessageBusOntologyModel.hasState,qs.get("?state"));
+           resource.addProperty(MessageBusOntologyModel.endTime, qs.get("?endTime"));
+
+         }
+      } catch (ResourceRepositoryException e) {
+        e.printStackTrace();
+      }
+      System.out.println(queryAssociatedReservations);
+    }else{
+      iterator =  messageModel.listResourcesWithProperty(RDF.type,MessageBusOntologyModel.classReservation);
+      while(iterator.hasNext()){
+        Resource r = iterator.nextResource();
+        System.out.println("ssss");
+      }
+    }
     final Map<String, String> reservedSlivers = new HashMap<>();
     String serializedResponse = MessageUtil.serializeModel(resultModel, serialization);
     responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, jmsCorrelationID, context);
     context.createProducer().send(topic, responseMessage);
+  }
+
+  private String buildQueryForGroupReservations(String uri) throws ResourceRepositoryException {
+    String query  = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "+
+                    "SELECT ?reservationId ?state ?endTime WHERE {\n" +
+            "?reservationId  omn:partOfGroup \""+uri+"\".\n" +
+            "?reservationId omn:hasState ?state .\n" +
+            "?reservationId omn:endTime  ?endTime\n" +
+            "}";
+    return query;
+
   }
 
   private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException {
@@ -100,6 +142,7 @@ public class ReservationMDBListener implements MessageListener {
     
     LOGGER.log(Level.INFO, "handle reservation ...");
     Model reservationModel = ModelFactory.createDefaultModel();
+    
     StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classReservation);
     while (iterator.hasNext()) {
       Resource sliver = iterator.next().getSubject();
@@ -108,20 +151,18 @@ public class ReservationMDBListener implements MessageListener {
       LOGGER.log(Level.INFO, "componentManagerId " + componentManagerId);
       if (this.isReservationAvailable(componentManagerId)) {
         LOGGER.log(Level.INFO, "reservation is available");
-        LOGGER.log(Level.INFO, "sliver is " + sliver.getURI());
         String sliverURN = setSliverURN(sliver.getURI());
-        reservedSlivers.put(sliverURN, "geni_allocated");
-        addSliverURNtoReservationModel(reservationModel, requestModel, sliverURN, sliver.getURI());
-        addSliceURNtoReservationModel(reservationModel, requestModel);
+        reservedSlivers.put(sliverURN, IGeni.GENI_ALLOCATED);
+        addSliverURNtoReservationModel(reservationModel, requestModel, sliverURN, sliver.getURI());  
       } else {
-        requestModel.remove(sliver, null, null);
-        reservedSlivers.put(sliver.getURI(), "geni_not_allocated");
+        reservedSlivers.put(sliver.getURI(), IGeni.GENI_NOT_ALLOCATED);
       }
     }
+    addSliceURNtoReservationModel(reservationModel, requestModel, reservedSlivers);
     return reservationModel;
   }
   
-  private void addSliceURNtoReservationModel(Model reservationModel, Model requestModel){
+  private void addSliceURNtoReservationModel(Model reservationModel, Model requestModel, Map<String, String> reservedSlivers){
 	  StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classGroup);
 	  Resource slice = null;
 	  while(iterator.hasNext()){
@@ -133,6 +174,11 @@ public class ReservationMDBListener implements MessageListener {
 	  while(iter.hasNext()){
 		  Statement statement = iter.next();
 		  sliceURN.addProperty(statement.getPredicate(), statement.getObject());
+	  }
+	  for(Map.Entry<String, String> slivers : reservedSlivers.entrySet()){
+		  if(slivers.getValue().equals(IGeni.GENI_ALLOCATED)){
+			  sliceURN.addProperty(MessageBusOntologyModel.hasReservation, slivers.getKey());  
+		  }
 	  }
   }
   
