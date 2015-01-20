@@ -34,11 +34,7 @@ public class TripletStoreAccessor {
     if (sparqlQuery.toUpperCase().contains("SELECT")) {
       ResultSet rs = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
       resultJSON = MessageUtil.parseResultSetToJson(rs);
-      resultModel = ResultSetFormatter.toModel(rs);
-//      String bla = "PREFIX abc: <http://www.w3xy.org/1999/02/22#> INSERT DATA {abc:HolzHaus234 abc:istEin abc:Gebäude}";
-//      QueryExecuter.executeSparqlUpdateQuery(bla);
-      LOGGER.log(Level.INFO,"ERFOLGREICH");
-      
+      resultModel = ResultSetFormatter.toModel(rs);      
     } else if (sparqlQuery.toUpperCase().contains("DESCRIBE")) {
       resultModel = QueryExecuter.executeSparqlDescribeQuery(sparqlQuery);
       resultJSON = MessageUtil.serializeModel(resultModel, IMessageBus.SERIALIZATION_JSONLD);
