@@ -257,28 +257,6 @@ public class HandleProvision {
 			provisionResponseModel.add(QueryExecuter
 					.executeSparqlDescribeQuery(reservationQuery));
 
-			String reservationId = "";
-			StmtIterator stmtIterator = provisionResponseModel.listStatements(
-					null, MessageBusOntologyModel.partOfGroup, groupURN);
-
-			while (stmtIterator.hasNext()) {
-				reservationId = stmtIterator.next().getSubject().getURI();
-				break;
-			}
-
-			String groupQuery = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
-					+ "CONSTRUCT { ?group omn:endTime ?value ."
-					+ "?group a omn:Group ."
-					+ " } "
-					+ "FROM <http://localhost:3030/ds/query> "
-					+ "WHERE {?group a omn:Group . "
-					+ "?group omn:hasReservation \""
-					+ reservationId
-					+ "\" . "
-					+ "OPTIONAL {?group omn:endTime ?value . }" + " }";
-
-			provisionResponseModel.add(QueryExecuter
-					.executeSparqlDescribeQuery(groupQuery));
 		}
 
 		return provisionResponseModel;
