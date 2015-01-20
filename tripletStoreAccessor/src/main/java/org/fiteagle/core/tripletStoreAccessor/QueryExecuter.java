@@ -2,6 +2,7 @@ package org.fiteagle.core.tripletStoreAccessor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.jena.atlas.web.HttpException;
@@ -25,10 +26,10 @@ public class QueryExecuter {
   
   private static Map<String, String> missedNsPrefixes = new HashMap<>();
   
-  protected static final String FUSEKI_SERVICE = "http://localhost:3030/fiteagle/";
-  protected static final String FUSEKI_SERVICE_DATA = FUSEKI_SERVICE + "data";
-  protected static final String FUSEKI_SERVICE_QUERY = FUSEKI_SERVICE + "query";
-  protected static final String FUSEKI_SERVICE_UPDATE = FUSEKI_SERVICE + "update";
+  protected static final String SESAME_SERVICE = "http://localhost:8080/openrdf-workbench/repositories/fiteagle/";
+  protected static final String SESAME_SERVICE_DATA = SESAME_SERVICE + "data";
+  protected static final String SESAME_SERVICE_QUERY = SESAME_SERVICE + "query";
+  protected static final String SESAME_SERVICE_UPDATE = SESAME_SERVICE + "update";
   
   static {
     missedNsPrefixes.put("wgs", "http://www.w3.org/2003/01/geo/wgs84_pos#");
@@ -44,7 +45,8 @@ public class QueryExecuter {
   public static ResultSet executeSparqlSelectQuery(String queryString) throws ResourceRepositoryException {
     ResultSet rs = null;
     try{
-      QueryExecution qe = QueryExecutionFactory.sparqlService(FUSEKI_SERVICE_QUERY, queryString);
+      QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE_QUERY, queryString);
+      LOGGER.log(Level.INFO,qe.toString());
       rs = qe.execSelect();
     } catch(QueryExceptionHTTP | QueryParseException e){
       throw new ResourceRepositoryException(e.getMessage());
@@ -55,7 +57,7 @@ public class QueryExecuter {
   public static boolean executeSparqlAskQuery(String queryString) throws ResourceRepositoryException {
 	  boolean result = false;
 	  try{
-		  QueryExecution qe = QueryExecutionFactory.sparqlService(FUSEKI_SERVICE_QUERY, queryString);
+		  QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE_QUERY, queryString);
 		  result = qe.execAsk();
 	  } catch(QueryExceptionHTTP | QueryParseException e){
 	      throw new ResourceRepositoryException(e.getMessage());
@@ -66,7 +68,7 @@ public class QueryExecuter {
   public static Model executeSparqlConstructQuery(String queryString) throws ResourceRepositoryException {
     Model resultModel = null;
     try{
-      QueryExecution qe = QueryExecutionFactory.sparqlService(FUSEKI_SERVICE_QUERY, queryString);
+      QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE_QUERY, queryString);
       resultModel = qe.execConstruct();
     } catch(QueryExceptionHTTP | QueryParseException e){
       throw new ResourceRepositoryException(e.getMessage());
@@ -78,7 +80,7 @@ public class QueryExecuter {
   public static Model executeSparqlDescribeQuery(String queryString) throws ResourceRepositoryException {
     Model resultModel = null;
     try{
-      QueryExecution qe = QueryExecutionFactory.sparqlService(FUSEKI_SERVICE_QUERY, queryString);
+      QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE_QUERY, queryString);
       resultModel = qe.execDescribe();
     } catch(QueryExceptionHTTP | QueryParseException e){
       throw new ResourceRepositoryException(e.getMessage());
@@ -89,7 +91,7 @@ public class QueryExecuter {
   
   public static void executeSparqlUpdateQuery(String queryString) throws ResourceRepositoryException{
     UpdateRequest req = UpdateFactory.create(queryString);
-    UpdateProcessor up = UpdateExecutionFactory.createRemote(req, FUSEKI_SERVICE_UPDATE);
+    UpdateProcessor up = UpdateExecutionFactory.createRemote(req, SESAME_SERVICE_UPDATE);
     try{
       up.execute();
     } catch (HttpException e) {

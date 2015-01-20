@@ -35,6 +35,9 @@ public class TripletStoreAccessor {
       ResultSet rs = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
       resultJSON = MessageUtil.parseResultSetToJson(rs);
       resultModel = ResultSetFormatter.toModel(rs);
+//      String bla = "PREFIX abc: <http://www.w3xy.org/1999/02/22#> INSERT DATA {abc:HolzHaus234 abc:istEin abc:Gebäude}";
+//      QueryExecuter.executeSparqlUpdateQuery(bla);
+      LOGGER.log(Level.INFO,"ERFOLGREICH");
       
     } else if (sparqlQuery.toUpperCase().contains("DESCRIBE")) {
       resultModel = QueryExecuter.executeSparqlDescribeQuery(sparqlQuery);
@@ -116,9 +119,9 @@ public class TripletStoreAccessor {
   }
   
   private static DatasetAccessor getTripletStoreAccessor() throws ResourceRepositoryException {
-    DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(QueryExecuter.FUSEKI_SERVICE_DATA);
+    DatasetAccessor accessor = DatasetAccessorFactory.createHTTP(QueryExecuter.SESAME_SERVICE_DATA);
     if (accessor == null) {
-      throw new ResourceRepositoryException("Could not connect to fuseki service at:" + QueryExecuter.FUSEKI_SERVICE_DATA);
+      throw new ResourceRepositoryException("Could not connect to fuseki service at:" + QueryExecuter.SESAME_SERVICE_DATA);
     }
     return accessor;
   }
