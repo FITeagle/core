@@ -88,7 +88,8 @@ public class OrchestratorMDBListener implements MessageListener {
 				
 				if (allInstancesHandled(requests.get(requestID).getGroups(), requestType)) {
 
-					Model response = createResponse(requests.get(requestID).getGroups().keySet());
+//					Model response = createResponse(requests.get(requestID).getGroups().keySet());
+					Model response = createResponse(requests.get(requestID).getGroups());
 					sendResponse(requestID, response);
 					requests.remove(requestID);
 				}
@@ -519,26 +520,26 @@ public class OrchestratorMDBListener implements MessageListener {
 		return provisionFinished;
 	}
 	
-	private Model createResponse(Set<String> groupsURN)
+	private Model createResponse(Map<String, Group> groups)
 			throws ResourceRepositoryException {
 
 		Model responseModel = ModelFactory.createDefaultModel();
-		Iterator<String> iterator = groupsURN.iterator();
-
-		while (iterator.hasNext()) {
-
-			String groupURN = iterator.next().toString();
-
-			String reservationQuery = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
-					+ "DESCRIBE ?reservationIDs WHERE {"
-					+ "?reservationIDs a omn:Reservation . "
-					+ "?reservationIDs omn:partOfGroup \""
-					+ groupURN
-					+ "\" . "
-					+ "}";
-
-			responseModel.add(QueryExecuter.executeSparqlDescribeQuery(reservationQuery));
-
+		
+		for(Map.Entry<String, Group> group : groups.entrySet()){
+			
+			for(Map.Entry<String, ReservationDetails> reservation : group.getValue().getReservations().entrySet()){
+				
+				String reservationQuery = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
+						+ "DESCRIBE ?reservationIDs WHERE {"
+						+ "?reservationIDs a omn:Reservation . "
+						+ "?reservationIDs omn:partOfGroup \""
+						+ group.getKey()
+						+ "\" . "
+						+ "?reservationIDs <http://www.w3.org/2002/07/owl#sameAs> <" + reservation.getKey() + "> "
+						+ "}";
+				
+				responseModel.add(QueryExecuter.executeSparqlDescribeQuery(reservationQuery));
+			}
 		}
 
 		return responseModel;
