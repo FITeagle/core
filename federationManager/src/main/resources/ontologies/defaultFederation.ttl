@@ -6,9 +6,10 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix omn:  <http://open-multinet.info/ontology/omn#> .
 @prefix av:   <http://federation.av.tu-berlin.de/about#> .
+@prefix omnFederation: <http://open-multinet.info/ontology/omn-federation#> .
 
 
-av:AV_Smart_Communication_Testbed a omn:Testbed,
+av:AV_Smart_Communication_Testbed a omnFederation:Federation,
                                         owl:NamedIndividual;
                                          rdfs:label "AV Smart Communication Testbed" ;
                                          rdfs:seeAlso "https://federation.av.tu-berlin.de" ;
