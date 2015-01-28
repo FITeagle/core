@@ -70,6 +70,8 @@ public class OrchestratorMDBListener implements MessageListener {
 			} else if (messageType.equals(IMessageBus.TYPE_INFORM)) {
 				handleInform(messageBody,
 						MessageUtil.getJMSCorrelationID(message));
+			} else if(messageType.equals(IMessageBus.TYPE_CREATE)){
+				LOGGER.log(Level.INFO, "Create Topology");
 			}
 		}
 	}
