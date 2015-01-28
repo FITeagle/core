@@ -1,5 +1,8 @@
 package org.fiteagle.core.reservation.dm;
 
+import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -14,11 +17,9 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
-
 import com.hp.hpl.jena.rdf.model.*;
 
 import org.fiteagle.api.core.IGeni;
-
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageFilters;
@@ -27,6 +28,7 @@ import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
+import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.vocabulary.RDF;
@@ -75,7 +77,7 @@ public class ReservationMDBListener implements MessageListener {
 
     //get Slice URN or Sliver URNS
 
-    ResIterator iterator = messageModel.listResourcesWithProperty(RDF.type,MessageBusOntologyModel.classGroup);
+    ResIterator iterator = messageModel.listResourcesWithProperty(RDF.type, Omn.Topology);
     if(iterator.hasNext()){
       //should be only one resource
       Resource r = iterator.nextResource();
@@ -87,8 +89,8 @@ public class ReservationMDBListener implements MessageListener {
          while(rs.hasNext()){
            QuerySolution qs = rs.next();
            Resource result = qs.get("?reservationId").asResource();
-           Resource resource = resultModel.createResource(result.getURI(), MessageBusOntologyModel.classReservation);
-           resource.addProperty(MessageBusOntologyModel.hasState,qs.get("?state"));
+           Resource resource = resultModel.createResource(result.getURI(), Omn.Resource);
+           resource.addProperty(Omn_lifecycle.hasReservationState,qs.get("?state"));
            resource.addProperty(MessageBusOntologyModel.endTime, qs.get("?endTime"));
 
          }
@@ -97,7 +99,7 @@ public class ReservationMDBListener implements MessageListener {
       }
       System.out.println(queryAssociatedReservations);
     }else{
-      iterator =  messageModel.listResourcesWithProperty(RDF.type,MessageBusOntologyModel.classReservation);
+      iterator =  messageModel.listResourcesWithProperty(RDF.type, Omn.Resource);
       while(iterator.hasNext()){
         Resource r = iterator.nextResource();
         System.out.println("ssss");
@@ -123,47 +125,48 @@ public class ReservationMDBListener implements MessageListener {
   private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException {
     LOGGER.log(Level.INFO, "handling reservation request ...");
     Message responseMessage = null;
-    Model resultModel = ModelFactory.createDefaultModel();
-    final Map<String, String> reservedSlivers = new HashMap<>();
+//    Model resultModel = ModelFactory.createDefaultModel();
+    final Map<String, OntClass> reservedSlivers = new HashMap<>();
     Model reservationModel = this.handleReservation(requestModel, reservedSlivers);
     this.reserve(reservationModel);
     
-    for (Map.Entry<String, String> sliver : reservedSlivers.entrySet()) {
-      Resource sliversResource = resultModel.createResource(sliver.getKey());
-      sliversResource.addProperty(resultModel.createProperty(OMN + "reservation_status"), sliver.getValue());
-    }
-    String serializedResponse = MessageUtil.serializeModel(resultModel, serialization);
+//    for (Map.Entry<String, OntClass> sliver : reservedSlivers.entrySet()) {
+//      Resource sliversResource = resultModel.createResource(sliver.getKey());
+//      sliversResource.addProperty(Omn_lifecycle.hasReservationState, sliver.getValue());
+//    }
+//    String serializedResponse = MessageUtil.serializeModel(resultModel, serialization);
+    String serializedResponse = MessageUtil.serializeModel(reservationModel, serialization);
     responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
     LOGGER.log(Level.INFO, " a reply is sent to SFA ...");
     context.createProducer().send(topic, responseMessage);
   }
   
-  private Model handleReservation(Model requestModel, Map<String, String> reservedSlivers) throws ResourceRepositoryException {
+  private Model handleReservation(Model requestModel, Map<String, OntClass> reservedSlivers) throws ResourceRepositoryException {
     
     LOGGER.log(Level.INFO, "handle reservation ...");
     Model reservationModel = ModelFactory.createDefaultModel();
     
-    StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classReservation);
+    StmtIterator iterator = requestModel.listStatements(null, RDF.type, Omn.Reservation);
     while (iterator.hasNext()) {
       Resource sliver = iterator.next().getSubject();
-      Statement st = sliver.getProperty(MessageBusOntologyModel.reserveInstanceFrom);
+      Statement st = sliver.getProperty(Omn.isResourceOf);
       String componentManagerId = st.getObject().toString();
       LOGGER.log(Level.INFO, "componentManagerId " + componentManagerId);
       if (this.isReservationAvailable(componentManagerId)) {
         LOGGER.log(Level.INFO, "reservation is available");
         String sliverURN = setSliverURN(sliver.getURI());
-        reservedSlivers.put(sliverURN, IGeni.GENI_ALLOCATED);
+        reservedSlivers.put(sliverURN, Omn_lifecycle.Allocated);
         addSliverURNtoReservationModel(reservationModel, requestModel, sliverURN, sliver.getURI());  
       } else {
-        reservedSlivers.put(sliver.getURI(), IGeni.GENI_NOT_ALLOCATED);
+        reservedSlivers.put(sliver.getURI(), Omn_lifecycle.Unallocated);
       }
     }
     addSliceURNtoReservationModel(reservationModel, requestModel, reservedSlivers);
     return reservationModel;
   }
   
-  private void addSliceURNtoReservationModel(Model reservationModel, Model requestModel, Map<String, String> reservedSlivers){
-	  StmtIterator iterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classGroup);
+  private void addSliceURNtoReservationModel(Model reservationModel, Model requestModel, Map<String, OntClass> reservedSlivers){
+	  StmtIterator iterator = requestModel.listStatements(null, RDF.type, Omn.Group);
 	  Resource slice = null;
 	  while(iterator.hasNext()){
 		  Statement statement = iterator.next();
@@ -175,9 +178,9 @@ public class ReservationMDBListener implements MessageListener {
 		  Statement statement = iter.next();
 		  sliceURN.addProperty(statement.getPredicate(), statement.getObject());
 	  }
-	  for(Map.Entry<String, String> slivers : reservedSlivers.entrySet()){
-		  if(slivers.getValue().equals(IGeni.GENI_ALLOCATED)){
-			  sliceURN.addProperty(MessageBusOntologyModel.hasReservation, slivers.getKey());  
+	  for(Map.Entry<String, OntClass> slivers : reservedSlivers.entrySet()){
+		  if(slivers.getValue().equals(Omn_lifecycle.Allocated)){
+			  sliceURN.addProperty(Omn.hasReservation, slivers.getKey());  
 		  }
 	  }
   }
@@ -227,10 +230,11 @@ public class ReservationMDBListener implements MessageListener {
   
   private String createSPARQLquery(String componentManagerId) {
     String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
+        + "PREFIX omnLifecycle: <http://open-multinet.info/ontology/omn-lifecycle#> "
         + "SELECT ?maxInstances ?reservedInstances ?createdInstances WHERE {"
         + "OPTIONAL { ?instance a ?resourceType ." + " <" + componentManagerId + "> a ?adapterType ."
-        + "?adapterType omn:implements ?resourceType .}" + "OPTIONAL { <" + componentManagerId
-        + "> omn:maxInstances ?maxInstances  }" + "OPTIONAL { ?reservedInstances omn:reserve_Instance_from <"
+        + "?adapterType omnLifecycle:implements ?resourceType .}" + "OPTIONAL { <" + componentManagerId
+        + "> omn:maxInstances ?maxInstances  }" + "OPTIONAL { ?reservedInstances omn:isResourceOf <"
         + componentManagerId + "> } " + "}";
     return query;
   }

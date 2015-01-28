@@ -1,6 +1,12 @@
 package org.fiteagle.core.tripletStoreAccessor;
 
+import java.util.Iterator;
+import java.util.Set;
+import java.util.logging.Level;
+
+import org.fiteagle.api.core.IGeni;
 import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 import org.junit.Test;
@@ -10,14 +16,17 @@ import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Selector;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.sparql.resultset.RDFInput;
+import com.hp.hpl.jena.vocabulary.RDF;
 
 public class QueryExecuterTest {
 
-	@Test(expected = ResourceRepositoryException.class)
+//	@Test(expected = ResourceRepositoryException.class)
 	public void testInvalidQuery() throws ResourceRepositoryException {
 		QueryExecuter.executeSparqlDescribeQuery("This is no valid SPARQL Query");
 	}
@@ -98,6 +107,31 @@ public class QueryExecuterTest {
         System.out.println(result);
       }
 
+
+//	  @Test
+	  public void testGetGroupURI() throws ResourceRepositoryException{
+		  String reservation = "urn:publicid:IDN+wall2.ilabt.iminds.be+sliver+1681677363";
+			String groupQuery = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
+					+ "CONSTRUCT { "
+					+ "?group a omn:Group ."
+					+ " } "
+					+ "FROM <http://localhost:3030/ds/query> "
+					+ "WHERE {?group a omn:Group . "
+					+ "?group omn:hasReservation \""
+					+ reservation
+					+ "\" . "
+					+ "}";
+
+			String groupURI = "";
+			Model model = QueryExecuter.executeSparqlDescribeQuery(groupQuery);
+			StmtIterator iter = model.listStatements();
+			while(iter.hasNext()){
+				groupURI = iter.next().getSubject().getURI();
+			}
+			System.out.println("groupURI " + groupURI); 
+	    	 
+	  }
+	     
       //@Test
       public void TestSelectMaxInstances() throws ResourceRepositoryException{
     	  
@@ -224,6 +258,7 @@ public class QueryExecuterTest {
 	    	 
 		 }
 	      
+
 //	      @Test
 	      public void isSliverURNallocated() throws ResourceRepositoryException{
 	    	  String sliverURN = "wall2.ilabt.iminds.be+sliver+123";
@@ -232,6 +267,33 @@ public class QueryExecuterTest {
 	    	  boolean result = QueryExecuter.executeSparqlAskQuery(query);
 	    	  System.out.println(result);
 	      }
+	      
+		  
+//	      @Test
+	      public void TestGetReservationDetails() throws ResourceRepositoryException{
+	    	  String groupId = "urn:publicid:IDN+wall2.ilabt.iminds.be+slice+test16";
+			   
+	  		String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
+					+ "SELECT ?reservationId ?componentManagerId WHERE { "
+					+ "" + "<"
+					+ groupId + "> a omn:Group ."
+					+ "?reservationId omn:partOfGroup \"" + groupId + "\" . "
+					+ "?reservationId omn:reserveInstanceFrom ?componentManagerId "
+					+ "}";
+			ResultSet rs = QueryExecuter.executeSparqlSelectQuery(query);
+
+			while (rs.hasNext()) {
+				QuerySolution qs = rs.next();
+
+				if (qs.contains("reservationId") && qs.contains("componentManagerId")) {
+					
+					System.out.println("a sliver is found");
+					System.out.println("reservation " + qs.getResource("reservationId").getURI()
+							+ " componentManagerId " + qs.getLiteral("componentManagerId").getString());
+				}
+			}
+	      }
+	      
 }
 
  

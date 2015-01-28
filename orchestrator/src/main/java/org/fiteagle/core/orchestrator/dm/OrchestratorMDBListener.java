@@ -1,5 +1,8 @@
 package org.fiteagle.core.orchestrator.dm;
 
+import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -26,6 +29,7 @@ import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
+import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -90,7 +94,6 @@ public class OrchestratorMDBListener implements MessageListener {
 				
 				if (allInstancesHandled(requests.get(requestID).getGroups(), requestType)) {
 
-//					Model response = createResponse(requests.get(requestID).getGroups().keySet());
 					Model response = createResponse(requests.get(requestID).getGroups());
 					sendResponse(requestID, response);
 					requests.remove(requestID);
@@ -109,7 +112,7 @@ public class OrchestratorMDBListener implements MessageListener {
 		final Model modelCreate = ModelFactory.createDefaultModel();
 		final Map<String, Group> groups = new HashMap<>();
 
-		this.handleGroup(requestModel, modelCreate, groups, IGeni.GENI_PROVISIONED);
+		this.handleGroup(requestModel, modelCreate, groups, Omn_lifecycle.Provisioned);
 		this.handleReservation(requestModel, modelCreate, groups);
 
 		String serializedModel = MessageUtil.serializeModel(modelCreate, IMessageBus.SERIALIZATION_TURTLE);
@@ -124,7 +127,7 @@ public class OrchestratorMDBListener implements MessageListener {
 		final Model modelDelete = ModelFactory.createDefaultModel();
 		final Map<String, Group> groups = new HashMap<>();
 
-		this.handleGroup(requestModel, modelDelete, groups, IGeni.GENI_UNALLOCATED);
+		this.handleGroup(requestModel, modelDelete, groups, Omn_lifecycle.Unallocated);
 		this.handleReservation(requestModel, modelDelete, groups);
 		
 		String serializedModel = MessageUtil.serializeModel(modelDelete, IMessageBus.SERIALIZATION_TURTLE);
@@ -204,7 +207,7 @@ public class OrchestratorMDBListener implements MessageListener {
 
 	public static class ReservationDetails {
 		private String componentManagerId;
-		private String status = "";
+		private OntClass status = null;
 
 		public ReservationDetails(String componentManagerId) {
 			this.componentManagerId = componentManagerId;
@@ -214,18 +217,18 @@ public class OrchestratorMDBListener implements MessageListener {
 			return this.componentManagerId;
 		}
 
-		public String getStatus() {
+		public OntClass getStatus() {
 			return this.status;
 		}
 
-		public void setStatus(String status) {
+		public void setStatus(OntClass status) {
 			this.status = status;
 		}
 	}
 
-	private void handleGroup(Model requestModel, Model modelToBeSentToAdapter, Map<String, Group> groups, String state){
+	private void handleGroup(Model requestModel, Model modelToBeSentToAdapter, Map<String, Group> groups, OntClass state){
 		
-		StmtIterator groupIterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classGroup);
+		StmtIterator groupIterator = requestModel.listStatements(null, RDF.type, Omn.Group);
 		
 		while (groupIterator.hasNext()) {
 			
@@ -247,7 +250,7 @@ public class OrchestratorMDBListener implements MessageListener {
 	
 	private void handleReservation(Model requestModel, Model modelToBeSentToAdapter, Map<String, Group> groups){
 		
-		StmtIterator reservationIterator = requestModel.listStatements(null, RDF.type, MessageBusOntologyModel.classReservation);
+		StmtIterator reservationIterator = requestModel.listStatements(null, RDF.type, Omn.Resource);
 		while (reservationIterator.hasNext()) {
 			Resource reservation = reservationIterator.next().getSubject();
 			LOGGER.log(Level.INFO,
@@ -328,13 +331,13 @@ public class OrchestratorMDBListener implements MessageListener {
 	}
 	
 	private final Map<String, ReservationDetails> getGroupReservations(
-			String group, String requiredState) throws ResourceRepositoryException {
+			String group, OntClass requiredState) throws ResourceRepositoryException {
 		final Map<String, ReservationDetails> reservations = new HashMap<>();
 
 		String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
 				+ "SELECT ?reservationId ?componentManagerId ?state WHERE { " + "<"
 				+ group + "> a omn:Group ."
-				+ "?reservationId omn:partOfGroup \"" + group + "\" . "
+				+ "?reservationId omn:isReservationOf \"" + group + "\" . "
 				+ "?reservationId omn:reserveInstanceFrom ?componentManagerId . "
 				+ "?reservationId omn:hasState ?state "
 				+ "}";
@@ -349,16 +352,16 @@ public class OrchestratorMDBListener implements MessageListener {
 				System.out.println("reservation " + qs.getResource("reservationId").getURI()
 						+ " componentManagerId " + qs.getLiteral("componentManagerId").getString() + " has state " + qs.getLiteral("state").getString());
 				
-				switch (requiredState){
-				case IGeni.GENI_UNALLOCATED:
+				switch (requiredState.getLocalName()){
+				case IGeni.GENI_UNALLOCATED: // TODO: musst be changed to Omn_lifecycle.Unallocated
 					// TODO : if(qs.getLiteral("state").getString().equals(IGeni.GENI_ALLOCATED)){}
 					// TODO : if(qs.getLiteral("state").getString().equals(IGeni.GENI_UNALLOCATED)){}
-					if(qs.getLiteral("state").getString().equals(IGeni.GENI_PROVISIONED)){
+					if(qs.getLiteral("state").getString().equals(IGeni.GENI_UNALLOCATED)){
 						ReservationDetails reservationDetails = new ReservationDetails(qs.getLiteral("componentManagerId").getString());
 						reservations.put(qs.getResource("reservationId").getURI(), reservationDetails);
 					}
 					break;
-				case IGeni.GENI_PROVISIONED:
+				case IGeni.GENI_PROVISIONED: // should be changed to Omn_lifecycle.Provisiond
 					if(qs.getLiteral("state").getString().equals(IGeni.GENI_ALLOCATED)){
 						ReservationDetails reservationDetails = new ReservationDetails(qs.getLiteral("componentManagerId").getString());
 						reservations.put(qs.getResource("reservationId").getURI(), reservationDetails);
@@ -451,10 +454,10 @@ public class OrchestratorMDBListener implements MessageListener {
 					
 					switch (requestType) {
 					case IMessageBus.TYPE_CREATE:
-						group.getValue().getReservations().get(reservationURI).setStatus(IGeni.GENI_PROVISIONED);
+						group.getValue().getReservations().get(reservationURI).setStatus(Omn_lifecycle.Provisioned);
 						break;
 					case IMessageBus.TYPE_DELETE:
-						group.getValue().getReservations().get(reservationURI).setStatus(IGeni.GENI_UNALLOCATED);
+						group.getValue().getReservations().get(reservationURI).setStatus(Omn_lifecycle.Unallocated);
 						break;
 					default:
 						break;
@@ -472,21 +475,21 @@ public class OrchestratorMDBListener implements MessageListener {
 		Model deleteModel = ModelFactory.createDefaultModel();
 		Resource deleteResource = deleteModel.createResource(reservationURI);
 		TripletStoreAccessor.removePropertyValue(deleteResource,
-				MessageBusOntologyModel.hasState);
+				Omn_lifecycle.hasReservationState);
 		
 		
 		switch (requestType){
 		case IMessageBus.TYPE_CREATE:
 			Resource provisionedState = model.createResource(reservationURI);
-			provisionedState.addProperty(MessageBusOntologyModel.hasState,IGeni.GENI_PROVISIONED);
+			provisionedState.addProperty(Omn_lifecycle.hasReservationState, Omn_lifecycle.Provisioned);
 			break;
 			
 		case IMessageBus.TYPE_DELETE:
 			Resource reservation = model.createResource(reservationURI);
-			model.remove(reservation, MessageBusOntologyModel.hasState, reservation.getProperty(MessageBusOntologyModel.hasState).getObject());
+			model.remove(reservation, Omn_lifecycle.hasReservationState, reservation.getProperty(Omn_lifecycle.hasReservationState).getObject());
 			
 			Resource deletedState = model.createResource(reservationURI);
-			deletedState.addProperty(MessageBusOntologyModel.hasState,IGeni.GENI_UNALLOCATED);
+			deletedState.addProperty(Omn_lifecycle.hasReservationState, Omn_lifecycle.Unallocated);
 			break;
 		default:
 			break;
