@@ -25,12 +25,10 @@ public class QueryExecuter {
   private static Logger LOGGER = Logger.getLogger(QueryExecuter.class.toString());
   
   private static Map<String, String> missedNsPrefixes = new HashMap<>();
-  
-  protected static final String SESAME_SERVICE = "http://localhost:3030/fiteagle/";
-  protected static final String SESAME_SERVICE_DATA = SESAME_SERVICE + "data";
-  protected static final String SESAME_SERVICE_QUERY = SESAME_SERVICE + "query";
-  protected static final String SESAME_SERVICE_UPDATE = SESAME_SERVICE + "update";
-  
+
+  protected static final String SESAME_SERVICE = "http://localhost:8080/openrdf-sesame/repositories/fiteagle";
+  protected static final String SESAME_SERVICE_DATA = SESAME_SERVICE + "/statements";
+
   static {
     missedNsPrefixes.put("wgs", "http://www.w3.org/2003/01/geo/wgs84_pos#");
     missedNsPrefixes.put("omn", "http://open-multinet.info/ontology/omn#");
@@ -45,7 +43,7 @@ public class QueryExecuter {
   public static ResultSet executeSparqlSelectQuery(String queryString) throws ResourceRepositoryException {
     ResultSet rs = null;
     try{
-      QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE_QUERY, queryString);
+      QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE, queryString);
       LOGGER.log(Level.INFO,qe.toString());
       rs = qe.execSelect();
     } catch(QueryExceptionHTTP | QueryParseException e){
@@ -57,7 +55,7 @@ public class QueryExecuter {
   public static boolean executeSparqlAskQuery(String queryString) throws ResourceRepositoryException {
 	  boolean result = false;
 	  try{
-		  QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE_QUERY, queryString);
+		  QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE, queryString);
 		  result = qe.execAsk();
 	  } catch(QueryExceptionHTTP | QueryParseException e){
 	      throw new ResourceRepositoryException(e.getMessage());
@@ -68,7 +66,7 @@ public class QueryExecuter {
   public static Model executeSparqlConstructQuery(String queryString) throws ResourceRepositoryException {
     Model resultModel = null;
     try{
-      QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE_QUERY, queryString);
+      QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE, queryString);
       resultModel = qe.execConstruct();
     } catch(QueryExceptionHTTP | QueryParseException e){
       throw new ResourceRepositoryException(e.getMessage());
@@ -80,7 +78,7 @@ public class QueryExecuter {
   public static Model executeSparqlDescribeQuery(String queryString) throws ResourceRepositoryException {
     Model resultModel = null;
     try{
-      QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE_QUERY, queryString);
+      QueryExecution qe = QueryExecutionFactory.sparqlService(SESAME_SERVICE, queryString);
       resultModel = qe.execDescribe();
     } catch(QueryExceptionHTTP | QueryParseException e){
       throw new ResourceRepositoryException(e.getMessage());
@@ -91,7 +89,7 @@ public class QueryExecuter {
   
   public static void executeSparqlUpdateQuery(String queryString) throws ResourceRepositoryException{
     UpdateRequest req = UpdateFactory.create(queryString);
-    UpdateProcessor up = UpdateExecutionFactory.createRemote(req, SESAME_SERVICE_UPDATE);
+    UpdateProcessor up = UpdateExecutionFactory.createRemote(req, SESAME_SERVICE);
     try{
       up.execute();
     } catch (HttpException e) {

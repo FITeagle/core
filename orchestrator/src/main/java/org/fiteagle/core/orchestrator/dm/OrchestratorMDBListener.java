@@ -1,5 +1,6 @@
 package org.fiteagle.core.orchestrator.dm;
 
+import com.hp.hpl.jena.rdf.model.*;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
@@ -32,10 +33,6 @@ import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepos
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
 import com.sun.mail.handlers.message_rfc822;
 
@@ -76,8 +73,30 @@ public class OrchestratorMDBListener implements MessageListener {
 						MessageUtil.getJMSCorrelationID(message));
 			} else if(messageType.equals(IMessageBus.TYPE_CREATE)){
 				LOGGER.log(Level.INFO, "Create Topology");
+				handleCreateRequest(messageBody,MessageUtil.getJMSCorrelationID(message) );
 			}
 		}
+	}
+
+	private void handleCreateRequest(String messageBody, String jmsCorrelationID) {
+		Model model = MessageUtil.parseSerializedModel(messageBody, IMessageBus.SERIALIZATION_TURTLE);
+
+		ResIterator resIterator = model.listSubjectsWithProperty(RDF.type,Omn.Topology);
+
+		while (resIterator.hasNext()){
+			Resource r = resIterator.nextResource();
+
+			try {
+				TripletStoreAccessor.addResource(r);
+				Model m = ModelFactory.createDefaultModel();
+				Resource resource = m.createResource(r.getURI());
+				sendResponse(jmsCorrelationID,m);
+
+			} catch (ResourceRepositoryException e) {
+				e.printStackTrace();
+			}
+		}
+
 	}
 
 	private void handleInform(String body, String requestID) {
@@ -158,8 +177,7 @@ public class OrchestratorMDBListener implements MessageListener {
 		System.out.println("response model " + serializedResponse);
 		Message responseMessage = MessageUtil.createRDFMessage(
 				serializedResponse, IMessageBus.TYPE_INFORM, null,
-				IMessageBus.SERIALIZATION_TURTLE, requests.get(requestID)
-						.getRequestID(), context);
+				IMessageBus.SERIALIZATION_TURTLE,requestID, context);
 		LOGGER.log(Level.INFO, " a reply is sent to SFA ...");
 		context.createProducer().send(topic, responseMessage);
 	}

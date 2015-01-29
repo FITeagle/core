@@ -11,6 +11,11 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
+import com.hp.hpl.jena.rdf.model.ResIterator;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.vocabulary.RDF;
+import info.openmultinet.ontology.vocabulary.Omn_federation;
+import org.apache.jena.riot.thrift.wire.RDF_VarTuple;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
@@ -34,30 +39,8 @@ public class FederationManagerMDBListener implements MessageListener {
   private JMSContext context;
   @javax.annotation.Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
   private Topic topic;
-  
-  static{
-    Model federationModel = OntologyModelUtil.loadModel("ontologies/defaultFederation.ttl", IMessageBus.SERIALIZATION_TURTLE);
-    try {
-      TripletStoreAccessor.updateRepositoryModel(federationModel);
-    } catch (ResourceRepositoryException e) {
-      LOGGER.log(Level.SEVERE, e.getMessage());
-    }
-  }
-  
-  private final static String TRIPLET_STORE_URL = "<http://localhost:3030/fiteagle/query> ";
-  private final static String queryForFederation = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> "
-      + "PREFIX omn: <http://open-multinet.info/ontology/omn#> "
-      + "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
-      + "PREFIX wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#> "
-      + "PREFIX av: <http://federation.av.tu-berlin.de/about#> "
-      + "PREFIX omnFederation: <http://open-multinet.info/ontology/omn-federation#> ."
-      + "CONSTRUCT { ?testbed rdf:type omnFederation:Federation. ?testbed rdfs:label ?label. "
-      + "?testbed rdfs:seeAlso ?seeAlso. ?testbed wgs:long ?long. ?testbed wgs:lat ?lat. } "
-      + "FROM "
-      + TRIPLET_STORE_URL
-      + "WHERE {?testbed rdf:type omnFederation:Federation. "
-      + "OPTIONAL {?testbed rdfs:label ?label. ?testbed rdfs:seeAlso ?seeAlso. ?testbed wgs:long ?long. ?testbed wgs:lat ?lat. } }";
-  
+
+
   public void onMessage(final Message message) {
     String messageType = MessageUtil.getMessageType(message);
     String serialization = MessageUtil.getMessageSerialization(message);
@@ -71,15 +54,15 @@ public class FederationManagerMDBListener implements MessageListener {
   }
   
   private void handleGet(String serialization, String requestID){
-    String serializedFederationModel = null;
+    Model federationModel = null;
     try {
-      serializedFederationModel = TripletStoreAccessor.handleSPARQLRequest(queryForFederation, serialization);
-    } catch (ResourceRepositoryException | ParsingException e) {
+    federationModel=  TripletStoreAccessor.get(Omn_federation.Infrastructure);
+    } catch (ResourceRepositoryException e) {
       Message message = MessageUtil.createErrorMessage(e.getMessage(), requestID, context);
       context.createProducer().send(topic, message);
       return;
     }
-    Model federationModel = MessageUtil.parseSerializedModel(serializedFederationModel, serialization);
+
     Message message = MessageUtil.createRDFMessage(federationModel, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
     context.createProducer().send(topic, message);
   }

@@ -13,7 +13,7 @@ import com.hp.hpl.jena.rdf.model.Model;
 
 public class TripletStoreAccessorTest {
   
-  @Test
+ // @Test
   public void testHandleSPARQLRequestTurtle() throws ParsingException {
     String result = null;
     try {
@@ -31,7 +31,7 @@ public class TripletStoreAccessorTest {
     assertNotNull(resultModel);
   }
   
-  @Test
+  //@Test
   public void testHandleSPARQLRequestJSON() throws ParsingException {
     String result = null;
     try {

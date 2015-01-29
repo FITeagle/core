@@ -4,6 +4,7 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.hp.hpl.jena.ontology.OntClass;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.MessageUtil.ParsingException;
@@ -18,6 +19,8 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
+
+import javax.xml.crypto.Data;
 
 public class TripletStoreAccessor {
   
@@ -121,7 +124,16 @@ public class TripletStoreAccessor {
     }
     return accessor;
   }
-  
+
+  public static Model get(OntClass infrastructure) throws ResourceRepositoryException {
+    DatasetAccessor accessor = null;
+
+      accessor = getTripletStoreAccessor();
+
+    Model model = accessor.getModel(infrastructure.toString());
+    return model;
+  }
+
   public static class ResourceRepositoryException extends Exception {
     
     private static final long serialVersionUID = 8213556984621316215L;
@@ -130,5 +142,9 @@ public class TripletStoreAccessor {
       super(message);
     }
   }
-  
+
+  public static void addResource(Resource resource) throws ResourceRepositoryException {
+    DatasetAccessor accessor = TripletStoreAccessor.getTripletStoreAccessor();
+    accessor.putModel(resource.getModel());
+  }
 }
