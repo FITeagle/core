@@ -3,6 +3,7 @@ package org.fiteagle.core.federationManager.dm;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.inject.Inject;
@@ -21,6 +22,7 @@ import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.MessageUtil.ParsingException;
 import org.fiteagle.api.core.OntologyModelUtil;
+import org.fiteagle.core.federationManager.FederationManager;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
@@ -40,6 +42,15 @@ public class FederationManagerMDBListener implements MessageListener {
   @javax.annotation.Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
   private Topic topic;
 
+  @Inject
+  FederationManager federationManager;
+
+  @PostConstruct
+  private void initIfNecessary(){
+
+      federationManager.runSetup();
+
+  }
 
   public void onMessage(final Message message) {
     String messageType = MessageUtil.getMessageType(message);

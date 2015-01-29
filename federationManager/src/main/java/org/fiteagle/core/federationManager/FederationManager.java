@@ -12,6 +12,8 @@ import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.enterprise.context.ApplicationScoped;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,21 +23,65 @@ public class FederationManager {
 
 
     private static final Logger LOGGER = Logger.getLogger(FederationManager.class.getName());
+    private Model federationModel;
 
+
+    boolean initialized;
+
+    private Timer timer;
     @javax.annotation.PostConstruct
     public void setup() {
+        initialized = false;
+        federationModel = OntologyModelUtil.loadModel("ontologies/defaultFederation.ttl", IMessageBus.SERIALIZATION_TURTLE);
 
-        LOGGER.log(Level.INFO, "I am starting");
-
-     Model federationModel = OntologyModelUtil.loadModel("ontologies/defaultFederation.ttl", IMessageBus.SERIALIZATION_TURTLE);
-      try {
-        ResIterator iter = federationModel.listSubjectsWithProperty(RDF.type, Omn_federation.Infrastructure);
-        while (iter.hasNext()) {
-          Resource resource = iter.nextResource();
-          TripletStoreAccessor.addResource(resource);
-        }
-      } catch (TripletStoreAccessor.ResourceRepositoryException e) {
-        LOGGER.log(Level.SEVERE, e.getMessage());
-      }
+        timer = new Timer();
+        runSetup();
     }
+
+
+    public void runSetup(){
+
+        if(!initialized){
+            try{
+                SetupTask task = new SetupTask(500);
+                timer.schedule(task, 0);
+            } catch(IllegalStateException e){
+                LOGGER.log(Level.INFO,"Attempt to schedule task on canceled timer, doesn't matter ");
+            }
+        }
+    }
+
+   private class SetupTask extends TimerTask {
+
+       long delay;
+
+       SetupTask(long delay){
+           this.delay = delay;
+       }
+       @Override
+       public void run() {
+
+           if(!initialized && delay < 3600000 ) {
+               try {
+                   ResIterator iter = federationModel.listSubjectsWithProperty(RDF.type, Omn_federation.Infrastructure);
+                   while (iter.hasNext()) {
+                       Resource resource = iter.nextResource();
+                       TripletStoreAccessor.addResource(resource);
+
+                   }
+                   initialized = true;
+                   timer.cancel();
+               } catch (TripletStoreAccessor.ResourceRepositoryException e) {
+                   LOGGER.log(Level.INFO, e.getMessage());
+                   delay = delay + delay;
+                   timer.schedule(new SetupTask(delay), delay);
+
+               }
+           }else{
+               timer.cancel();
+           }
+       }
+
+
+   }
 }
