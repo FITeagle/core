@@ -12,16 +12,9 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
-import com.hp.hpl.jena.rdf.model.ResIterator;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.vocabulary.RDF;
-import info.openmultinet.ontology.vocabulary.Omn_federation;
-import org.apache.jena.riot.thrift.wire.RDF_VarTuple;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
-import org.fiteagle.api.core.MessageUtil.ParsingException;
-import org.fiteagle.api.core.OntologyModelUtil;
 import org.fiteagle.core.federationManager.FederationManager;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
@@ -67,7 +60,7 @@ public class FederationManagerMDBListener implements MessageListener {
   private void handleGet(String serialization, String requestID){
     Model federationModel = null;
     try {
-    federationModel=  TripletStoreAccessor.get(Omn_federation.Infrastructure);
+    federationModel=  TripletStoreAccessor.getInfrastructure();
     } catch (ResourceRepositoryException e) {
       Message message = MessageUtil.createErrorMessage(e.getMessage(), requestID, context);
       context.createProducer().send(topic, message);

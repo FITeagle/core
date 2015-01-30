@@ -75,7 +75,7 @@ public class ReservationMDBListener implements MessageListener {
     Message responseMessage = null;
     Model resultModel = ModelFactory.createDefaultModel();
 
-    //get Slice URN or Sliver URNS
+    //getInfrastructure Slice URN or Sliver URNS
 
     ResIterator iterator = messageModel.listResourcesWithProperty(RDF.type, Omn.Topology);
     if(iterator.hasNext()){

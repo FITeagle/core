@@ -251,7 +251,7 @@ public class OrchestratorMDBListener implements MessageListener {
 		while (groupIterator.hasNext()) {
 			
 			Resource group = groupIterator.next().getSubject();
-			LOGGER.log(Level.INFO,"trying to get reservations belonging to this URN " + group.getURI());
+			LOGGER.log(Level.INFO,"trying to getInfrastructure reservations belonging to this URN " + group.getURI());
 
 			try {
 				final Map<String, ReservationDetails> reservations = this.getGroupReservations(group.getURI(), state);
@@ -272,7 +272,7 @@ public class OrchestratorMDBListener implements MessageListener {
 		while (reservationIterator.hasNext()) {
 			Resource reservation = reservationIterator.next().getSubject();
 			LOGGER.log(Level.INFO,
-					"trying to get the reservation " + reservation.getURI());
+					"trying to getInfrastructure the reservation " + reservation.getURI());
 			
 			try {
 				final Map<String, ReservationDetails> reservations = new HashMap<>();
