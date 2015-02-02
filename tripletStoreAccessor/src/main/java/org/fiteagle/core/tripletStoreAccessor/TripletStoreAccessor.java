@@ -15,6 +15,7 @@ import com.hp.hpl.jena.sparql.syntax.ElementGroup;
 import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock;
 import com.hp.hpl.jena.sparql.syntax.Template;
 import info.openmultinet.ontology.vocabulary.Omn_federation;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.MessageUtil.ParsingException;
@@ -133,7 +134,6 @@ public class TripletStoreAccessor {
 
   public static Model getInfrastructure() throws ResourceRepositoryException {
 
-      String queryString = "CONSTRUCT { ?infrastructure ?o ?p} WHERE { ?infrastructure " + RDF.type.getNameSpace() +RDF.type.getLocalName() + " " + Omn_federation.Infrastructure.getNameSpace() + Omn_federation.Infrastructure.getLocalName()  +"}" ;
       Query query = QueryFactory.create();
       query.setQueryConstructType();
       query.addResultVar("infrastructure");
@@ -163,10 +163,29 @@ public class TripletStoreAccessor {
     return model;
   }
 
-    private void setConstructPattern() {
 
+
+    public static String getResources() {
+
+        Query query = QueryFactory.create();
+        query.setQueryConstructType();
+        query.addResultVar("resource");
+        Triple tripleForPattern = new Triple(new Node_Variable("resource"),new Node_Variable("o"),new Node_Variable("p"));
+        BasicPattern constructPattern = new BasicPattern();
+        constructPattern.add(tripleForPattern);
+        query.setConstructTemplate(new Template(constructPattern));
+
+        ElementGroup whereClause = new ElementGroup();
+        whereClause.addTriplePattern(new Triple(new Node_Variable("resource"), Omn_lifecycle.parentTo.asNode(), new Node_Variable("p")));
+        whereClause.addTriplePattern(tripleForPattern);
+        query.setQueryPattern(whereClause);
+        QueryExecution queryExecution = QueryExecutionFactory.sparqlService(QueryExecuter.SESAME_SERVICE, query);
+        Model model  = queryExecution.execConstruct();
+        String serializedAnswer = MessageUtil.serializeModel(model,IMessageBus.SERIALIZATION_TURTLE);
+        return serializedAnswer;
     }
-  public static class ResourceRepositoryException extends Exception {
+
+    public static class ResourceRepositoryException extends Exception {
 
     private static final long serialVersionUID = 8213556984621316215L;
 

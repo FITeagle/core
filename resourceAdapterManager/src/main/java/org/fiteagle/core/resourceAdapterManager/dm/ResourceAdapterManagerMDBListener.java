@@ -11,6 +11,9 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
+import com.hp.hpl.jena.rdf.model.ResIterator;
+import com.hp.hpl.jena.rdf.model.Resource;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
@@ -58,19 +61,22 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
 
   private void handleGet(Message message, String serialization, String requestID) {
     Message responseMessage = null;
-    try {
-      String serializedResponse = TripletStoreAccessor.handleSPARQLRequest(MessageUtil.getSPARQLQuery(message), serialization);
+
+      //String serializedResponse = TripletStoreAccessor.handleSPARQLRequest(MessageUtil.getSPARQLQuery(message), serialization);
+      String serializedResponse = TripletStoreAccessor.getResources();
       responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
-    } catch (ResourceRepositoryException | ParsingException e) {
-      responseMessage = MessageUtil.createErrorMessage(e.getMessage(), requestID, context);
-    } finally {
+
       context.createProducer().send(topic, responseMessage);
-    }
+  
   }
   
   private void handleCreate(Model model, String serialization, String requestID) {
     try {
-      TripletStoreAccessor.updateRepositoryModel(model);
+        ResIterator resIterator = model.listSubjectsWithProperty(Omn_lifecycle.parentTo);
+        while (resIterator.hasNext()){
+            TripletStoreAccessor.addResource(resIterator.nextResource());
+        }
+        //TripletStoreAccessor.updateRepositoryModel(model);
     } catch (ResourceRepositoryException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
