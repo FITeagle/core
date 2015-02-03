@@ -109,7 +109,12 @@ public class OrchestratorMDBListener implements MessageListener {
 			try {
 				this.updateReservations(model, requests.get(requestID).getGroups(), requestType);
 
-				TripletStoreAccessor.updateRepositoryModel(model);
+                ResIterator resIterator  =  model.listSubjectsWithProperty(RDF.type,Omn.Reservation);
+
+                while(resIterator.hasNext()){
+                    TripletStoreAccessor.addResource(resIterator.nextResource());
+                }
+				//TripletStoreAccessor.updateRepositoryModel(model);
 				
 				if (allInstancesHandled(requests.get(requestID).getGroups(), requestType)) {
 

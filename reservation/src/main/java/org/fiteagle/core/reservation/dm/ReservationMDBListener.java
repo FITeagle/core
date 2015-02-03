@@ -267,7 +267,12 @@ public class ReservationMDBListener implements MessageListener {
   private void reserve(Model model) {
     
     try {
-      TripletStoreAccessor.updateRepositoryModel(model);
+
+        ResIterator resIterator = model.listSubjectsWithProperty(RDF.type, Omn.Reservation);
+
+        while(resIterator.hasNext()){
+            TripletStoreAccessor.addResource(resIterator.nextResource());
+        }
     } catch (ResourceRepositoryException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }

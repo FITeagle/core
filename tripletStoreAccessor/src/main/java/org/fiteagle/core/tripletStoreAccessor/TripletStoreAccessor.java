@@ -153,34 +153,33 @@ public class TripletStoreAccessor {
 
         LOGGER.log(Level.INFO, query.serialize());
   //    Query query =  QueryFactory.create(queryString);
-      QueryExecution queryExecution = QueryExecutionFactory.sparqlService(QueryExecuter.SESAME_SERVICE, query);
-
-
-
-      Model model  = queryExecution.execConstruct();
+      Model model = getModel(query);
 
 
     return model;
   }
 
+    private static Model getModel(Query query) {
+        QueryExecution queryExecution = QueryExecutionFactory.sparqlService(QueryExecuter.SESAME_SERVICE, query);
+
+
+        return queryExecution.execConstruct();
+    }
 
 
     public static String getResources() {
 
         Query query = QueryFactory.create();
-        query.setQueryConstructType();
+        query.setQueryDescribeType();
         query.addResultVar("resource");
         Triple tripleForPattern = new Triple(new Node_Variable("resource"),new Node_Variable("o"),new Node_Variable("p"));
-        BasicPattern constructPattern = new BasicPattern();
-        constructPattern.add(tripleForPattern);
-        query.setConstructTemplate(new Template(constructPattern));
+
 
         ElementGroup whereClause = new ElementGroup();
         whereClause.addTriplePattern(new Triple(new Node_Variable("resource"), Omn_lifecycle.parentTo.asNode(), new Node_Variable("p")));
         whereClause.addTriplePattern(tripleForPattern);
         query.setQueryPattern(whereClause);
-        QueryExecution queryExecution = QueryExecutionFactory.sparqlService(QueryExecuter.SESAME_SERVICE, query);
-        Model model  = queryExecution.execConstruct();
+        Model model = getModel(query);
         String serializedAnswer = MessageUtil.serializeModel(model,IMessageBus.SERIALIZATION_TURTLE);
         return serializedAnswer;
     }

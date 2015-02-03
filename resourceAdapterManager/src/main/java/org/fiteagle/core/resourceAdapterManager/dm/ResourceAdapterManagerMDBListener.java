@@ -67,7 +67,7 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
       responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
 
       context.createProducer().send(topic, responseMessage);
-  
+
   }
   
   private void handleCreate(Model model, String serialization, String requestID) {
