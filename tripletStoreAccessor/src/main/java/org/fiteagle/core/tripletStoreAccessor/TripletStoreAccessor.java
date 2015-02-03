@@ -4,30 +4,22 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Node_Variable;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.query.*;
+import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.sparql.core.BasicPattern;
-import com.hp.hpl.jena.sparql.core.Var;
 import com.hp.hpl.jena.sparql.syntax.ElementGroup;
-import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock;
 import com.hp.hpl.jena.sparql.syntax.Template;
+import com.hp.hpl.jena.update.*;
 import info.openmultinet.ontology.vocabulary.Omn_federation;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.MessageUtil.ParsingException;
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.Property;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
-
-import javax.xml.crypto.Data;
 
 public class TripletStoreAccessor {
   
@@ -153,13 +145,13 @@ public class TripletStoreAccessor {
 
         LOGGER.log(Level.INFO, query.serialize());
   //    Query query =  QueryFactory.create(queryString);
-      Model model = getModel(query);
+      Model model = executeConstruct(query);
 
 
     return model;
   }
 
-    private static Model getModel(Query query) {
+    private static Model executeConstruct(Query query) {
         QueryExecution queryExecution = QueryExecutionFactory.sparqlService(QueryExecuter.SESAME_SERVICE, query);
 
 
@@ -179,10 +171,44 @@ public class TripletStoreAccessor {
         whereClause.addTriplePattern(new Triple(new Node_Variable("resource"), Omn_lifecycle.parentTo.asNode(), new Node_Variable("p")));
         whereClause.addTriplePattern(tripleForPattern);
         query.setQueryPattern(whereClause);
-        Model model = getModel(query);
+
+        QueryExecution execution =  QueryExecutionFactory.sparqlService(QueryExecuter.SESAME_SERVICE, query);
+        Model model = execution.execDescribe();
         String serializedAnswer = MessageUtil.serializeModel(model,IMessageBus.SERIALIZATION_TURTLE);
         return serializedAnswer;
     }
+
+    public static boolean exists(String uri) {
+        Query query  = QueryFactory.create();
+        query.setQueryAskType();
+        Triple triple = new Triple(ResourceFactory.createResource(uri).asNode(), new Node_Variable("p"), new Node_Variable("o"));
+        ElementGroup whereclause = new ElementGroup();
+        whereclause.addTriplePattern(triple);
+        query.setQueryPattern(whereclause);
+        QueryExecution execution  = QueryExecutionFactory.sparqlService(QueryExecuter.SESAME_SERVICE, query);
+        return execution.execAsk();
+
+    }
+
+    public static Model getResource(String uri) {
+        Query query =  QueryFactory.create();
+        query.setQueryDescribeType();
+        query.addDescribeNode(ResourceFactory.createResource(uri).asNode());
+
+
+        LOGGER.log(Level.INFO, query.serialize());
+        QueryExecution queryExecution = QueryExecutionFactory.sparqlService(QueryExecuter.SESAME_SERVICE, query);
+        Model model = queryExecution.execDescribe();
+        return model;
+    }
+
+    public static void updateModel(Model model) throws ResourceRepositoryException {
+
+        DatasetAccessor datasetAccessor = getTripletStoreAccessor();
+        datasetAccessor.add(model);
+
+    }
+
 
     public static class ResourceRepositoryException extends Exception {
 

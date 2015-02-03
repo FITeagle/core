@@ -32,6 +32,7 @@ import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.vocabulary.RDF;
+import sun.rmi.runtime.Log;
 
 @MessageDriven(name = "ReservationMDBListener", activationConfig = {
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -146,26 +147,45 @@ public class ReservationMDBListener implements MessageListener {
     LOGGER.log(Level.INFO, "handle reservation ...");
     Model reservationModel = ModelFactory.createDefaultModel();
     
-    StmtIterator iterator = requestModel.listStatements(null, RDF.type, Omn.Reservation);
+   ResIterator iterator = requestModel.listResourcesWithProperty(RDF.type, Omn.Topology);
     while (iterator.hasNext()) {
-      Resource sliver = iterator.next().getSubject();
-      Statement st = sliver.getProperty(Omn.isResourceOf);
-      String componentManagerId = st.getObject().toString();
-      LOGGER.log(Level.INFO, "componentManagerId " + componentManagerId);
-      if (this.isReservationAvailable(componentManagerId)) {
-        LOGGER.log(Level.INFO, "reservation is available");
-        String sliverURN = setSliverURN(sliver.getURI());
-        reservedSlivers.put(sliverURN, Omn_lifecycle.Allocated);
-        addSliverURNtoReservationModel(reservationModel, requestModel, sliverURN, sliver.getURI());  
-      } else {
-        reservedSlivers.put(sliver.getURI(), Omn_lifecycle.Unallocated);
-      }
+        Resource topology = iterator.nextResource();
+        if (TripletStoreAccessor.exists(topology.getURI())) {
+            LOGGER.log(Level.INFO, "Topology already exists");
+            Model topologyModel = TripletStoreAccessor.getResource(topology.getURI());
+            topologyModel.add(requestModel);
+
+            TripletStoreAccessor.updateModel(topologyModel);
+            reservationModel = topologyModel;
+        }else{
+            LOGGER.log(Level.INFO, "Topology does not exists.");
+
+            TripletStoreAccessor.updateModel(requestModel);
+            reservationModel =requestModel;
+        }
+
+
+
+//      Statement st = sliver.getProperty(Omn.isResourceOf);
+//      String componentManagerId = st.getObject().toString();
+//      LOGGER.log(Level.INFO, "componentManagerId " + componentManagerId);
+//      if (this.isReservationAvailable(componentManagerId)) {
+//        LOGGER.log(Level.INFO, "reservation is available");
+//        String sliverURN = setSliverURN(sliver.getURI());
+//        reservedSlivers.put(sliverURN, Omn_lifecycle.Allocated);
+//        addSliverURNtoReservationModel(reservationModel, requestModel, sliverURN, sliver.getURI());
+//      } else {
+//        reservedSlivers.put(sliver.getURI(), Omn_lifecycle.Unallocated);
+//      }
+//    }
+//    addSliceURNtoReservationModel(reservationModel, requestModel, reservedSlivers);
     }
-    addSliceURNtoReservationModel(reservationModel, requestModel, reservedSlivers);
     return reservationModel;
   }
-  
-  private void addSliceURNtoReservationModel(Model reservationModel, Model requestModel, Map<String, OntClass> reservedSlivers){
+
+
+
+    private void addSliceURNtoReservationModel(Model reservationModel, Model requestModel, Map<String, OntClass> reservedSlivers){
 	  StmtIterator iterator = requestModel.listStatements(null, RDF.type, Omn.Group);
 	  Resource slice = null;
 	  while(iterator.hasNext()){

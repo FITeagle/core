@@ -63,12 +63,7 @@ public class FederationManager {
 
            if(!initialized && delay < 3600000 ) {
                try {
-                   ResIterator iter = federationModel.listSubjectsWithProperty(RDF.type, Omn_federation.Infrastructure);
-                   while (iter.hasNext()) {
-                       Resource resource = iter.nextResource();
-                       TripletStoreAccessor.addResource(resource);
-
-                   }
+                  TripletStoreAccessor.updateModel(federationModel);
                    initialized = true;
                    timer.cancel();
                } catch (TripletStoreAccessor.ResourceRepositoryException e) {
