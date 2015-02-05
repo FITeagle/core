@@ -4,12 +4,7 @@ import com.hp.hpl.jena.rdf.model.*;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,10 +15,10 @@ import javax.jms.JMSContext;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
+import javax.xml.soap.MessageFactory;
 
 import org.fiteagle.api.core.IGeni;
 import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
@@ -34,7 +29,6 @@ import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.vocabulary.RDF;
-import com.sun.mail.handlers.message_rfc822;
 
 @MessageDriven(activationConfig = {
 		@ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -45,6 +39,9 @@ public class OrchestratorMDBListener implements MessageListener {
 
 	private static Logger LOGGER = Logger
 			.getLogger(OrchestratorMDBListener.class.toString());
+
+    @Inject
+    OrchestratorStateKeeper stateKeeper;
 
 	@Inject
 	private JMSContext context;
@@ -101,31 +98,35 @@ public class OrchestratorMDBListener implements MessageListener {
 
 	private void handleInform(String body, String requestID) {
 
-		if (requests.keySet().contains(requestID)) {
+        Request request = stateKeeper.getRequest(requestID);
+        if(request!=null) {
 
 			LOGGER.log(Level.INFO, "Orchestrator received a reply");
 			Model model = MessageUtil.parseSerializedModel(body, IMessageBus.SERIALIZATION_TURTLE);
-			String requestType = requests.get(requestID).getRequestType();
-			try {
-				this.updateReservations(model, requests.get(requestID).getGroups(), requestType);
+			//update
+			//	this.updateReservations(model, requests.get(requestID).getGroups(), requestType);
 
-                ResIterator resIterator  =  model.listSubjectsWithProperty(RDF.type,Omn.Reservation);
+//                ResIterator resIterator  =  model.listSubjectsWithProperty(RDF.type,Omn.Reservation);
+//
+//                while(resIterator.hasNext()){
+//                    TripletStoreAccessor.addResource(resIterator.nextResource());
+//                }
+//				//TripletStoreAccessor.updateRepositoryModel(model);
+				RequestContext requestContext = request.getContext();
+                request.setHandled();
+            if(requestContext.allAnswersReceived()) {
 
-                while(resIterator.hasNext()){
-                    TripletStoreAccessor.addResource(resIterator.nextResource());
-                }
-				//TripletStoreAccessor.updateRepositoryModel(model);
-				
-				if (allInstancesHandled(requests.get(requestID).getGroups(), requestType)) {
 
-					Model response = createResponse(requests.get(requestID).getGroups());
-					sendResponse(requestID, response);
-					requests.remove(requestID);
+                    Resource resource = request.getResource();
+                    String topologyURI = resource.getProperty(Omn.isResourceOf).getObject().asResource().getURI();
+                    Model response = TripletStoreAccessor.getResource(topologyURI);
+
+
+					sendResponse(requestContext.getRequestContextId(), response);
+                stateKeeper.removeRequest(requestID);
+
 				}
-			} catch (ResourceRepositoryException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+
 		}
 	}
 
@@ -133,19 +134,71 @@ public class OrchestratorMDBListener implements MessageListener {
 			String serialization, String requestID) {
 		LOGGER.log(Level.INFO, "handling configure request ...");
 
-		final Model modelCreate = ModelFactory.createDefaultModel();
-		final Map<String, Group> groups = new HashMap<>();
+        RequestContext requestContext = new RequestContext(requestID);
 
-		this.handleGroup(requestModel, modelCreate, groups, Omn_lifecycle.Provisioned);
-		this.handleReservation(requestModel, modelCreate, groups);
+		final Model modelCreate = ModelFactory.createDefaultModel();
+
+        ResIterator resIterator =  requestModel.listSubjects();
+        while(resIterator.hasNext()){
+            Resource resource = resIterator.nextResource();
+            String rdfType  =  resource.getProperty(RDF.type).getObject().asResource().getURI();
+            if(Omn.Topology.getURI().equals(rdfType)){
+                Model topology = TripletStoreAccessor.getResource(resource.getURI());
+                ResIterator resourceIterator = topology.listResourcesWithProperty(Omn.isResourceOf);
+                while(resourceIterator.hasNext()){
+                    LOGGER.log(Level.INFO, resourceIterator.nextResource().toString());
+                }
+            }else if(Omn.Resource.getURI().equals(rdfType)){
+                Model existingResource = TripletStoreAccessor.getResource(resource.getURI());
+                ResIterator resourceIterator = existingResource.listResourcesWithProperty(Omn.isResourceOf);
+                while(resourceIterator.hasNext()){
+                    Resource resource1 = resourceIterator.nextResource();
+                    LOGGER.log(Level.INFO, resource1.toString());
+                    String randomId = UUID.randomUUID().toString();
+                    Request request = new Request(randomId, resource1, requestContext);
+                    stateKeeper.addRequest(request);
+
+                }
+
+            }else {
+                throw new RuntimeException();
+            }
+
+        }
+//
+        this.sendConfigureToResources(requestContext);
+//		this.handleGroup(requestModel, modelCreate, groups, Omn_lifecycle.Provisioned);
+//		this.handleReservation(requestModel, modelCreate, groups);
 
 		String serializedModel = MessageUtil.serializeModel(modelCreate, IMessageBus.SERIALIZATION_TURTLE);
 		LOGGER.log(Level.INFO, "message contains " + serializedModel);
-		sendMessage(serializedModel, IMessageBus.TYPE_CREATE, IMessageBus.TARGET_ADAPTER, groups, requestID);
+	//	sendMessage(serializedModel, IMessageBus.TYPE_CREATE, IMessageBus.TARGET_ADAPTER, groups, requestID);
 
 	}
 
-	private void handleDeleteRequest(Model requestModel, String serialization, String requestID) {
+    private void sendConfigureToResources(RequestContext requestContext) {
+
+        Map<String, Request> requestMap = requestContext.getRequestMap();
+
+        for(String requestId: requestMap.keySet()){
+            configureResource(requestId,requestMap.get(requestId).getResource());
+        }
+    }
+
+    private void configureResource(String requestId, Resource resource) {
+
+
+        Model messageModel = TripletStoreAccessor.getResource(resource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource().getURI());
+        messageModel.add(resource.listProperties());
+        Resource adapter = messageModel.getResource(resource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource().getURI());
+        String messageTarget = messageModel.getProperty(adapter, RDF.type).getObject().asResource().getURI();
+
+        Message message = MessageUtil.createRDFMessage(messageModel,IMessageBus.TYPE_CREATE, messageTarget, IMessageBus.SERIALIZATION_TURTLE, requestId, context);
+        context.createProducer().send(topic, message);
+
+    }
+
+    private void handleDeleteRequest(Model requestModel, String serialization, String requestID) {
 		LOGGER.log(Level.INFO, "handling delete request ...");
 		
 		final Model modelDelete = ModelFactory.createDefaultModel();
@@ -156,24 +209,25 @@ public class OrchestratorMDBListener implements MessageListener {
 		
 		String serializedModel = MessageUtil.serializeModel(modelDelete, IMessageBus.SERIALIZATION_TURTLE);
 		LOGGER.log(Level.INFO, "message contains " + serializedModel);
-		sendMessage(serializedModel, IMessageBus.TYPE_DELETE, IMessageBus.TARGET_ADAPTER, groups, requestID);
+		//sendMessage(serializedModel, IMessageBus.TYPE_DELETE, IMessageBus.TARGET_ADAPTER, groups, requestID);
 		
 	}
 
-	private static Map<String, Request> requests = new HashMap<String, OrchestratorMDBListener.Request>();
+	private static Map<String, Request> requests = new HashMap<>();
 
-	private void sendMessage(String model, String methodType,
-			String methodTarget, Map<String, Group> groups,
-			String initialRequestID) {
 
-		final Message request = MessageUtil.createRDFMessage(model, methodType,
-				methodTarget, IMessageBus.SERIALIZATION_TURTLE, null, context);
-		Request r = new Request(groups, initialRequestID, methodType);
-		requests.put(MessageUtil.getJMSCorrelationID(request), r);
-		context.createProducer().send(topic, request);
-		LOGGER.log(Level.INFO, methodType
-				+ " message is sent to resource adapter");
-	}
+	//private void sendMessage(String model, String methodType,
+	//		String methodTarget, Map<String, Group> groups,
+	//		String initialRequestID) {
+
+//		final Message request = MessageUtil.createRDFMessage(model, methodType,
+//				methodTarget, IMessageBus.SERIALIZATION_TURTLE, null, context);
+//        //Request r = new Request(groups, initialRequestID, methodType);
+//		requests.put(MessageUtil.getJMSCorrelationID(request), r);
+//		context.createProducer().send(topic, request);
+//		LOGGER.log(Level.INFO, methodType
+//				+ " message is sent to resource adapter");
+	//}
 
 	private void sendResponse(String requestID, Model responseModel) {
 
@@ -185,31 +239,6 @@ public class OrchestratorMDBListener implements MessageListener {
 				IMessageBus.SERIALIZATION_TURTLE,requestID, context);
 		LOGGER.log(Level.INFO, " a reply is sent to SFA ...");
 		context.createProducer().send(topic, responseMessage);
-	}
-
-	public static class Request {
-		private Map<String, Group> groups;
-		private String requestID;
-		private String requestType;
-
-		public Request(Map<String, Group> groups, String requestID, String requestType) {
-			this.groups = groups;
-			this.requestID = requestID;
-			this.requestType = requestType;
-		}
-
-		protected Map<String, Group> getGroups() {
-			return this.groups;
-		}
-
-		protected String getRequestID() {
-			return this.requestID;
-		}
-		
-		protected String getRequestType(){
-			return this.requestType;
-		}
-
 	}
 
 	public static class Group {
