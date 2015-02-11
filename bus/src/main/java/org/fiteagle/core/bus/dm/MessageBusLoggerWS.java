@@ -12,6 +12,7 @@ import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageListener;
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -77,18 +78,19 @@ public class MessageBusLoggerWS implements MessageListener {
       sendToAllSessions(serializedResult);
     } catch (JMSException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
+      e.printStackTrace();
     }
   }
   
   private String parseToJSON(Message message) throws JMSException {
     JsonObjectBuilder builder = Json.createObjectBuilder();
     try {
-      if(message.getBody(String.class) == null){
-        builder.add("body", "N.A.");
-      }
-      else{
-        builder.add("body", message.getBody(String.class));
-      }
+		try{
+			String body = message.getBody(String.class);
+			builder.add("body", body);
+		} catch (MessageFormatException e){
+			builder.add("body", "N.A.");
+		}
       if (message.getStringProperty(IMessageBus.METHOD_TARGET) == null) {
         builder.add(IMessageBus.METHOD_TARGET, "N.A.");
       }
