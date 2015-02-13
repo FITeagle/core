@@ -1,15 +1,22 @@
 package org.fiteagle.core.tripletStoreAccessor;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.graph.Node_Variable;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.sparql.core.BasicPattern;
+import com.hp.hpl.jena.sparql.core.Quad;
+import com.hp.hpl.jena.sparql.modify.request.QuadAcc;
+import com.hp.hpl.jena.sparql.modify.request.UpdateDeleteInsert;
+import com.hp.hpl.jena.sparql.modify.request.UpdateDeleteWhere;
 import com.hp.hpl.jena.sparql.syntax.ElementGroup;
 import com.hp.hpl.jena.sparql.syntax.Template;
 import com.hp.hpl.jena.update.*;
@@ -55,12 +62,7 @@ public class TripletStoreAccessor {
     throw new ResourceRepositoryException("Unsupported serialization type: "+serialization);
   }
 
-  public static void deleteModel(Model modelToDelete) throws ResourceRepositoryException {
-    StmtIterator iterator = modelToDelete.listStatements();
-    while(iterator.hasNext()){
-      removeStatement(iterator.next());
-    }
-  }
+
 
   public static void deleteResource(Resource resourceToRemove) throws ResourceRepositoryException {
     String resource =  "<"+resourceToRemove.getURI()+"> ?anyPredicate ?anyObject .";
@@ -94,19 +96,7 @@ public class TripletStoreAccessor {
     QueryExecuter.executeSparqlUpdateQuery(updateString);
   }
 
-  public static void removeStatement(Statement statement) throws ResourceRepositoryException{
-    String existingValue = "";
-    if(statement.getObject().isResource()){
-      existingValue = "<"+statement.getSubject().getURI()+"> <"+statement.getPredicate().getURI()+"> <"+statement.getResource().getURI()+"> .";
-    }
-    else{
-      existingValue = "<"+statement.getSubject().getURI()+"> <"+statement.getPredicate().getURI()+"> "+statement.getLiteral()+" .";
-    }
 
-    String updateString = "DELETE { "+existingValue+" }" + "WHERE { "+existingValue+" }";
-
-    QueryExecuter.executeSparqlUpdateQuery(updateString);
-  }
 
   public static void removePropertyValue(Resource subject, Resource predicate) throws ResourceRepositoryException{
     String existingValue = "<"+subject.getURI()+"> <"+predicate.getURI()+"> ?anyObject .";
@@ -202,13 +192,28 @@ public class TripletStoreAccessor {
         return model;
     }
 
-    public static void updateModel(Model model) throws ResourceRepositoryException {
+    public static void addModel(Model model) throws ResourceRepositoryException {
 
         DatasetAccessor datasetAccessor = getTripletStoreAccessor();
         datasetAccessor.add(model);
 
     }
 
+    public static void deleteModel(Model model) throws ResourceRepositoryException {
+
+        StmtIterator stmtIterator = model.listStatements();
+        List<Quad> quadList = new LinkedList<>();
+        while (stmtIterator.hasNext()){
+            Statement statement = stmtIterator.nextStatement();
+            Quad quad = new Quad(Quad.defaultGraphIRI,statement.asTriple());
+            quadList.add(quad);
+        }
+        QuadAcc quadAcc = new QuadAcc(quadList);
+        UpdateDeleteWhere updateDeleteInsert = new UpdateDeleteWhere(quadAcc);
+        UpdateRequest request = new UpdateRequest(updateDeleteInsert);
+        UpdateProcessor qexec=UpdateExecutionFactory.createRemoteForm(request,QueryExecuter.SESAME_SERVICE_DATA);
+        qexec.execute();
+    }
 
     public static class ResourceRepositoryException extends Exception {
 
@@ -223,4 +228,9 @@ public class TripletStoreAccessor {
     DatasetAccessor accessor = TripletStoreAccessor.getTripletStoreAccessor();
     accessor.add(resource.getModel());
   }
+
+    public static Model getGraph() throws ResourceRepositoryException {
+        DatasetAccessor accessor = TripletStoreAccessor.getTripletStoreAccessor();
+        return accessor.getModel();
+    }
 }

@@ -1,7 +1,11 @@
 package org.fiteagle.core.orchestrator.dm;
 
+import com.hp.hpl.jena.rdf.model.Resource;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Created by dne on 04.02.15.
@@ -46,5 +50,20 @@ public class RequestContext {
         }
 
         return returnValue;
+    }
+
+    public Request getRequestByTarget(String resource) {
+
+        Request request = null;
+        for( Request r: this.requestMap.values()){
+            if(r.getTarget().equals(resource)){
+                request =r;
+               break;
+            }
+        }
+        if(request == null){
+            request = new Request(UUID.randomUUID().toString(),resource,this);
+        }
+        return  request;
     }
 }

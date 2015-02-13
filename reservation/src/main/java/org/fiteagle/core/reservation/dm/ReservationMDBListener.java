@@ -3,9 +3,8 @@ package org.fiteagle.core.reservation.dm;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,7 +18,6 @@ import javax.jms.Topic;
 
 import com.hp.hpl.jena.rdf.model.*;
 
-import org.fiteagle.api.core.IGeni;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageFilters;
@@ -32,7 +30,6 @@ import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.vocabulary.RDF;
-import sun.rmi.runtime.Log;
 
 @MessageDriven(name = "ReservationMDBListener", activationConfig = {
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -155,12 +152,12 @@ public class ReservationMDBListener implements MessageListener {
             Model topologyModel = TripletStoreAccessor.getResource(topology.getURI());
             topologyModel.add(requestModel);
 
-            TripletStoreAccessor.updateModel(topologyModel);
+
             reservationModel = topologyModel;
         }else{
             LOGGER.log(Level.INFO, "Topology does not exists.");
 
-            TripletStoreAccessor.updateModel(requestModel);
+            TripletStoreAccessor.addModel(requestModel);
             reservationModel =requestModel;
         }
 
@@ -285,17 +282,32 @@ public class ReservationMDBListener implements MessageListener {
   }
   
   private void reserve(Model model) {
-    
-    try {
 
-        ResIterator resIterator = model.listSubjectsWithProperty(RDF.type, Omn.Reservation);
+      ResIterator resIterator = model.listResourcesWithProperty(Omn.isResourceOf);
+      while(resIterator.hasNext()){
+          Resource resource = resIterator.nextResource();
+          Resource reservation = model.createResource(Omn.Reservation + "/"+ UUID.randomUUID().toString());
+          reservation.addProperty(RDF.type,Omn.Reservation);
+          resource.addProperty(Omn.hasReservation, reservation);
+          reservation.addProperty(Omn.isReservationOf, resource);
+          Date afterAdding2h = getDefaultExpirationTime();
+          reservation.addProperty(MessageBusOntologyModel.endTime, new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(afterAdding2h));
+          reservation.addProperty(Omn_lifecycle.hasReservationState, Omn_lifecycle.Allocated);
+      }
 
-        while(resIterator.hasNext()){
-            TripletStoreAccessor.addResource(resIterator.nextResource());
-        }
+      try {
+          TripletStoreAccessor.addModel(model);
+
+
     } catch (ResourceRepositoryException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
   }
+
+    private static Date getDefaultExpirationTime() {
+        Date date = new Date();
+        long t=date.getTime();
+        return new Date(t + (120 * 60000));
+    }
   
 }

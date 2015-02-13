@@ -1,17 +1,12 @@
 package org.fiteagle.core.federationManager;
 
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ResIterator;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.vocabulary.RDF;
-import info.openmultinet.ontology.vocabulary.Omn_federation;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.OntologyModelUtil;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
-import javax.enterprise.context.ApplicationScoped;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -63,7 +58,7 @@ public class FederationManager {
 
            if(!initialized && delay < 3600000 ) {
                try {
-                  TripletStoreAccessor.updateModel(federationModel);
+                  TripletStoreAccessor.addModel(federationModel);
                    initialized = true;
                    timer.cancel();
                } catch (TripletStoreAccessor.ResourceRepositoryException e) {

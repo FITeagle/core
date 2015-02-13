@@ -2,6 +2,8 @@ package org.fiteagle.core.orchestrator.dm;
 
 import com.hp.hpl.jena.rdf.model.Resource;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -10,17 +12,19 @@ import java.util.Map;
 
 public  class Request {
     private final String requestId;
-    private final Resource resource;
+    private final String target;
     private boolean handled;
     private final RequestContext context;
+    private List<Resource> resourceList;
 
-    public Request(String requestId, Resource resource, RequestContext context) {
+    public Request(String requestId, String target, RequestContext context) {
 
         this.requestId = requestId;
-        this.resource = resource;
+        this.target = target;
         this.context =  context;
         handled = false;
         context.addRequest(this);
+        this.resourceList = new LinkedList<>();
     }
 
     public void setHandled(){
@@ -30,9 +34,7 @@ public  class Request {
     public String getRequestId(){
         return  requestId;
     }
-    public Resource getResource(){
-        return this.resource;
-    }
+
 
     public RequestContext getContext() {
         return context;
@@ -42,4 +44,15 @@ public  class Request {
         return handled;
     }
 
+    public String getTarget() {
+        return  this.target;
+    }
+
+    public void addResource(Resource resource) {
+        resourceList.add(resource);
+    }
+
+    public List<Resource> getResourceList(){
+        return this.resourceList;
+    }
 }
