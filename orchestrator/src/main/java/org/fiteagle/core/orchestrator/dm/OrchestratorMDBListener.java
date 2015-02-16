@@ -89,23 +89,41 @@ public class OrchestratorMDBListener implements MessageListener {
 
     private void handleGet(String messageBody, String jmsCorrelationID) {
         Model model = MessageUtil.parseSerializedModel(messageBody, IMessageBus.SERIALIZATION_TURTLE);
-        ResIterator resIterator = model.listSubjectsWithProperty(RDF.type,Omn.Resource);
+        ResIterator resIterator = model.listSubjects();
         Model responseModel = ModelFactory.createDefaultModel();
 
         while (resIterator.hasNext()){
             Resource r = resIterator.nextResource();
+            Model m = TripletStoreAccessor.getResource(r.getURI());
+            if(r.hasProperty(RDF.type,Omn.Resource)) {
 
 
-                Model m = TripletStoreAccessor.getResource(r.getURI());
                 Resource resource = m.getResource(r.getURI());
-                Model reservation = TripletStoreAccessor.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
+                getReservationAndAddToResponse(responseModel, m, resource);
+            }else if(r.hasProperty(RDF.type,Omn.Topology)){
+                StmtIterator stmtIterator = m.listStatements(new SimpleSelector(r, Omn.hasResource, (Object)null));
 
-                responseModel.add(m);
-                responseModel.add(reservation);
+                while(stmtIterator.hasNext()){
+                    Statement statement = stmtIterator.nextStatement();
+                    String resourceURI = statement.getObject().asResource().getURI();
+                    Model resourceModel = TripletStoreAccessor.getResource(resourceURI);
+                    Resource resource = resourceModel.getResource(resourceURI);
+                    getReservationAndAddToResponse(responseModel, resourceModel, resource);
+
+                }
+
+            }
 
 
         }
         sendResponse(jmsCorrelationID,responseModel);
+    }
+
+    private void getReservationAndAddToResponse(Model responseModel, Model m, Resource resource) {
+        Model reservation = TripletStoreAccessor.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
+
+        responseModel.add(m);
+        responseModel.add(reservation);
     }
 
     private void handleCreateRequest(String messageBody, String jmsCorrelationID) {
