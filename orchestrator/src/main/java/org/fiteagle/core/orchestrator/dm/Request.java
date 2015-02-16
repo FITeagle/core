@@ -2,9 +2,9 @@ package org.fiteagle.core.orchestrator.dm;
 
 import com.hp.hpl.jena.rdf.model.Resource;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by dne on 04.02.15.
@@ -49,7 +49,37 @@ public  class Request {
     }
 
     public void addResource(Resource resource) {
-        resourceList.add(resource);
+        if(!containsResource(resource)){
+            resourceList.add(resource);
+        }else{
+            updateResource(resource);
+
+
+        }
+
+    }
+
+    private void updateResource(Resource resource) {
+        for(Iterator<Resource> iterator = resourceList.iterator();iterator.hasNext();){
+            Resource resource1 = iterator.next();
+           if(resource1.getURI().equals(resource.getURI())){
+               resource1.getModel().add(resource.getModel());
+           }
+
+
+        }
+    }
+
+    private boolean containsResource(Resource resource) {
+        boolean ret = false;
+        for(Resource r: resourceList){
+            if(r.getURI().equals(resource.getURI())){
+                ret = true;
+                break;
+            }
+
+        }
+        return ret;
     }
 
     public List<Resource> getResourceList(){
