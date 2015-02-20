@@ -85,7 +85,7 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
         ResIterator iterator = model.listResourcesWithProperty(Omn_lifecycle.parentTo);
         while(iterator.hasNext()){
           String adapterInstance = iterator.nextResource().getLocalName();
-          Config.getInstance(adapterInstance.concat(".properties")).setDefaultProperty();
+          Config.getInstance(adapterInstance.concat(".properties"));
         }
     } catch (ResourceRepositoryException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
