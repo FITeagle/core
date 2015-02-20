@@ -13,7 +13,10 @@ import javax.jms.Topic;
 
 import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
+
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+
+import org.fiteagle.api.core.Config;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
@@ -23,6 +26,7 @@ import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepos
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.vocabulary.RDF;
 
 @MessageDriven(name = "ResourceAdapterManagerMDBListener", activationConfig = {
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -77,6 +81,12 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
             TripletStoreAccessor.addResource(resIterator.nextResource());
         }
         //TripletStoreAccessor.updateRepositoryModel(model);
+        
+        ResIterator iterator = model.listResourcesWithProperty(Omn_lifecycle.parentTo);
+        while(iterator.hasNext()){
+          String adapterInstance = iterator.nextResource().getLocalName();
+          Config.getInstance(adapterInstance.concat(".properties")).setDefaultProperty();
+        }
     } catch (ResourceRepositoryException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
