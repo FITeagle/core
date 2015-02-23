@@ -12,21 +12,18 @@ import javax.jms.MessageListener;
 import javax.jms.Topic;
 
 import com.hp.hpl.jena.rdf.model.ResIterator;
-import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
 
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
-import org.fiteagle.api.core.Config;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
-import org.fiteagle.api.core.MessageUtil.ParsingException;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.vocabulary.RDF;
 
 @MessageDriven(name = "ResourceAdapterManagerMDBListener", activationConfig = {
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -82,11 +79,6 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
         }
         //TripletStoreAccessor.updateRepositoryModel(model);
         
-        ResIterator iterator = model.listResourcesWithProperty(Omn_lifecycle.parentTo);
-        while(iterator.hasNext()){
-          String adapterInstance = iterator.nextResource().getLocalName();
-          Config.getInstance(adapterInstance.concat(".properties"));
-        }
     } catch (ResourceRepositoryException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
@@ -98,8 +90,10 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
     try {
       StmtIterator iter = model.listStatements();
       while(iter.hasNext()){
-        TripletStoreAccessor.deleteResource(iter.next().getSubject());
-      }      
+        Statement statement = iter.next();
+        TripletStoreAccessor.deleteResource(statement.getSubject());
+      } 
+      
     } catch (ResourceRepositoryException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
     }
