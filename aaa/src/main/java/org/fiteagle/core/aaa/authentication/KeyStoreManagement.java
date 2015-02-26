@@ -31,24 +31,21 @@ import org.bouncycastle.openssl.PEMWriter;
 import org.fiteagle.core.aaa.authentication.x509.X509Util;
 import org.fiteagle.core.config.preferences.FiteaglePreferences;
 import org.fiteagle.core.config.preferences.FiteaglePreferencesXML;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 public class KeyStoreManagement {
 private FiteaglePreferences preferences;
-private Logger log = LoggerFactory.getLogger(getClass()); 
-private final String DEFAULT_KEYSTORE_LOCATION=System.getProperty("user.home")+System.getProperty("file.separator")+"fiteagle"+System.getProperty("file.separator")+"jetty-ssl.keystore";
+private final String DEFAULT_KEYSTORE_LOCATION=System.getProperty("jboss.server.config.dir")+System.getProperty("file.separator")+"jetty-ssl.keystore";
 private final String DEFAULT_KEYSTORE_PASSWORD = "jetty6";
 private final String DEFAULT_CA_ALIAS ="root";
 private final String DEFAULT_CA_PRK_PASS = "jetty6";
 private final String DEFAULT_PRK_PASS= "jetty6";
-private final String DEFAULT_TRUSTSTORE_LOCATION=System.getProperty("jboss.server.config.url")+System.getProperty("file.separator")+"jetty-ssl.truststore";
+private final String DEFAULT_TRUSTSTORE_LOCATION=System.getProperty("jboss.server.config.dir")+System.getProperty("file.separator")+"jetty-ssl.truststore";
 private final String DEFAULT_TRUSTSTORE_PASSWORD =  DEFAULT_KEYSTORE_PASSWORD;
 private final String DEFAULT_SERVER_ALIAS ="root";
 private final String DEFAULT_SA_ALIAS="fiteagleSA";
 private final String DEFAULT_SA_PASS="changeit";
-private final String DEFAULT_RESOURCE_STORE_LOCATION = System.getProperty("user.home")+System.getProperty("file.separator")+"fiteagle"+System.getProperty("file.separator")+"resourceCertificateStore";
+private final String DEFAULT_RESOURCE_STORE_LOCATION = System.getProperty("jboss.server.config.dir")+System.getProperty("file.separator")+"resourceCertificateStore";
 private final String DEFAULT_RESOURCE_STORE_PASS = "changeit";
 private static KeyStoreManagement keyStoreManagement;
 
