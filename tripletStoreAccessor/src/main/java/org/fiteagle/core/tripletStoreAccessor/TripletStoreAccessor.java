@@ -82,7 +82,11 @@ public class TripletStoreAccessor {
 
     String updateString = "DELETE { "+resource+" }" + "WHERE { "+resource+" }";
 
-    QueryExecuter.executeSparqlUpdateQuery(updateString);
+    try{
+      QueryExecuter.executeSparqlUpdateQuery(updateString);
+    } catch(ResourceRepositoryException e){
+      LOGGER.log(Level.WARNING, "Error while deleting resource: "+e.getMessage());
+    }
   }
 
   public static void updateRepositoryModel(Model modelInform) throws ResourceRepositoryException {
