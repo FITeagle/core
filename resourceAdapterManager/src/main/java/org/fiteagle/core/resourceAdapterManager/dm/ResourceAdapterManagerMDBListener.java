@@ -63,7 +63,6 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
   private void handleGet(Message message, String serialization, String requestID) {
     Message responseMessage = null;
 
-      //String serializedResponse = TripletStoreAccessor.handleSPARQLRequest(MessageUtil.getSPARQLQuery(message), serialization);
       String serializedResponse = TripletStoreAccessor.getResources();
       responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
 
