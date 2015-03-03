@@ -80,6 +80,7 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
         
     } catch (ResourceRepositoryException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
+      e.printStackTrace();
     }
     Message message = MessageUtil.createRDFMessage(model, IMessageBus.TYPE_INFORM, null, serialization , requestID, context);
     context.createProducer().send(topic, message);
@@ -95,6 +96,7 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
       
     } catch (ResourceRepositoryException e) {
       LOGGER.log(Level.SEVERE, e.getMessage());
+      e.printStackTrace();
     }
   }
   
