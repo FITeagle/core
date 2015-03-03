@@ -21,7 +21,6 @@ import com.hp.hpl.jena.update.UpdateRequest;
 
 public class QueryExecuter {
   
-  @SuppressWarnings("unused")
   private static Logger LOGGER = Logger.getLogger(QueryExecuter.class.toString());
   
   private static Map<String, String> missedNsPrefixes = new HashMap<>();

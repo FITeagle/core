@@ -7,7 +7,6 @@ import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.MessageUtil.ParsingException;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
-import org.junit.Test;
 
 import com.hp.hpl.jena.rdf.model.Model;
 
