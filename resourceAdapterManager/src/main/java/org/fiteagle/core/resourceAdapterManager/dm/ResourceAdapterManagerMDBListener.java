@@ -1,5 +1,7 @@
 package org.fiteagle.core.resourceAdapterManager.dm;
 
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -11,11 +13,6 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
-import com.hp.hpl.jena.rdf.model.ResIterator;
-import com.hp.hpl.jena.rdf.model.Statement;
-
-import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
-
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
@@ -23,6 +20,9 @@ import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ResIterator;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 @MessageDriven(name = "ResourceAdapterManagerMDBListener", activationConfig = {
@@ -71,32 +71,28 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
   }
   
   private void handleCreate(Model model, String serialization, String requestID) {
-    try {
-        ResIterator resIterator = model.listSubjectsWithProperty(Omn_lifecycle.parentTo);
-        while (resIterator.hasNext()){
-            TripletStoreAccessor.addResource(resIterator.nextResource());
-        }
-        //TripletStoreAccessor.updateRepositoryModel(model);
-        
-    } catch (ResourceRepositoryException e) {
-      LOGGER.log(Level.SEVERE, e.getMessage());
-      e.printStackTrace();
+    ResIterator resIterator = model.listSubjectsWithProperty(Omn_lifecycle.parentTo);
+    while (resIterator.hasNext()) {
+      Resource resource = resIterator.next();
+      try {
+        TripletStoreAccessor.addResource(resIterator.nextResource());
+      } catch (ResourceRepositoryException e) {
+        LOGGER.log(Level.SEVERE, "Could not add" + resource, e);
+      }
     }
-    Message message = MessageUtil.createRDFMessage(model, IMessageBus.TYPE_INFORM, null, serialization , requestID, context);
+    Message message = MessageUtil.createRDFMessage(model, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
     context.createProducer().send(topic, message);
   }
   
   private void handleDelete(Model model) {
-    try {
-      StmtIterator iter = model.listStatements();
-      while(iter.hasNext()){
-        Statement statement = iter.next();
+    StmtIterator iter = model.listStatements();
+    while (iter.hasNext()) {
+      Statement statement = iter.next();
+      try {
         TripletStoreAccessor.deleteResource(statement.getSubject());
-      } 
-      
-    } catch (ResourceRepositoryException e) {
-      LOGGER.log(Level.SEVERE, e.getMessage());
-      e.printStackTrace();
+      } catch (ResourceRepositoryException e) {
+        LOGGER.log(Level.SEVERE, "Could not delete" + statement.getSubject(), e);
+      }
     }
   }
   
