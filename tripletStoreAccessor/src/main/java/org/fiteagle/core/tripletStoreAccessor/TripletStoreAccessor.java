@@ -5,6 +5,7 @@ import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -166,7 +167,7 @@ public class TripletStoreAccessor {
     }
 
 
-    public static String getResources() {
+    public static String getResources() throws ResourceRepositoryException {
 
         Query query = QueryFactory.create();
         query.setQueryDescribeType();
@@ -181,6 +182,8 @@ public class TripletStoreAccessor {
 
         QueryExecution execution =  QueryExecutionFactory.sparqlService(QueryExecuter.SESAME_SERVICE, query);
         Model model = execution.execDescribe();
+        model.setNsPrefixes(getNsPrefixMappings());
+        
         String serializedAnswer = MessageUtil.serializeModel(model,IMessageBus.SERIALIZATION_TURTLE);
         return serializedAnswer;
     }
@@ -248,8 +251,12 @@ public class TripletStoreAccessor {
     accessor.add(resource.getModel());
   }
 
-    public static Model getGraph() throws ResourceRepositoryException {
-        DatasetAccessor accessor = TripletStoreAccessor.getTripletStoreAccessor();
-        return accessor.getModel();
-    }
+  public static Model getGraph() throws ResourceRepositoryException {
+    DatasetAccessor accessor = TripletStoreAccessor.getTripletStoreAccessor();
+    return accessor.getModel();
+  }
+  
+  public static Map<String, String> getNsPrefixMappings() throws ResourceRepositoryException{
+    return getGraph().getNsPrefixMap();
+  }
 }

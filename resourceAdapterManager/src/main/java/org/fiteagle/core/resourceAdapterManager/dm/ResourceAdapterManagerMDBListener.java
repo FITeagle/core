@@ -63,7 +63,12 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
   private void handleGet(Message message, String serialization, String requestID) {
     Message responseMessage = null;
 
-      String serializedResponse = TripletStoreAccessor.getResources();
+      String serializedResponse = null;
+      try {
+        serializedResponse = TripletStoreAccessor.getResources();
+      } catch (ResourceRepositoryException e) {
+        LOGGER.log(Level.SEVERE, "Could not get resources", e);
+      }
       responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
 
       context.createProducer().send(topic, responseMessage);
