@@ -80,7 +80,7 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
     while (resIterator.hasNext()) {
       Resource resource = resIterator.next();
       try {
-        TripletStoreAccessor.addResource(resIterator.nextResource());
+        TripletStoreAccessor.addResource(resource);
       } catch (ResourceRepositoryException e) {
         LOGGER.log(Level.SEVERE, "Could not add " + resource, e);
       }
