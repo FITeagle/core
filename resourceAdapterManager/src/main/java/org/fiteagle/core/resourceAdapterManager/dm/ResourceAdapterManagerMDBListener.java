@@ -77,7 +77,7 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
       try {
         TripletStoreAccessor.addResource(resIterator.nextResource());
       } catch (ResourceRepositoryException e) {
-        LOGGER.log(Level.SEVERE, "Could not add" + resource, e);
+        LOGGER.log(Level.SEVERE, "Could not add " + resource, e);
       }
     }
     Message message = MessageUtil.createRDFMessage(model, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
@@ -91,7 +91,7 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
       try {
         TripletStoreAccessor.deleteResource(statement.getSubject());
       } catch (ResourceRepositoryException e) {
-        LOGGER.log(Level.SEVERE, "Could not delete" + statement.getSubject(), e);
+        LOGGER.log(Level.SEVERE, "Could not delete " + statement.getSubject(), e);
       }
     }
   }
