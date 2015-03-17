@@ -99,7 +99,9 @@ public class OrchestratorMDBListener implements MessageListener {
 
 
                 Resource resource = m.getResource(r.getURI());
-                getReservationAndAddToResponse(responseModel, m, resource);
+                getTopologyAndAddToResponse(responseModel,resource);
+                getReservationAndAddToResponse(responseModel,resource);
+                responseModel.add(m);
             } else if (r.hasProperty(RDF.type, Omn.Topology)) {
                 StmtIterator stmtIterator = m.listStatements(new SimpleSelector(r, Omn.hasResource, (Object) null));
 
@@ -108,7 +110,8 @@ public class OrchestratorMDBListener implements MessageListener {
                     String resourceURI = statement.getObject().asResource().getURI();
                     Model resourceModel = TripletStoreAccessor.getResource(resourceURI);
                     Resource resource = resourceModel.getResource(resourceURI);
-                    getReservationAndAddToResponse(responseModel, resourceModel, resource);
+                    getReservationAndAddToResponse(responseModel,  resource);
+                    responseModel.add(resourceModel);
 
                 }
 
@@ -119,14 +122,20 @@ public class OrchestratorMDBListener implements MessageListener {
         sendResponse(jmsCorrelationID, responseModel);
     }
 
-    private void getReservationAndAddToResponse(Model responseModel, Model m, Resource resource) {
+    private void getTopologyAndAddToResponse(Model responseModel, Resource resource) {
+        Model topology = TripletStoreAccessor.getResource(resource.getProperty(Omn.isResourceOf).getObject().asResource().getURI());
+        responseModel.add(topology);
+    }
+
+    private void getReservationAndAddToResponse(Model responseModel, Resource resource) {
         Model reservation = TripletStoreAccessor.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
 
-        responseModel.add(m);
+
         responseModel.add(reservation);
     }
 
     private void handleCreateRequest(String messageBody, String jmsCorrelationID) {
+        LOGGER.log(Level.INFO,"Orchestrator received a create");
         Model model = MessageUtil.parseSerializedModel(messageBody, IMessageBus.SERIALIZATION_TURTLE);
 
         ResIterator resIterator = model.listSubjectsWithProperty(RDF.type, Omn.Topology);
