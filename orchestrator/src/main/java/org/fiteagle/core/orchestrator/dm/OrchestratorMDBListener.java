@@ -18,10 +18,7 @@ import javax.jms.MessageListener;
 import javax.jms.Topic;
 import javax.xml.soap.MessageFactory;
 
-import org.fiteagle.api.core.IGeni;
-import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageFilters;
-import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.api.core.*;
 import org.fiteagle.core.orchestrator.ConfigurationHandler;
 import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
@@ -226,7 +223,7 @@ public class OrchestratorMDBListener implements MessageListener {
     private void configureResource(Request request) {
 
         Model requestModel = ModelFactory.createDefaultModel();
-        Resource requestTopology = requestModel.createResource(Omn.Topology.getURI() + "/" + UUID.randomUUID());
+        Resource requestTopology = requestModel.createResource(IConfig.TOPOLOGY_NAMESPACE_VALUE+ UUID.randomUUID());
         requestTopology.addProperty(RDF.type, Omn.Topology);
 
         for (Resource resource : request.getResourceList()) {

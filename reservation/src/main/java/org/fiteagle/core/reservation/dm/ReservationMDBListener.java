@@ -24,6 +24,7 @@ import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.core.reservation.ReservationHandler;
 import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
+import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.query.QuerySolution;
@@ -78,22 +79,8 @@ public class ReservationMDBListener implements MessageListener {
             //should be only one resource
             Resource r = iterator.nextResource();
             String uri = r.getURI();
-            String queryAssociatedReservations = "";
-            try {
-                queryAssociatedReservations = buildQueryForGroupReservations(uri);
-                ResultSet rs = QueryExecuter.executeSparqlSelectQuery(queryAssociatedReservations);
-                while (rs.hasNext()) {
-                    QuerySolution qs = rs.next();
-                    Resource result = qs.get("?reservationId").asResource();
-                    Resource resource = resultModel.createResource(result.getURI(), Omn.Resource);
-                    resource.addProperty(Omn_lifecycle.hasReservationState, qs.get("?state"));
-                    resource.addProperty(MessageBusOntologyModel.endTime, qs.get("?endTime"));
+            resultModel = TripletStoreAccessor.getResource(uri);
 
-                }
-            } catch (ResourceRepositoryException e) {
-                e.printStackTrace();
-            }
-            System.out.println(queryAssociatedReservations);
         } else {
             iterator = messageModel.listResourcesWithProperty(RDF.type, Omn.Resource);
             while (iterator.hasNext()) {
@@ -106,16 +93,7 @@ public class ReservationMDBListener implements MessageListener {
         context.createProducer().send(topic, responseMessage);
     }
 
-    private String buildQueryForGroupReservations(String uri) throws ResourceRepositoryException {
-        String query = "PREFIX omn: <http://open-multinet.info/ontology/omn#> " +
-                "SELECT ?reservationId ?state ?endTime WHERE {\n" +
-                "?reservationId  omn:partOfGroup \"" + uri + "\".\n" +
-                "?reservationId omn:hasState ?state .\n" +
-                "?reservationId omn:endTime  ?endTime\n" +
-                "}";
-        return query;
 
-    }
 
     private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException {
         LOGGER.log(Level.INFO, "handling reservation request ...");
