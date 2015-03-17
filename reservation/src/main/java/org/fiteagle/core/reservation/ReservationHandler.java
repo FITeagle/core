@@ -4,6 +4,7 @@ import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.vocabulary.RDF;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+import org.fiteagle.api.core.IConfig;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 
@@ -68,7 +69,7 @@ public class ReservationHandler {
         while(resIterator.hasNext()){
 
             Resource requestedResource = resIterator.nextResource();
-            Resource reservation = model.createResource(Omn.Reservation + "/"+ UUID.randomUUID().toString());
+            Resource reservation = model.createResource(IConfig.RESERVATION_NAMESPACE_VALUE+ UUID.randomUUID().toString());
             reservation.addProperty(RDF.type,Omn.Reservation);
             requestedResource.addProperty(Omn.hasReservation, reservation);
             reservation.addProperty(Omn.isReservationOf, requestedResource);
