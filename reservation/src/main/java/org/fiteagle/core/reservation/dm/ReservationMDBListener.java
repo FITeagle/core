@@ -80,12 +80,17 @@ public class ReservationMDBListener implements MessageListener {
             Resource r = iterator.nextResource();
             String uri = r.getURI();
             resultModel = TripletStoreAccessor.getResource(uri);
+            addResources(resultModel);
+            addReservations(resultModel);
 
         } else {
             iterator = messageModel.listResourcesWithProperty(RDF.type, Omn.Resource);
             while (iterator.hasNext()) {
                 Resource r = iterator.nextResource();
-                System.out.println("ssss");
+                String uri = r.getURI();
+                resultModel = TripletStoreAccessor.getResource(uri);
+                addReservations(resultModel);
+                addWrappingTopology(resultModel);
             }
         }
         String serializedResponse = MessageUtil.serializeModel(resultModel, serialization);
@@ -93,6 +98,31 @@ public class ReservationMDBListener implements MessageListener {
         context.createProducer().send(topic, responseMessage);
     }
 
+    private void addWrappingTopology(Model resultModel) {
+        StmtIterator stmtIterator = resultModel.listStatements(new SimpleSelector(null, Omn.hasResource,(Object)null));
+        while(stmtIterator.hasNext()){
+            Resource resource = stmtIterator.nextStatement().getSubject().asResource();
+            resource.addProperty(RDF.type,Omn.Topology);
+            resultModel.add(resource.listProperties());
+            //resultModel.add(TripletStoreAccessor.getResource(resource.getURI()));
+        }
+    }
+
+    private void addReservations(Model resultModel) {
+        StmtIterator stmtIterator = resultModel.listStatements(new SimpleSelector(null, Omn.hasReservation,(Object)null));
+        while(stmtIterator.hasNext()){
+            Resource resource = stmtIterator.nextStatement().getObject().asResource();
+            resultModel.add(TripletStoreAccessor.getResource(resource.getURI()));
+        }
+    }
+
+    private void addResources(Model resultModel) {
+        StmtIterator stmtIterator = resultModel.listStatements(new SimpleSelector(null, Omn.hasResource,(Object)null));
+        while(stmtIterator.hasNext()){
+            Resource resource = stmtIterator.nextStatement().getObject().asResource();
+            resultModel.add(TripletStoreAccessor.getResource(resource.getURI()));
+        }
+    }
 
 
     private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException {

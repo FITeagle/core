@@ -2,6 +2,7 @@ package org.fiteagle.core.orchestrator.dm;
 
 import com.hp.hpl.jena.rdf.model.*;
 import com.sun.org.apache.xpath.internal.operations.Mod;
+import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
@@ -73,6 +74,8 @@ public class OrchestratorMDBListener implements MessageListener {
                     handleInform(messageBody,
                             MessageUtil.getJMSCorrelationID(message));
                 } catch (ResourceRepositoryException e) {
+                    LOGGER.log(Level.WARNING, e.getMessage());
+                } catch (InvalidModelException e) {
                     LOGGER.log(Level.WARNING, e.getMessage());
                 }
             } else if (messageType.equals(IMessageBus.TYPE_CREATE)) {
@@ -153,14 +156,14 @@ public class OrchestratorMDBListener implements MessageListener {
 
     }
 
-    private void handleInform(String body, String requestID) throws ResourceRepositoryException {
+    private void handleInform(String body, String requestID) throws ResourceRepositoryException, InvalidModelException {
 
         Request request = stateKeeper.getRequest(requestID);
         if (request != null) {
 
             LOGGER.log(Level.INFO, "Orchestrator received a reply");
             Model model = MessageUtil.parseSerializedModel(body, IMessageBus.SERIALIZATION_TURTLE);
-            TripletStoreAccessor.addModel(model);
+            TripletStoreAccessor.updateModel(model);
             ResIterator resIterator = model.listSubjects();
             while(resIterator.hasNext()){
                 request.addResource(resIterator.nextResource());
@@ -172,23 +175,25 @@ public class OrchestratorMDBListener implements MessageListener {
                 for (Request request1 : requestContext.getRequestMap().values()) {
 
                     for (Resource resource : request1.getResourceList()) {
+                        if(resource.hasProperty(Omn.isResourceOf)){
+                            String topologyURI = resource.getProperty(Omn.isResourceOf).getObject().asResource().getURI();
+                            Model top = TripletStoreAccessor.getResource(topologyURI);
+                            response.add(top);
+                            response.add(resource.listProperties());
+                            Model reservationModel = TripletStoreAccessor.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
+                            Resource reservation = reservationModel.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
 
-                        String topologyURI = resource.getProperty(Omn.isResourceOf).getObject().asResource().getURI();
-                        Model top = TripletStoreAccessor.getResource(topologyURI);
-                        response.add(top);
-                        response.add(resource.listProperties());
-                        Model reservationModel = TripletStoreAccessor.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
-                        Resource reservation = reservationModel.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
-                        TripletStoreAccessor.deleteModel(reservationModel);
-                        reservation.removeAll(Omn_lifecycle.hasReservationState);
-                        reservation.addProperty(Omn_lifecycle.hasReservationState, Omn_lifecycle.Provisioned);
+                            reservation.removeAll(Omn_lifecycle.hasReservationState);
+                            reservation.addProperty(Omn_lifecycle.hasReservationState, Omn_lifecycle.Provisioned);
 
-                        response.add(reservationModel);
+                            response.add(reservationModel);
 
-                        TripletStoreAccessor.addModel(reservationModel);
-                    }
+                            TripletStoreAccessor.updateModel(reservationModel);
+                        }
 
-                    stateKeeper.removeRequest(requestID);
+                        stateKeeper.removeRequest(requestID);
+                        }
+
                 }
                 sendResponse(requestContext.getRequestContextId(), response);
 
@@ -245,10 +250,7 @@ public class OrchestratorMDBListener implements MessageListener {
         LOGGER.log(Level.INFO, "handling delete request ...");
 
         final Model modelDelete = ModelFactory.createDefaultModel();
-        final Map<String, Group> groups = new HashMap<>();
 
-        this.handleGroup(requestModel, modelDelete, groups, Omn_lifecycle.Unallocated);
-        this.handleReservation(requestModel, modelDelete, groups);
 
         String serializedModel = MessageUtil.serializeModel(modelDelete, IMessageBus.SERIALIZATION_TURTLE);
         LOGGER.log(Level.INFO, "message contains " + serializedModel);
@@ -259,18 +261,7 @@ public class OrchestratorMDBListener implements MessageListener {
     private static Map<String, Request> requests = new HashMap<>();
 
 
-    //private void sendMessage(String model, String methodType,
-    //		String methodTarget, Map<String, Group> groups,
-    //		String initialRequestID) {
 
-//		final Message request = MessageUtil.createRDFMessage(model, methodType,
-//				methodTarget, IMessageBus.SERIALIZATION_TURTLE, null, context);
-//        //Request r = new Request(groups, initialRequestID, methodType);
-//		requests.put(MessageUtil.getJMSCorrelationID(request), r);
-//		context.createProducer().send(topic, request);
-//		LOGGER.log(Level.INFO, methodType
-//				+ " message is sent to resource adapter");
-    //}
 
     private void sendResponse(String requestID, Model responseModel) {
 

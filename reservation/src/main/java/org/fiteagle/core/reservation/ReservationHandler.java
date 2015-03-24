@@ -1,7 +1,10 @@
 package org.fiteagle.core.reservation;
 
+import com.hp.hpl.jena.ontology.impl.ObjectPropertyImpl;
 import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.vocabulary.OWL;
 import com.hp.hpl.jena.vocabulary.RDF;
+import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import org.fiteagle.api.core.IConfig;
@@ -76,6 +79,10 @@ public class ReservationHandler {
             Date afterAdding2h = getDefaultExpirationTime();
             reservation.addProperty(MessageBusOntologyModel.endTime, new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(afterAdding2h));
             reservation.addProperty(Omn_lifecycle.hasReservationState, Omn_lifecycle.Allocated);
+            Property property  = model.createProperty(Omn_lifecycle.hasState.getNameSpace(), Omn_lifecycle.hasState.getLocalName());
+            property.addProperty(RDF.type, OWL.FunctionalProperty);
+            requestedResource.addProperty(property,Omn_lifecycle.Uncompleted);
+
 
         }
 
@@ -85,6 +92,8 @@ public class ReservationHandler {
 
 
         } catch (TripletStoreAccessor.ResourceRepositoryException e) {
+            LOGGER.log(Level.SEVERE, e.getMessage());
+        } catch (InvalidModelException e) {
             LOGGER.log(Level.SEVERE, e.getMessage());
         }
     }

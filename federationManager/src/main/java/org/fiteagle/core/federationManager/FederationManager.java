@@ -1,6 +1,7 @@
 package org.fiteagle.core.federationManager;
 
 import com.hp.hpl.jena.rdf.model.Model;
+import info.openmultinet.ontology.exceptions.InvalidModelException;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.OntologyModelUtil;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
@@ -66,6 +67,8 @@ public class FederationManager {
                    delay = delay + delay;
                    timer.schedule(new SetupTask(delay), delay);
 
+               } catch (InvalidModelException e) {
+                   LOGGER.log(Level.INFO, e.getMessage());
                }
            }else{
                timer.cancel();

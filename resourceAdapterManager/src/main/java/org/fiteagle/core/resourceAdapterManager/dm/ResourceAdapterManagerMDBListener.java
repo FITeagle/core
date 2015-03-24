@@ -1,5 +1,6 @@
 package org.fiteagle.core.resourceAdapterManager.dm;
 
+import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
 import java.util.logging.Level;
@@ -44,20 +45,26 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
     String serialization = MessageUtil.getMessageSerialization(message);
     String rdfString = MessageUtil.getStringBody(message);
     LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-    
-    if (messageType != null && rdfString != null) {
-      if (messageType.equals(IMessageBus.TYPE_CREATE)) {
-        Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
-        handleCreate(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
-        
-      } else if (messageType.equals(IMessageBus.TYPE_GET)) {
-        handleGet(message, serialization, MessageUtil.getJMSCorrelationID(message));
-        
-      } else if (messageType.equals(IMessageBus.TYPE_DELETE)) {
-        Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
-        handleDelete(messageModel);
-      }
+    try {
+        if (messageType != null && rdfString != null) {
+            if (messageType.equals(IMessageBus.TYPE_CREATE)) {
+                Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
+                handleCreate(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
+
+            } else if (messageType.equals(IMessageBus.TYPE_GET)) {
+                handleGet(message, serialization, MessageUtil.getJMSCorrelationID(message));
+
+            } else if (messageType.equals(IMessageBus.TYPE_DELETE)) {
+                Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
+                handleDelete(messageModel);
+            }
+        }
+    }catch (ResourceRepositoryException e) {
+        e.printStackTrace();
+    } catch (InvalidModelException e) {
+        e.printStackTrace();
     }
+
   }
 
   private void handleGet(Message message, String serialization, String requestID) {
@@ -91,16 +98,8 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
     context.createProducer().send(topic, message);
   }
   
-  private void handleDelete(Model model) {
-    StmtIterator iter = model.listStatements();
-    while (iter.hasNext()) {
-      Statement statement = iter.next();
-      try {
-        TripletStoreAccessor.deleteResource(statement.getSubject());
-      } catch (ResourceRepositoryException e) {
-        LOGGER.log(Level.SEVERE, "Could not delete " + statement.getSubject(), e);
-      }
-    }
+  private void handleDelete(Model model) throws InvalidModelException, ResourceRepositoryException {
+        TripletStoreAccessor.deleteModel(model);
   }
   
 }

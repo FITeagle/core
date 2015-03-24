@@ -12,38 +12,6 @@ import com.hp.hpl.jena.rdf.model.Model;
 
 public class TripletStoreAccessorTest {
   
- // @Test
-  public void testHandleSPARQLRequestTurtle() throws ParsingException {
-    String result = null;
-    try {
-      result = TripletStoreAccessor.handleSPARQLRequest("SELECT * WHERE {?r ?s ?p}", IMessageBus.SERIALIZATION_TURTLE);
-    } catch (ResourceRepositoryException e) {
-      if(e.getMessage().contains("org.apache.http.conn.HttpHostConnectException")){
-        return;
-      }
-      else{
-        fail(e.getMessage());
-      }
-    }
-    assertNotNull(result);
-    Model resultModel = MessageUtil.parseSerializedModel(result, IMessageBus.SERIALIZATION_TURTLE);
-    assertNotNull(resultModel);
-  }
-  
-  //@Test
-  public void testHandleSPARQLRequestJSON() throws ParsingException {
-    String result = null;
-    try {
-      result = TripletStoreAccessor.handleSPARQLRequest("SELECT * WHERE {?r ?s ?p}", IMessageBus.SERIALIZATION_JSONLD);
-    } catch (ResourceRepositoryException e) {
-      if(e.getMessage().contains("org.apache.http.conn.HttpHostConnectException")){
-        return;
-      }
-      else{
-        fail(e.getMessage());
-      }
-    }
-    assertNotNull(result);
-  }
+
   
 }

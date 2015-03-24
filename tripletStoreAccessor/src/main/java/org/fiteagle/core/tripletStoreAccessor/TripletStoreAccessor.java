@@ -1,8 +1,13 @@
 package org.fiteagle.core.tripletStoreAccessor;
 
+import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.vocabulary.OWL;
+import info.openmultinet.ontology.Parser;
+import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn_federation;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -25,12 +30,6 @@ import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.Property;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.ResourceFactory;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.sparql.core.BasicPattern;
 import com.hp.hpl.jena.sparql.core.Quad;
 import com.hp.hpl.jena.sparql.modify.request.QuadAcc;
@@ -48,71 +47,7 @@ public class TripletStoreAccessor {
 
   private final static String FUNCTIONAL_PROPERTY = "http://www.w3.org/2002/07/owl#FunctionalProperty";
 
-  public static String handleSPARQLRequest(String sparqlQuery, String serialization) throws ResourceRepositoryException, ParsingException {
-    Model resultModel = null;
-    String resultJSON = "";
 
-    LOGGER.log(Level.INFO, "Processing SPARQL Query:\n" + sparqlQuery);
-
-    if (sparqlQuery.toUpperCase().contains("SELECT")) {
-      ResultSet rs = QueryExecuter.executeSparqlSelectQuery(sparqlQuery);
-      resultJSON = MessageUtil.parseResultSetToJson(rs);
-      resultModel = ResultSetFormatter.toModel(rs);
-    } else if (sparqlQuery.toUpperCase().contains("DESCRIBE")) {
-      resultModel = QueryExecuter.executeSparqlDescribeQuery(sparqlQuery);
-      resultJSON = MessageUtil.serializeModel(resultModel, IMessageBus.SERIALIZATION_JSONLD);
-
-    } else if (sparqlQuery.toUpperCase().contains("CONSTRUCT")) {
-      resultModel = QueryExecuter.executeSparqlConstructQuery(sparqlQuery);
-      resultJSON = MessageUtil.serializeModel(resultModel, IMessageBus.SERIALIZATION_JSONLD);
-    }
-
-    switch(serialization){
-      case IMessageBus.SERIALIZATION_TURTLE:
-        return MessageUtil.serializeModel(resultModel, IMessageBus.SERIALIZATION_TURTLE);
-      case IMessageBus.SERIALIZATION_JSONLD:
-        return resultJSON;
-    }
-    throw new ResourceRepositoryException("Unsupported serialization type: "+serialization);
-  }
-
-
-
-  public static void deleteResource(Resource resourceToRemove) throws ResourceRepositoryException {
-    String resource =  "<"+resourceToRemove.getURI()+"> ?anyPredicate ?anyObject .";
-
-    String updateString = "DELETE { "+resource+" }" + "WHERE { "+resource+" }";
-
-    try{
-      QueryExecuter.executeSparqlUpdateQuery(updateString);
-    } catch(ResourceRepositoryException e){
-      LOGGER.log(Level.WARNING, "Error while deleting resource: "+e.getMessage());
-    }
-  }
-
-  public static void updateRepositoryModel(Model modelInform) throws ResourceRepositoryException {
-    DatasetAccessor accessor = getTripletStoreAccessor();
-    Model currentModel = accessor.getModel();
-    Property functionalProperty = currentModel.getProperty(FUNCTIONAL_PROPERTY);
-    StmtIterator iter = modelInform.listStatements();
-    while(iter.hasNext()){
-      Statement st = iter.next();
-      if(currentModel.getProperty(st.getPredicate().getURI()).hasProperty(RDF.type, functionalProperty)){
-        removePropertyValue(st.getSubject(), st.getPredicate());
-      }
-    }
-    insertDataFromModel(modelInform);
-  }
-
-  private static void insertDataFromModel(Model model) throws ResourceRepositoryException{
-    for(Entry<String, String> p : model.getNsPrefixMap().entrySet()){
-      model.removeNsPrefix(p.getKey());
-    }
-
-    String updateString = "INSERT DATA { "+MessageUtil.serializeModel(model, IMessageBus.SERIALIZATION_TURTLE)+" }";
-
-    QueryExecuter.executeSparqlUpdateQuery(updateString);
-  }
 
 
 
@@ -212,16 +147,18 @@ public class TripletStoreAccessor {
         return model;
     }
 
-    public static void addModel(Model model) throws ResourceRepositoryException {
-      DatasetAccessor datasetAccessor = getTripletStoreAccessor();
-      try {
-        datasetAccessor.add(model);
-      } catch (HttpException e) {
-        throw new ResourceRepositoryException(e.getMessage());
-      }
+
+    public static void addModel(Model model) throws ResourceRepositoryException, InvalidModelException {
+
+        DatasetAccessor datasetAccessor = getTripletStoreAccessor();
+        try {
+            datasetAccessor.add(model);
+        } catch (HttpException e) {
+            throw new ResourceRepositoryException(e.getMessage());
+        }
     }
 
-    public static void deleteModel(Model model) throws ResourceRepositoryException {
+    public static void deleteModel(Model model) throws ResourceRepositoryException, InvalidModelException {
 
         StmtIterator stmtIterator = model.listStatements();
         List<Quad> quadList = new LinkedList<>();
@@ -230,12 +167,46 @@ public class TripletStoreAccessor {
             Quad quad = new Quad(Quad.defaultGraphIRI,statement.asTriple());
             quadList.add(quad);
         }
+        deleteStatementList(quadList);
+    }
+
+    public static void deleteTriple(Triple statement){
+        List<Quad> quadList = new LinkedList<>();
+        Quad quad = new Quad(Quad.defaultGraphIRI,statement);
+        quadList.add(quad);
+        deleteStatementList(quadList);
+    }
+
+    private static void deleteStatementList(List<Quad> quadList) {
         QuadAcc quadAcc = new QuadAcc(quadList);
         UpdateDeleteWhere updateDeleteInsert = new UpdateDeleteWhere(quadAcc);
         UpdateRequest request = new UpdateRequest(updateDeleteInsert);
-        UpdateProcessor qexec=UpdateExecutionFactory.createRemoteForm(request,QueryExecuter.SESAME_SERVICE_DATA);
+        UpdateProcessor qexec= UpdateExecutionFactory.createRemoteForm(request, QueryExecuter.SESAME_SERVICE_DATA);
         qexec.execute();
     }
+
+    public static void updateModel(Model model) throws ResourceRepositoryException, InvalidModelException {
+
+        StmtIterator stmtIterator = model.listStatements();
+        while(stmtIterator.hasNext()){
+            Statement statement = stmtIterator.nextStatement();
+            Property property = statement.getPredicate();
+            Resource type = null;
+            Statement typeStatement = property.getProperty(RDF.type);
+            if(typeStatement != null ){
+               RDFNode rdfNode =  typeStatement.getObject();
+                type = rdfNode.asResource();
+            }
+            if(type != null && type.equals(OWL.FunctionalProperty)){
+                Triple triple = new Triple(statement.getSubject().asNode(), statement.getPredicate().asNode(), new Node_Variable("o"));
+
+                deleteTriple(triple);
+            }
+        }
+        addModel(model);
+    }
+
+
 
     public static class ResourceRepositoryException extends Exception {
 

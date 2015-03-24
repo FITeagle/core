@@ -1,6 +1,13 @@
 package org.fiteagle.core.orchestrator.dm;
 
+import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.vocabulary.OWL;
+import com.hp.hpl.jena.vocabulary.RDF;
+import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -49,21 +56,37 @@ public  class Request {
     }
 
     public void addResource(Resource resource) {
-        if(!containsResource(resource)){
-            resourceList.add(resource);
-        }else{
-            updateResource(resource);
+        //TODO check type and only add Resources
+        if(resource.hasProperty(Omn.isResourceOf)) {
+            if (!containsResource(resource)) {
+                resourceList.add(resource);
+            } else {
+
+                updateResource(resource);
 
 
+            }
         }
 
     }
 
     private void updateResource(Resource resource) {
+        //TODO update functional properties if given
         for(Iterator<Resource> iterator = resourceList.iterator();iterator.hasNext();){
             Resource resource1 = iterator.next();
            if(resource1.getURI().equals(resource.getURI())){
-               resource1.getModel().add(resource.getModel());
+               StmtIterator stmtIterator = resource.listProperties();
+               while(stmtIterator.hasNext()){
+                   Statement statement = stmtIterator.next();
+                   Property property = statement.getPredicate();
+                   if(property.hasProperty(RDF.type)){
+                       if(property.getProperty(RDF.type).getObject().equals(OWL.FunctionalProperty)){
+                           if(resource1.hasProperty(property))
+                                resource1.removeAll(property);
+                       }
+                   }
+                  resource1.getModel().add(statement);
+               }
            }
 
 
