@@ -1,15 +1,22 @@
 language: java
 jdk:
-  - oraclejdk7
+- oraclejdk7
+env:
+  global:
+  - secure: S9RoP/cz2JOd/Mg/w21VddE9XIicOtDV3uSPLqMhMcv36OtMMqV5LfAt6LzwaZhBIInA4Fxvgp9v574d0Ig0P8rEdE7FQkvMo2I+tSpP+d3mklKK+MSlNxBtVBknFjdDynekEflaZzUdTU+jgVp+5tfiZDhezWf5wbo5rCq5NAM=
+  - secure: FIbfSwqRnpOaEXjz8x5N13HL2DcaLSZQQ86Enb+GY+3oBqsWnDdM3UQxSwkcBUhsd0PsnFOXwi3NsJR9oEcVyWN1Yxg/sKPsGgUs8lA7FrP6wraPLavGpPFgvYZteM+P+vafj3KsIuwKgSseX5xLq4yJhtT/zylgG9i2uHKO1gY=
 script:
-  - travis_retry mvn clean install site
+- travis_retry mvn clean install site
 notifications:
-  slack: av-fitt:FmLx2wj2Td3cNfmrjaQXUXBO
+  slack:
+    secure: lYVE1qJ5globXWgN6b7SGaZLBiFceaq1/zJPfobu56WtiOWbQQcpGrYgWkZK7hudZpUxTZr6TovkLnwMUeExmlvmlUt7Lt/bWrKVLk5J/KHN/kN3FT906H/rrpnFVtmKgTP+yS1xZVVsKVuRp/bA01N+9D5oNIYLbcTU6ggrA9o=
   email:
-    - alexander.willner@tu-berlin.de
-    - fiteagle.dev@av.tu-berlin.de
+  - alexander.willner@tu-berlin.de
+  - fiteagle.dev@av.tu-berlin.de
 cache:
   directories:
   - $HOME/.m2
 after_success:
-  - mvn clean test jacoco:report coveralls:report
+- mvn clean test jacoco:report coveralls:report
+- find /home/travis/.m2/repository/org/fiteagle/ -name \*.war -exec curl -X POST -u
+  $HTTP_USER:$HTTP_PASS -F "fileToUpload=@{}" https://services.av.tu-berlin.de/travis-upload/upload.php\;
