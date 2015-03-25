@@ -19,4 +19,4 @@ cache:
 after_success:
 - mvn clean test jacoco:report coveralls:report
 - find /home/travis/.m2/repository/org/fiteagle/ -name \*.war -exec curl -X POST -u
-  $HTTP_USER:$HTTP_PASS -F "fileToUpload=@{}" https://services.av.tu-berlin.de/travis-upload/upload.php\;
+  $HTTP_USER:$HTTP_PASS -F "fileToUpload=@{}" https://services.av.tu-berlin.de/travis-upload/upload.php \;
