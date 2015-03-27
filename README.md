@@ -15,16 +15,7 @@ Requirements
 FAQ
 ---
 * Q: FITeagle tests seem to hang while testing cryptography methods on Linux
-* A: Setup rng-tools:
-
-  ```
-    sudo apt-get install rng-tools
-    vi /etc/default/rng-tools
-  ```
-  * then add the line HRNGDEVICE=/dev/urandom
-  * afterwards start the rng-tools daemon:
-
-  ```
-    sudo /etc/init.d/rng-tools start
-
-  ```
+* A: The current version uses /dev/urandom as random source (```-Djava.security.egd=file:/dev/./urandom```)
+* A: ~~Setup rng-tools:~~
+  * ~~then add the line ```HRNGDEVICE=/dev/urandom``` to ```/etc/default/rng-tools```.~~
+  * ~~afterwards start the rng-tools daemon: ```sudo /etc/init.d/rng-tools start```.~~
