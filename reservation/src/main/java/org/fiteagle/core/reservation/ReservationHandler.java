@@ -8,7 +8,9 @@ import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import org.fiteagle.api.core.IConfig;
+import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
+import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 
 import java.text.SimpleDateFormat;
@@ -42,7 +44,29 @@ public class ReservationHandler {
                Model topologyModel = TripletStoreAccessor.getResource(topology.getURI());
                 reservationModel.add(topologyModel);
 
-            }
+            }else {
+                    Property property = reservationModel.createProperty(MessageBusOntologyModel.endTime.getNameSpace(),MessageBusOntologyModel.endTime.getLocalName());
+                    property.addProperty(RDF.type,OWL.FunctionalProperty);
+                    topology.addProperty(property,new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(getDefaultExpirationTime()));
+
+                   ResIterator resIterator = requestModel.listSubjectsWithProperty(RDF.type, Omn.Topology);
+
+                   while (resIterator.hasNext()) {
+                       Resource r = resIterator.nextResource();
+
+                       try {
+                           TripletStoreAccessor.addResource(r);
+                           Model m = ModelFactory.createDefaultModel();
+                           Resource resource = m.createResource(r.getURI());
+
+
+                       } catch (TripletStoreAccessor.ResourceRepositoryException e) {
+                           e.printStackTrace();
+                       }
+                   }
+
+
+           }
             ResIterator resIter =  requestModel.listResourcesWithProperty(Omn.isResourceOf, topology);
             while(resIter.hasNext()){
                 Resource resource = resIter.nextResource();

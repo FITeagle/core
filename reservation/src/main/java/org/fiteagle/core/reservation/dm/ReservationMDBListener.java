@@ -1,6 +1,7 @@
 package org.fiteagle.core.reservation.dm;
 
 
+import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
@@ -50,21 +51,64 @@ public class ReservationMDBListener implements MessageListener {
         String serialization = MessageUtil.getMessageSerialization(message);
         String rdfString = MessageUtil.getStringBody(message);
         LOGGER.log(Level.INFO, "Received a " + messageType + " message");
+        try {
 
         if (messageType != null && rdfString != null) {
             Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
 
             if (messageType.equals(IMessageBus.TYPE_CREATE)) {
-                try {
+
                     handleCreate(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
-                } catch (ResourceRepositoryException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+
+            }
+            if (messageType.equals(IMessageBus.TYPE_CONFIGURE)) {
+
+                    handleConfigure(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
+
             }
             if (messageType.equals(IMessageBus.TYPE_GET)) {
                 handleGet(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
             }
+        }        }
+        catch (ResourceRepositoryException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (InvalidModelException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void handleConfigure(Model messageModel, String serialization, String jmsCorrelationID) throws InvalidModelException, ResourceRepositoryException {
+        Message responseMessage = null;
+        Model resultModel  = messageModel;
+        ResIterator iterator = messageModel.listResourcesWithProperty(RDF.type, Omn.Topology);
+        if (iterator.hasNext()) {
+            //should be only one resource
+            TripletStoreAccessor.updateModel(messageModel);
+
+
+        } else {
+            iterator = messageModel.listResourcesWithProperty(RDF.type, Omn.Reservation);
+            TripletStoreAccessor.updateModel(messageModel);
+            while (iterator.hasNext()) {
+
+                Resource reservation = iterator.nextResource();
+                String uri = reservation.getURI();
+                resultModel = TripletStoreAccessor.getResource(uri);
+                addResourcesForReservations(resultModel);
+                addWrappingTopology(resultModel);
+            }
+        }
+        String serializedResponse = MessageUtil.serializeModel(resultModel, serialization);
+        responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, jmsCorrelationID, context);
+        context.createProducer().send(topic, responseMessage);
+    }
+
+    private void addResourcesForReservations(Model resultModel) {
+        StmtIterator stmtIterator = resultModel.listStatements(new SimpleSelector(null, Omn.isReservationOf,(Object)null));
+        while(stmtIterator.hasNext()){
+            Resource resource = stmtIterator.nextStatement().getObject().asResource();
+            resultModel.add(TripletStoreAccessor.getResource(resource.getURI()));
         }
     }
 
