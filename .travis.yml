@@ -3,10 +3,8 @@ jdk:
 - oraclejdk7
 env:
   global:
-  - secure: S9RoP/cz2JOd/Mg/w21VddE9XIicOtDV3uSPLqMhMcv36OtMMqV5LfAt6LzwaZhBIInA4Fxvgp9v574d0Ig0P8rEdE7FQkvMo2I+tSpP+d3mklKK+MSlNxBtVBknFjdDynekEflaZzUdTU+jgVp+5tfiZDhezWf5wbo5rCq5NAM=
-  - secure: FIbfSwqRnpOaEXjz8x5N13HL2DcaLSZQQ86Enb+GY+3oBqsWnDdM3UQxSwkcBUhsd0PsnFOXwi3NsJR9oEcVyWN1Yxg/sKPsGgUs8lA7FrP6wraPLavGpPFgvYZteM+P+vafj3KsIuwKgSseX5xLq4yJhtT/zylgG9i2uHKO1gY=
-  - secure: bLKLxIWo4l4KgtBdvhjzawLz/FeELHfYCX/YFqZehtaViYxj7meBvDvvQmN0yk5LMSg/QIxmM0bQNjovxHk8EqCsXm3ZWltu0m1DojEXaeZdLAf0ZWMeSBDMVB9ODfqtKWRuY+xFZ5foo0boAumoh1I5tivs/kkLpo2tdg3d2dA=
-  - secure: nv+EBogSXyUgTTl10lCCf8yzC/OyHuETUORcKdBB5WqnWL10zRznw6GuUfO+IOwWT0walW/gziTYhqgTqw8+u6l1gY7+zXnW6421RkmiuWBKHfJHzA6Y3ivXRI5+vBaYBafOWE6ZZ/VG8DUnooeMB05ji1KFvRJtjpi7LRoLr7w=
+  - secure: laRrHyMLPb39PLzAA7pYXsSmcZxkopW+0XhnwJZAU3yHGoVkAmVKu9i0ici2FEmC2lu1EAaWtTrGi3fBltrR15nXkElRo3e5OkuHkf8vPdQwvVEAgcRLY0AW9XxRcMsjl/iw3X4CJ4hsd9FDunei6fRYh7jcPsvfT6HrZl8A95k=
+  - secure: nOROM6pCVTDdaYdK6ISmQGeytYr0UTWGcVCD1CNvk60lMrdaaCPW9XHKpPTLpgnQ89cFVUhJKtiUglL0KzCgdT/REn8wyU7MnQXbkdWvF30z++PdwFvfBcJ5TWvhsrEpwtu1LjfdRuRO5p7EBKxcwEa2D5Fsa/DGLkSM+D7V7vU=
 script:
 - travis_retry mvn clean install site
 notifications:
@@ -21,6 +19,3 @@ cache:
 after_success:
 - mvn clean test jacoco:report coveralls:report
 - mvn deploy --settings .travis/settings.xml
-- find /home/travis/.m2/repository/org/fiteagle/ -name \*.war -exec curl -X POST -u
-  $HTTP_USER:$HTTP_PASS -F "fileToUpload=@{}" https://services.av.tu-berlin.de/travis-upload/upload.php
-  \;
