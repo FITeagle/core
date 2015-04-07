@@ -23,6 +23,7 @@ public  class Request {
     private boolean handled;
     private final RequestContext context;
     private List<Resource> resourceList;
+    private String method;
 
     public Request(String requestId, String target, RequestContext context) {
 
@@ -55,7 +56,7 @@ public  class Request {
         return  this.target;
     }
 
-    public void addResource(Resource resource) {
+    public void addOrUpdate(Resource resource) {
         //TODO check type and only add Resources
         if(resource.hasProperty(Omn.isResourceOf)) {
             if (!containsResource(resource)) {
@@ -107,5 +108,13 @@ public  class Request {
 
     public List<Resource> getResourceList(){
         return this.resourceList;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
     }
 }
