@@ -4,9 +4,13 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.vocabulary.RDF;
+
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+import info.openmultinet.ontology.vocabulary.Omn_service;
+
 import org.fiteagle.core.orchestrator.dm.OrchestratorStateKeeper;
 import org.fiteagle.core.orchestrator.dm.Request;
 import org.fiteagle.core.orchestrator.dm.RequestContext;
@@ -49,6 +53,14 @@ public class RequestHandler {
             Resource requestedResource = resIterator.nextResource();
             Model resourceModel = TripletStoreAccessor.getResource(requestedResource.getURI());
 
+            if(requestModel.contains(requestedResource, Omn_service.publickey) && requestModel.contains(requestedResource, Omn_service.username)) {
+              Statement publicKey = requestModel.getProperty(requestedResource, Omn_service.publickey);
+              resourceModel.add(publicKey);
+              Statement username = requestModel.getProperty(requestedResource, Omn_service.username);
+              resourceModel.add(username);
+            }
+            
+            
             returnModel.add(resourceModel);
 
 
