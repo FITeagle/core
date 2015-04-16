@@ -438,7 +438,7 @@ public class OrchestratorMDBListener implements MessageListener {
 
         String target = targetModel.getResource(request.getTarget()).getProperty(RDF.type).getObject().asResource().getURI();
 
-        Message message = MessageUtil.createRDFMessage(requestModel, IMessageBus.TYPE_CREATE, target, IMessageBus.SERIALIZATION_TURTLE, request.getRequestId(), context);
+        Message message = MessageUtil.createRDFMessage(requestModel, IMessageBus.TYPE_CONFIGURE, target, IMessageBus.SERIALIZATION_TURTLE, request.getRequestId(), context);
 
         context.createProducer().send(topic, message);
 
