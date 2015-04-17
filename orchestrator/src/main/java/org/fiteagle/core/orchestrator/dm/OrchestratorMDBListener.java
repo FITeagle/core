@@ -1,6 +1,7 @@
 package org.fiteagle.core.orchestrator.dm;
 
 import com.hp.hpl.jena.rdf.model.*;
+
 import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
@@ -18,6 +19,7 @@ import javax.jms.MessageListener;
 import javax.jms.Topic;
 
 import info.openmultinet.ontology.vocabulary.Omn_service;
+
 import org.fiteagle.api.core.*;
 import org.fiteagle.core.orchestrator.RequestHandler;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
@@ -404,7 +406,6 @@ public class OrchestratorMDBListener implements MessageListener {
 
 
     private void sendCreateToResource(Request request) {
-
         Model requestModel = ModelFactory.createDefaultModel();
         Resource requestTopology = requestModel.createResource(IConfig.TOPOLOGY_NAMESPACE_VALUE+ UUID.randomUUID());
         requestTopology.addProperty(RDF.type, Omn.Topology);
@@ -419,8 +420,21 @@ public class OrchestratorMDBListener implements MessageListener {
 //        Resource resource =  targetModel.getResource(request.getTarget());
 //        Resource adapterinstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource();
 
+        final Resource resourceToBeCreated = targetModel.getResource(request.getTarget());
+		LOGGER.log(Level.INFO, "Creating new resource: " + resourceToBeCreated);
 
-        String target = targetModel.getResource(request.getTarget()).getProperty(RDF.type).getObject().asResource().getURI();
+		final Statement resourceTypeToBeCreated = resourceToBeCreated.getProperty(RDF.type);
+		LOGGER.log(Level.INFO, "Creating new resource of type: " + resourceTypeToBeCreated);
+
+		if (null == resourceTypeToBeCreated) {
+			//@todo: send a proper error message, since "operation timeout is not useful"
+			final String errorText = "The type of the requested resource '" + resourceToBeCreated + "' is null!";
+            //Message errorMessage = MessageUtil.createErrorMessage(errorText, request.getContext().getRequestContextId(), context);
+            //context.createProducer().send(topic, errorMessage);
+			throw new RuntimeException(errorText);
+		}
+
+        String target = resourceTypeToBeCreated.getObject().asResource().getURI();
 
         Message message = MessageUtil.createRDFMessage(requestModel, IMessageBus.TYPE_CREATE, target, IMessageBus.SERIALIZATION_TURTLE, request.getRequestId(), context);
 
