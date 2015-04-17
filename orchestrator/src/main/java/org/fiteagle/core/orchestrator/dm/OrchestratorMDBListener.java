@@ -17,6 +17,7 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
+import info.openmultinet.ontology.vocabulary.Omn_service;
 import org.fiteagle.api.core.*;
 import org.fiteagle.core.orchestrator.RequestHandler;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
@@ -135,6 +136,13 @@ public class OrchestratorMDBListener implements MessageListener {
                                     response.add(reservationModel);
 
                                     TripletStoreAccessor.updateModel(reservationModel);
+
+                                    StmtIterator stmtIterator = model.listStatements(new SimpleSelector(resource, Omn.hasService, (Object)null));
+                                    while(stmtIterator.hasNext()){
+                                        Statement statement = stmtIterator.nextStatement();
+                                        response.add(statement);
+                                        response.add(TripletStoreAccessor.getResource(statement.getObject().asResource().getURI()));
+                                    }
                                 }
 
                                 stateKeeper.removeRequest(requestID);

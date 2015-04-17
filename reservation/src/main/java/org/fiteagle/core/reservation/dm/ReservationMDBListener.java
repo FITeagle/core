@@ -126,6 +126,7 @@ public class ReservationMDBListener implements MessageListener {
             resultModel = TripletStoreAccessor.getResource(uri);
             addResources(resultModel);
             addReservations(resultModel);
+            addServices(resultModel);
 
         } else {
             iterator = messageModel.listResourcesWithProperty(RDF.type, Omn.Resource);
@@ -134,12 +135,21 @@ public class ReservationMDBListener implements MessageListener {
                 String uri = r.getURI();
                 resultModel = TripletStoreAccessor.getResource(uri);
                 addReservations(resultModel);
+                addServices(resultModel);
                 addWrappingTopology(resultModel);
             }
         }
         String serializedResponse = MessageUtil.serializeModel(resultModel, serialization);
         responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, jmsCorrelationID, context);
         context.createProducer().send(topic, responseMessage);
+    }
+
+    private void addServices(Model resultModel) {
+        StmtIterator stmtIterator = resultModel.listStatements(new SimpleSelector(null, Omn.hasService,(Object)null));
+        while(stmtIterator.hasNext()){
+            Resource resource = stmtIterator.nextStatement().getObject().asResource();
+            resultModel.add(TripletStoreAccessor.getResource(resource.getURI()));
+        }
     }
 
     private void addWrappingTopology(Model resultModel) {
