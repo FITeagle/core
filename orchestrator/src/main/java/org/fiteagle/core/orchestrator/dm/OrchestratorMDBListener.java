@@ -2,6 +2,7 @@ package org.fiteagle.core.orchestrator.dm;
 
 import com.hp.hpl.jena.rdf.model.*;
 
+import com.hp.hpl.jena.vocabulary.OWL2;
 import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
@@ -243,6 +244,10 @@ public class OrchestratorMDBListener implements MessageListener {
 
             }
 
+        }else{
+            //update
+            LOGGER.log(Level.INFO, "Orchestrator received an update");
+            LOGGER.log(Level.INFO, body);
         }
     }
 
@@ -420,10 +425,20 @@ public class OrchestratorMDBListener implements MessageListener {
 //        Resource resource =  targetModel.getResource(request.getTarget());
 //        Resource adapterinstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource();
 
+        //TODO perhaps better use "canImplement" to identify target
         final Resource resourceToBeCreated = targetModel.getResource(request.getTarget());
 		LOGGER.log(Level.INFO, "Creating new resource: " + resourceToBeCreated);
 
-		final Statement resourceTypeToBeCreated = resourceToBeCreated.getProperty(RDF.type);
+        StmtIterator resourceTypesToBeCreated = resourceToBeCreated.listProperties(RDF.type);
+        Statement resourceTypeToBeCreated = null;
+        while(resourceTypesToBeCreated.hasNext()){
+            Statement next = resourceTypesToBeCreated.next();
+            if(!next.getObject().equals(OWL2.NamedIndividual)){
+                resourceTypeToBeCreated = next;
+                break;
+            }
+        }
+
 		LOGGER.log(Level.INFO, "Creating new resource of type: " + resourceTypeToBeCreated);
 
 		if (null == resourceTypeToBeCreated) {

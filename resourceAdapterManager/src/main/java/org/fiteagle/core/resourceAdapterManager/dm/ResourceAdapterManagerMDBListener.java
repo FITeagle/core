@@ -85,7 +85,7 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
   }
   
   private void handleCreate(Model model, String serialization, String requestID) {
-    ResIterator resIterator = model.listSubjectsWithProperty(Omn_lifecycle.parentTo);
+    ResIterator resIterator = model.listSubjectsWithProperty(Omn_lifecycle.canImplement);
     while (resIterator.hasNext()) {
       Resource resource = resIterator.next();
       try {

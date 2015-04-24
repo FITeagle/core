@@ -111,7 +111,7 @@ public class TripletStoreAccessor {
 
 
         ElementGroup whereClause = new ElementGroup();
-        whereClause.addTriplePattern(new Triple(new Node_Variable("resource"), Omn_lifecycle.parentTo.asNode(), new Node_Variable("p")));
+        whereClause.addTriplePattern(new Triple(new Node_Variable("resource"), Omn_lifecycle.canImplement.asNode(), new Node_Variable("p")));
         whereClause.addTriplePattern(tripleForPattern);
         query.setQueryPattern(whereClause);
 
