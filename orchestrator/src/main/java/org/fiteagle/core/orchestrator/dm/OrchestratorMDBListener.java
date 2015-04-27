@@ -245,9 +245,11 @@ public class OrchestratorMDBListener implements MessageListener {
             }
 
         }else{
-            //update
+            //TODO check target else Orch receives everything
             LOGGER.log(Level.INFO, "Orchestrator received an update");
             LOGGER.log(Level.INFO, body);
+            model = MessageUtil.parseSerializedModel(body, IMessageBus.SERIALIZATION_TURTLE);
+            TripletStoreAccessor.updateModel(model);
         }
     }
 
