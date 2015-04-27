@@ -3,8 +3,8 @@ jdk:
 - oraclejdk7
 env:
   global:
-  - secure: laRrHyMLPb39PLzAA7pYXsSmcZxkopW+0XhnwJZAU3yHGoVkAmVKu9i0ici2FEmC2lu1EAaWtTrGi3fBltrR15nXkElRo3e5OkuHkf8vPdQwvVEAgcRLY0AW9XxRcMsjl/iw3X4CJ4hsd9FDunei6fRYh7jcPsvfT6HrZl8A95k=
-  - secure: nOROM6pCVTDdaYdK6ISmQGeytYr0UTWGcVCD1CNvk60lMrdaaCPW9XHKpPTLpgnQ89cFVUhJKtiUglL0KzCgdT/REn8wyU7MnQXbkdWvF30z++PdwFvfBcJ5TWvhsrEpwtu1LjfdRuRO5p7EBKxcwEa2D5Fsa/DGLkSM+D7V7vU=
+  - secure: cGXOeQnggkagzrFabSyrG+9JviGsGrfR++RsCHlUZGe5vfIavZpbnY5eVkQZ/viBfjrwu7LGRffhwz6zr2oRYzF7DE7gd+bHvukzAsFsD2A3nFBf/r4U3NKvPiGBP6AhoMhxtHu0/uUuTOfoQbuQbJ5E9MXeAuB/iUSiXB3YXEQ=
+  - secure: eOf7nXdKlxwCr4fxnCosV/t6gZCgTE7llSfoYZxeni5+jhimT394Rb/k5XUc1U1BUExzC8xhuG+bRXs/sniA2jbokUPeIlCtoJvlOe9ePge8qX11kxgyCivE6iRTvA1w+UADYzGm7DEmaIUIgrF7wzeaZr9AtD5OpVQpm8L2cXE=
 script:
 - travis_retry mvn clean install site
 notifications:
