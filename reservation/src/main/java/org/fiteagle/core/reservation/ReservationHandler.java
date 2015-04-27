@@ -77,7 +77,11 @@ public class ReservationHandler {
 
                 while(statementIter.hasNext()){
                     Statement statement = statementIter.nextStatement();
-                    newResource.addProperty(statement.getPredicate(),statement.getObject());
+                    newResource.addProperty(statement.getPredicate(), statement.getObject());
+                    if(statement.getPredicate().equals(Omn_lifecycle.usesService)){
+                        StmtIterator serviceModel =requestModel.listStatements(new SimpleSelector(statement.getObject().asResource(),null,(Object) null));
+                        reservationModel.add(serviceModel);
+                    }
                 }
                 reservationModel.add(topology, Omn.hasResource,newResource);
             }

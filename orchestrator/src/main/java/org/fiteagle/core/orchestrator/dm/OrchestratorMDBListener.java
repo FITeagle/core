@@ -54,6 +54,7 @@ public class OrchestratorMDBListener implements MessageListener {
         String messageType = MessageUtil.getMessageType(message);
         String serialization = MessageUtil.getMessageSerialization(message);
         String messageBody = MessageUtil.getStringBody(message);
+        String messageTarget = MessageUtil.getMessageTarget(message);
         LOGGER.log(Level.INFO, "Received a " + messageType + " message");
 
         if (messageType != null && messageBody != null) {
@@ -69,8 +70,13 @@ public class OrchestratorMDBListener implements MessageListener {
                         MessageUtil.getJMSCorrelationID(message));
             } else if (messageType.equals(IMessageBus.TYPE_INFORM)) {
                 try {
-                    handleInform(messageBody,
-                            MessageUtil.getJMSCorrelationID(message));
+                    if(IMessageBus.TARGET_ORCHESTRATOR.equals(messageTarget)){
+                        handleUpdate(messageBody);
+                    }else{
+                        handleInform(messageBody,
+                                MessageUtil.getJMSCorrelationID(message));
+                    }
+
                 } catch (ResourceRepositoryException e) {
                     LOGGER.log(Level.WARNING, e.getMessage());
                 } catch (InvalidModelException e) {
@@ -86,6 +92,13 @@ public class OrchestratorMDBListener implements MessageListener {
         }
     }
 
+    private void handleUpdate(String messageBody) throws InvalidModelException, ResourceRepositoryException {
+        LOGGER.log(Level.INFO, "Orchestrator received an update");
+        LOGGER.log(Level.INFO, messageBody);
+        Model model = null;
+        model = MessageUtil.parseSerializedModel(messageBody, IMessageBus.SERIALIZATION_TURTLE);
+        TripletStoreAccessor.updateModel(model);
+    }
 
 
     private void handleCreateRequest(Model messageModel, String jmsCorrelationID) {
@@ -245,11 +258,8 @@ public class OrchestratorMDBListener implements MessageListener {
             }
 
         }else{
-            //TODO check target else Orch receives everything
-            LOGGER.log(Level.INFO, "Orchestrator received an update");
-            LOGGER.log(Level.INFO, body);
-            model = MessageUtil.parseSerializedModel(body, IMessageBus.SERIALIZATION_TURTLE);
-            TripletStoreAccessor.updateModel(model);
+
+
         }
     }
 
@@ -421,6 +431,11 @@ public class OrchestratorMDBListener implements MessageListener {
             Model messageModel = TripletStoreAccessor.getResource(resource.getURI());
             requestTopology.addProperty(Omn.hasResource, messageModel.getResource(resource.getURI()));
             requestModel.add(resource.listProperties());
+            StmtIterator services = requestModel.listStatements(null, Omn_lifecycle.usesService, (RDFNode)null);
+            while(services.hasNext()){
+                Model serviceInfo= TripletStoreAccessor.getResource(services.nextStatement().getObject().asResource().getURI());
+                requestModel.add(serviceInfo);
+            }
         }
 
         Model targetModel = TripletStoreAccessor.getResource(request.getTarget());
