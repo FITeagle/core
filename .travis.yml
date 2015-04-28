@@ -7,7 +7,7 @@ env:
   - secure: eOf7nXdKlxwCr4fxnCosV/t6gZCgTE7llSfoYZxeni5+jhimT394Rb/k5XUc1U1BUExzC8xhuG+bRXs/sniA2jbokUPeIlCtoJvlOe9ePge8qX11kxgyCivE6iRTvA1w+UADYzGm7DEmaIUIgrF7wzeaZr9AtD5OpVQpm8L2cXE=
 script:
 - travis_retry mvn clean install site 
-- "[ ${TRAVIS_PULL_REQUEST} = 'false' ] && mvn clean deploy--settings .travis/settings.xml"
+- "[ ${TRAVIS_PULL_REQUEST} = 'false' ] && mvn clean deploy --settings .travis/settings.xml"
 notifications:
   slack:
     secure: lYVE1qJ5globXWgN6b7SGaZLBiFceaq1/zJPfobu56WtiOWbQQcpGrYgWkZK7hudZpUxTZr6TovkLnwMUeExmlvmlUt7Lt/bWrKVLk5J/KHN/kN3FT906H/rrpnFVtmKgTP+yS1xZVVsKVuRp/bA01N+9D5oNIYLbcTU6ggrA9o=
