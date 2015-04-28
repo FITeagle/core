@@ -233,6 +233,9 @@ public class OrchestratorMDBListener implements MessageListener {
                                     String topologyURI = resource.getProperty(Omn.isResourceOf).getObject().asResource().getURI();
                                     Model top = TripletStoreAccessor.getResource(topologyURI);
                                     response.add(top);
+                                    resource.removeAll(Omn_lifecycle.hasState);
+                                    resource.addProperty(Omn_lifecycle.hasState,Omn_lifecycle.Stopped);
+
                                     response.add(resource.listProperties());
                                     Model reservationModel = TripletStoreAccessor.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
                                     Resource reservation = reservationModel.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
