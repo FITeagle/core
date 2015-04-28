@@ -4,6 +4,7 @@ import com.hp.hpl.jena.ontology.impl.ObjectPropertyImpl;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.vocabulary.OWL;
 import com.hp.hpl.jena.vocabulary.RDF;
+import com.hp.hpl.jena.vocabulary.RDFS;
 import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
@@ -101,6 +102,7 @@ public class ReservationHandler {
 
             Resource requestedResource = resIterator.nextResource();
             Resource reservation = model.createResource(IConfig.RESERVATION_NAMESPACE_VALUE+ UUID.randomUUID().toString());
+            reservation.addProperty(RDFS.label, reservation.getURI());
             reservation.addProperty(RDF.type,Omn.Reservation);
             requestedResource.addProperty(Omn.hasReservation, reservation);
             reservation.addProperty(Omn.isReservationOf, requestedResource);
