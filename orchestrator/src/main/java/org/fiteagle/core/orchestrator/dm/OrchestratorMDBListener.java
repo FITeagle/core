@@ -329,8 +329,18 @@ public class OrchestratorMDBListener implements MessageListener {
         }
 
         Model targetModel = TripletStoreAccessor.getResource(request.getTarget());
+        final Resource resourceToBeDeleted= targetModel.getResource(request.getTarget());
+        StmtIterator resourceTypesToBeDeleted = resourceToBeDeleted.listProperties(RDF.type);
+        Statement resourceTypeToBeDeleted = null;
+        while(resourceTypesToBeDeleted.hasNext()){
+            Statement next = resourceTypesToBeDeleted.next();
+            if(!next.getObject().equals(OWL2.NamedIndividual)){
+                resourceTypeToBeDeleted = next;
+                break;
+            }
+        }
+        String target = resourceTypeToBeDeleted.getObject().asResource().getURI();
 
-        String target = targetModel.getResource(request.getTarget()).getProperty(RDF.type).getObject().asResource().getURI();
 
         Message message = MessageUtil.createRDFMessage(requestModel, IMessageBus.TYPE_DELETE, target, IMessageBus.SERIALIZATION_TURTLE, request.getRequestId(), context);
 
