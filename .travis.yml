@@ -19,4 +19,4 @@ cache:
   - $HOME/.m2
 after_success:
 - mvn clean test jacoco:report coveralls:report
-- curl http://trescimo.av.tu-berlin.de/static/trigger.php?c=fiteagle
+- curl http://demo.fiteagle.org/trigger.php?c=fiteagle
