@@ -287,6 +287,7 @@ public class OrchestratorMDBListener implements MessageListener {
         if(resIterator.hasNext()){
             Resource topology = resIterator.nextResource();
             Model storedModel = TripletStoreAccessor.getResource(topology.getURI());
+            modelDelete.add(storedModel);
             StmtIterator stmtIterator = storedModel.listStatements(new SimpleSelector(null,Omn.hasResource,(Object) null));
             while(stmtIterator.hasNext()){
                 Statement statement = stmtIterator.nextStatement();
@@ -489,6 +490,7 @@ public class OrchestratorMDBListener implements MessageListener {
     private void sendConfigureToResource(Request request) {
 
         Model requestModel = ModelFactory.createDefaultModel();
+
         Resource requestTopology = requestModel.createResource(IConfig.TOPOLOGY_NAMESPACE_VALUE+ UUID.randomUUID());
         requestTopology.addProperty(RDF.type, Omn.Topology);
 
@@ -499,11 +501,41 @@ public class OrchestratorMDBListener implements MessageListener {
         }
 
         Model targetModel = TripletStoreAccessor.getResource(request.getTarget());
+
+//        Resource resource =  targetModel.getResource(request.getTarget());
+//        Resource adapterinstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource();
+
+        //TODO perhaps better use "canImplement" to identify target
+        final Resource resourceToBeCreated = targetModel.getResource(request.getTarget());
+        LOGGER.log(Level.INFO, "Configure  resource: " + resourceToBeCreated);
+
+        StmtIterator resourceTypesToBeCreated = resourceToBeCreated.listProperties(RDF.type);
+        Statement resourceTypeToBeCreated = null;
+        while(resourceTypesToBeCreated.hasNext()){
+            Statement next = resourceTypesToBeCreated.next();
+            if(!next.getObject().equals(OWL2.NamedIndividual)){
+                resourceTypeToBeCreated = next;
+                break;
+            }
+        }
+
+        LOGGER.log(Level.INFO, "Creating new resource of type: " + resourceTypeToBeCreated);
+
+        if (null == resourceTypeToBeCreated) {
+            //@todo: send a proper error message, since "operation timeout is not useful"
+            final String errorText = "The type of the requested resource '" + resourceToBeCreated + "' is null!";
+            //Message errorMessage = MessageUtil.createErrorMessage(errorText, request.getContext().getRequestContextId(), context);
+            //context.createProducer().send(topic, errorMessage);
+            throw new RuntimeException(errorText);
+        }
+
+        String target = resourceTypeToBeCreated.getObject().asResource().getURI();
+
 //        Resource resource =  targetModel.getResource(request.getTarget());
 //        Resource adapterinstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource();
 
 
-        String target = targetModel.getResource(request.getTarget()).getProperty(RDF.type).getObject().asResource().getURI();
+
 
         Message message = MessageUtil.createRDFMessage(requestModel, IMessageBus.TYPE_CONFIGURE, target, IMessageBus.SERIALIZATION_TURTLE, request.getRequestId(), context);
 

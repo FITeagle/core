@@ -8,10 +8,7 @@ import com.hp.hpl.jena.vocabulary.RDFS;
 import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
-import org.fiteagle.api.core.IConfig;
-import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageBusOntologyModel;
-import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.api.core.*;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 
 import java.text.SimpleDateFormat;
@@ -45,29 +42,38 @@ public class ReservationHandler {
                Model topologyModel = TripletStoreAccessor.getResource(topology.getURI());
                 reservationModel.add(topologyModel);
 
-            }else {
-                    Property property = reservationModel.createProperty(MessageBusOntologyModel.endTime.getNameSpace(),MessageBusOntologyModel.endTime.getLocalName());
-                    property.addProperty(RDF.type,OWL.FunctionalProperty);
-                    topology.addProperty(property,new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(getDefaultExpirationTime()));
+            }
+        else {
 
-                   ResIterator resIterator = requestModel.listSubjectsWithProperty(RDF.type, Omn.Topology);
-
-                   while (resIterator.hasNext()) {
-                       Resource r = resIterator.nextResource();
-
-                       try {
-                           TripletStoreAccessor.addResource(r);
-                           Model m = ModelFactory.createDefaultModel();
-                           Resource resource = m.createResource(r.getURI());
-
-
-                       } catch (TripletStoreAccessor.ResourceRepositoryException e) {
-                           e.printStackTrace();
-                       }
-                   }
+               Resource newTopology = reservationModel.getResource(topology.getURI());
+               Property property = reservationModel.createProperty(MessageBusOntologyModel.endTime.getNameSpace(), MessageBusOntologyModel.endTime.getLocalName());
+               property.addProperty(RDF.type, OWL.FunctionalProperty);
+               newTopology.addProperty(property, new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(getDefaultExpirationTime()));
+               if (topology.getProperty(Omn_lifecycle.hasAuthenticationInformation) != null)
+                   newTopology.addProperty(Omn_lifecycle.hasAuthenticationInformation, topology.getProperty(Omn_lifecycle.hasAuthenticationInformation).getObject());
 
 
            }
+
+//
+//                   ResIterator resIterator = requestModel.listSubjectsWithProperty(RDF.type, Omn.Topology);
+//
+//                   while (resIterator.hasNext()) {
+//                       Resource r = resIterator.nextResource();
+//
+//                       try {
+//                           TripletStoreAccessor.addResource(r);
+//                           Model m = ModelFactory.createDefaultModel();
+//                           Resource resource = m.createResource(r.getURI());
+//
+//
+//                       } catch (TripletStoreAccessor.ResourceRepositoryException e) {
+//                           e.printStackTrace();
+//                       }
+//                   }
+//
+//
+//           }
             ResIterator resIter =  requestModel.listResourcesWithProperty(Omn.isResourceOf, topology);
             while(resIter.hasNext()){
                 Resource resource = resIter.nextResource();
@@ -101,7 +107,8 @@ public class ReservationHandler {
         while(resIterator.hasNext()){
 
             Resource requestedResource = resIterator.nextResource();
-            Resource reservation = model.createResource(IConfig.RESERVATION_NAMESPACE_VALUE+ UUID.randomUUID().toString());
+            Config config =new Config();
+            Resource reservation = model.createResource(config.getProperty(IConfig.LOCAL_NAMESPACE).concat("reservation/")+ UUID.randomUUID().toString());
             reservation.addProperty(RDFS.label, reservation.getURI());
             reservation.addProperty(RDF.type,Omn.Reservation);
             requestedResource.addProperty(Omn.hasReservation, reservation);

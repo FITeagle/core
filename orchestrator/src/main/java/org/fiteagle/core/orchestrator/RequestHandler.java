@@ -48,6 +48,27 @@ public class RequestHandler {
     private Model getRequestedResources(Model requestModel) {
         Model returnModel = ModelFactory.createDefaultModel();
         ResIterator resIterator = requestModel.listSubjectsWithProperty(RDF.type, Omn.Resource);
+        if(!resIterator.hasNext()){
+            ResIterator resIterator1 = requestModel.listSubjectsWithProperty(RDF.type,Omn.Topology);
+            while (resIterator1.hasNext()){
+                Resource topo = resIterator1.nextResource();
+                requestModel.add(TripletStoreAccessor.getResource(topo.getURI()));
+                resIterator = requestModel.listSubjectsWithProperty(Omn.isResourceOf, topo);
+                while (resIterator.hasNext()){
+                    Resource resource = resIterator.nextResource();
+                    Statement keyStatement = topo.getProperty(Omn_service.publickey);
+                    if(keyStatement!= null)
+                        resource.addProperty(keyStatement.getPredicate(),keyStatement.getObject());
+
+                    Statement username = topo.getProperty(Omn_service.username);
+                    if(username != null)
+                        resource.addProperty(username.getPredicate(),username.getObject());
+
+                }
+                resIterator = requestModel.listSubjectsWithProperty(Omn.isResourceOf, topo);
+            }
+
+        }
 
         while (resIterator.hasNext()) {
             Resource requestedResource = resIterator.nextResource();
