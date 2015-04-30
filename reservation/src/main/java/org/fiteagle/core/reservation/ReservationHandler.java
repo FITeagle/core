@@ -5,9 +5,15 @@ import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.vocabulary.OWL;
 import com.hp.hpl.jena.vocabulary.RDF;
 import com.hp.hpl.jena.vocabulary.RDFS;
+
 import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_component;
+import info.openmultinet.ontology.vocabulary.Omn_domain_pc;
+import info.openmultinet.ontology.vocabulary.Omn_federation;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+import info.openmultinet.ontology.vocabulary.Omn_resource;
+
 import org.fiteagle.api.core.*;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 
@@ -26,13 +32,16 @@ public class ReservationHandler {
     public Model handleReservation(Model requestModel) throws TripletStoreAccessor.ResourceRepositoryException {
 
         LOGGER.log(Level.INFO, "handle reservation ...");
-        Model reservationModel =createReservationModel(requestModel);
-        reserve(reservationModel);
+        Model reservationModel = ModelFactory.createDefaultModel();
+        if(checkType(requestModel, reservationModel)){
+          createReservationModel(requestModel, reservationModel);
+          reserve(reservationModel);
+        }
         return reservationModel;
     }
 
-    private Model createReservationModel(Model requestModel) {
-        Model reservationModel = ModelFactory.createDefaultModel();
+    private Model createReservationModel(Model requestModel, Model reservationModel) {
+        
         ResIterator iterator = requestModel.listResourcesWithProperty(RDF.type, Omn.Topology);
         while (iterator.hasNext()) {
             Resource topology = iterator.nextResource();
@@ -74,6 +83,8 @@ public class ReservationHandler {
 //
 //
 //           }
+           
+           
             ResIterator resIter =  requestModel.listResourcesWithProperty(Omn.isResourceOf, topology);
             while(resIter.hasNext()){
                 Resource resource = resIter.nextResource();
@@ -100,6 +111,54 @@ public class ReservationHandler {
     }
 
 
+    private Boolean checkType(Model requestModel, Model reservationModel){
+      Boolean TYPE=true;
+      ResIterator resIterator =  requestModel.listResourcesWithProperty(Omn.isResourceOf);
+      Object type= null;
+      Object adapterInstance = null;
+      
+      while(resIterator.hasNext()){
+        
+        Resource resource1 = resIterator.nextResource();
+        
+        if(resource1.hasProperty(RDF.type)){
+          
+          StmtIterator stmtIterator = resource1.listProperties(RDF.type);
+          while(stmtIterator.hasNext()){
+            
+            Statement statement1 = stmtIterator.nextStatement();
+            if(!Omn_resource.Node.equals(statement1.getObject())){
+              type = statement1.getObject();
+            }
+          } 
+        }
+        if(resource1.hasProperty(Omn_lifecycle.implementedBy)){
+          adapterInstance = resource1.getProperty(Omn_lifecycle.implementedBy).getObject();
+        }
+        
+      
+      
+      Model mo = ModelFactory.createDefaultModel();
+      Resource re = mo.createResource(adapterInstance.toString());
+      Model model = TripletStoreAccessor.getResource(re.getURI());
+      
+      ResIterator resIter =  model.listResourcesWithProperty(Omn_lifecycle.canImplement);
+      while(resIter.hasNext()){
+        Resource res = resIter.nextResource();
+        if(!type.equals(res.getProperty(Omn_lifecycle.canImplement).getObject())){
+          TYPE = false;
+          Resource resource = reservationModel.createResource(resource1.getURI());
+          Property wrongType = resource.getModel().createProperty(Omn_resource.type.getNameSpace(), "hasWrongType");
+          resource.addProperty(wrongType, type.toString());
+          Property itsRightType = resource.getModel().createProperty(Omn_resource.type.getNameSpace(), "itsRightType");
+          resource.addProperty(itsRightType, res.getProperty(Omn_lifecycle.canImplement).getObject().toString());
+          LOGGER.log(Level.INFO, "ADAPTER INSTANCE CAN'T IMPLEMENT THIS TYPE");
+        } 
+      }
+      }
+      return TYPE;
+    }
+    
     public void reserve(Model model) {
 
 
