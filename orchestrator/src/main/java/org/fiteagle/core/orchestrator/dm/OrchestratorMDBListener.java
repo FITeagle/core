@@ -153,8 +153,7 @@ public class OrchestratorMDBListener implements MessageListener {
 
                                     response.add(reservationModel);
 
-                                    Triple triple = new Triple(reservation.asNode(), new Node_Variable(Omn_lifecycle.hasReservationState.getLocalName()), new Node_Variable("o"));
-                                    TripletStoreAccessor.deleteTriple(triple);
+                                    deleteReservationState(reservation);
                                     
                                     TripletStoreAccessor.updateModel(reservationModel);
 
@@ -250,9 +249,8 @@ public class OrchestratorMDBListener implements MessageListener {
 
                                     response.add(reservationModel);
                                     
-                                    Triple triple = new Triple(reservation.asNode(), new Node_Variable(Omn_lifecycle.hasReservationState.getLocalName()), new Node_Variable("o"));
-                                    TripletStoreAccessor.deleteTriple(triple);
 
+                                    deleteReservationState(reservation);
                                     TripletStoreAccessor.updateModel(reservationModel);
                                 }
 
@@ -274,6 +272,11 @@ public class OrchestratorMDBListener implements MessageListener {
         }
     }
 
+    private void deleteReservationState(Resource resource){
+      Triple triple = new Triple(resource.asNode(), new Node_Variable(Omn_lifecycle.hasReservationState.getLocalName()), new Node_Variable("o"));
+      TripletStoreAccessor.deleteTriple(triple);
+    }
+    
     private void handleConfigureRequest(Model requestModel,
                                         String serialization, String requestID) {
         LOGGER.log(Level.INFO, "handling configure request ...");
