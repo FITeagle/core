@@ -1,8 +1,10 @@
 package org.fiteagle.core.orchestrator.dm;
 
+import com.hp.hpl.jena.graph.Node_Variable;
+import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.*;
-
 import com.hp.hpl.jena.vocabulary.OWL2;
+
 import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
@@ -151,6 +153,9 @@ public class OrchestratorMDBListener implements MessageListener {
 
                                     response.add(reservationModel);
 
+                                    Triple triple = new Triple(reservation.asNode(), new Node_Variable(Omn_lifecycle.hasReservationState.getLocalName()), new Node_Variable("o"));
+                                    TripletStoreAccessor.deleteTriple(triple);
+                                    
                                     TripletStoreAccessor.updateModel(reservationModel);
 
                                     StmtIterator stmtIterator = model.listStatements(new SimpleSelector(resource, Omn.hasService, (Object)null));
@@ -244,6 +249,9 @@ public class OrchestratorMDBListener implements MessageListener {
                                     reservation.addProperty(Omn_lifecycle.hasReservationState, Omn_lifecycle.Unallocated);
 
                                     response.add(reservationModel);
+                                    
+                                    Triple triple = new Triple(reservation.asNode(), new Node_Variable(Omn_lifecycle.hasReservationState.getLocalName()), new Node_Variable("o"));
+                                    TripletStoreAccessor.deleteTriple(triple);
 
                                     TripletStoreAccessor.updateModel(reservationModel);
                                 }
