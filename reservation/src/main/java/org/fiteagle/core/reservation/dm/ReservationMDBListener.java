@@ -181,13 +181,8 @@ public class ReservationMDBListener implements MessageListener {
 
     private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException {
         LOGGER.log(Level.INFO, "handling reservation request ...");
-        Message responseMessage = null;
         ReservationHandler reservationHandler = new ReservationHandler();
-        Model reservationModel = reservationHandler.handleReservation(requestModel);
-
-
-        String serializedResponse = MessageUtil.serializeModel(reservationModel, serialization);
-        responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
+        Message responseMessage = reservationHandler.handleReservation(requestModel, serialization, requestID, context);
 
         context.createProducer().send(topic, responseMessage);
     }

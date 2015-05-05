@@ -23,21 +23,31 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.jms.JMSContext;
+import javax.jms.Message;
+
 /**
  * Created by dne on 15.02.15.
  */
 public class ReservationHandler {
     private static final Logger LOGGER = Logger.getLogger(ReservationHandler.class.getName());
 
-    public Model handleReservation(Model requestModel) throws TripletStoreAccessor.ResourceRepositoryException {
+    public Message handleReservation(Model requestModel, String serialization, String requestID, JMSContext context) throws TripletStoreAccessor.ResourceRepositoryException {
 
         LOGGER.log(Level.INFO, "handle reservation ...");
-        Model reservationModel = ModelFactory.createDefaultModel();
-        if(checkType(requestModel, reservationModel)){
+        Message responseMessage = null;
+        String errorMessage = checkType(requestModel);
+        if(errorMessage == null || errorMessage.isEmpty()){
+          Model reservationModel = ModelFactory.createDefaultModel();
           createReservationModel(requestModel, reservationModel);
           reserve(reservationModel);
+          String serializedResponse = MessageUtil.serializeModel(reservationModel, serialization);
+          responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
         }
-        return reservationModel;
+        else {
+          responseMessage = MessageUtil.createErrorMessage(errorMessage, requestID, context);
+        }
+        return responseMessage;
     }
 
     private Model createReservationModel(Model requestModel, Model reservationModel) {
@@ -64,27 +74,6 @@ public class ReservationHandler {
 
            }
 
-//
-//                   ResIterator resIterator = requestModel.listSubjectsWithProperty(RDF.type, Omn.Topology);
-//
-//                   while (resIterator.hasNext()) {
-//                       Resource r = resIterator.nextResource();
-//
-//                       try {
-//                           TripletStoreAccessor.addResource(r);
-//                           Model m = ModelFactory.createDefaultModel();
-//                           Resource resource = m.createResource(r.getURI());
-//
-//
-//                       } catch (TripletStoreAccessor.ResourceRepositoryException e) {
-//                           e.printStackTrace();
-//                       }
-//                   }
-//
-//
-//           }
-           
-           
             ResIterator resIter =  requestModel.listResourcesWithProperty(Omn.isResourceOf, topology);
             while(resIter.hasNext()){
                 Resource resource = resIter.nextResource();
@@ -111,53 +100,50 @@ public class ReservationHandler {
     }
 
 
-    private Boolean checkType(Model requestModel, Model reservationModel){
-      Boolean TYPE=true;
-      ResIterator resIterator =  requestModel.listResourcesWithProperty(Omn.isResourceOf);
-      Object type= null;
-      Object adapterInstance = null;
+  private String checkType(Model requestModel) {
+    String errorMessage = "";
+    ResIterator resIterator = requestModel.listResourcesWithProperty(Omn.isResourceOf);
+    Object type = null;
+    Object adapterInstance = null;
+    
+    while (resIterator.hasNext()) {
       
-      while(resIterator.hasNext()){
+      Resource resource1 = resIterator.nextResource();
+      
+      if (resource1.hasProperty(RDF.type)) {
         
-        Resource resource1 = resIterator.nextResource();
-        
-        if(resource1.hasProperty(RDF.type)){
+        StmtIterator stmtIterator = resource1.listProperties(RDF.type);
+        while (stmtIterator.hasNext()) {
           
-          StmtIterator stmtIterator = resource1.listProperties(RDF.type);
-          while(stmtIterator.hasNext()){
-            
-            Statement statement1 = stmtIterator.nextStatement();
-            if(!Omn_resource.Node.equals(statement1.getObject())){
-              type = statement1.getObject();
-            }
-          } 
+          Statement statement1 = stmtIterator.nextStatement();
+          if (!Omn_resource.Node.equals(statement1.getObject())) {
+            type = statement1.getObject();
+          }
         }
-        if(resource1.hasProperty(Omn_lifecycle.implementedBy)){
-          adapterInstance = resource1.getProperty(Omn_lifecycle.implementedBy).getObject();
-        }
-        
-      
+      }
+      if (resource1.hasProperty(Omn_lifecycle.implementedBy)) {
+        adapterInstance = resource1.getProperty(Omn_lifecycle.implementedBy).getObject();
+      }
       
       Model mo = ModelFactory.createDefaultModel();
       Resource re = mo.createResource(adapterInstance.toString());
       Model model = TripletStoreAccessor.getResource(re.getURI());
-      
-      ResIterator resIter =  model.listResourcesWithProperty(Omn_lifecycle.canImplement);
-      while(resIter.hasNext()){
-        Resource res = resIter.nextResource();
-        if(!type.equals(res.getProperty(Omn_lifecycle.canImplement).getObject())){
-          TYPE = false;
-          Resource resource = reservationModel.createResource(resource1.getURI());
-          Property wrongType = resource.getModel().createProperty(Omn_resource.type.getNameSpace(), "hasWrongType");
-          resource.addProperty(wrongType, type.toString());
-          Property itsRightType = resource.getModel().createProperty(Omn_resource.type.getNameSpace(), "itsRightType");
-          resource.addProperty(itsRightType, res.getProperty(Omn_lifecycle.canImplement).getObject().toString());
-          LOGGER.log(Level.INFO, "ADAPTER INSTANCE CAN'T IMPLEMENT THIS TYPE");
-        } 
+      if (model.isEmpty() || model == null) {
+        errorMessage += "The requested component id " + re.getURI() + " is not supported";
+      } else {
+        ResIterator resIter = model.listResourcesWithProperty(Omn_lifecycle.canImplement);
+        while (resIter.hasNext()) {
+          Resource res = resIter.nextResource();
+          if (!type.equals(res.getProperty(Omn_lifecycle.canImplement).getObject())) {
+            errorMessage += "The requested type of the resource " + resource1.getURI()
+                + " is not supported. The supported type is "
+                + res.getProperty(Omn_lifecycle.canImplement).getObject().toString();
+          }
+        }
       }
-      }
-      return TYPE;
     }
+    return errorMessage;
+  }
     
     public void reserve(Model model) {
 
