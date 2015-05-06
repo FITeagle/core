@@ -108,13 +108,24 @@ public class OrchestratorMDBListener implements MessageListener {
 
         RequestContext requestContext = new RequestContext(jmsCorrelationID);
 
-        requestHandler.parseModel(requestContext, messageModel, IMessageBus.TYPE_CREATE);
-
-        this.createResources(requestContext);
+        String error_message = requestHandler.isValidURN(messageModel);
+        if(error_message.isEmpty() || error_message == null){
+          requestHandler.parseModel(requestContext, messageModel, IMessageBus.TYPE_CREATE);
+          this.createResources(requestContext);
+        }
+        else {
+          sendErrorMessage(error_message, jmsCorrelationID);
+        }
 
 
     }
 
+    private void sendErrorMessage(String error_message, String jmsCorrelationID){
+      Message responseMessage = null;
+      responseMessage = MessageUtil.createErrorMessage(error_message, jmsCorrelationID, context);
+      context.createProducer().send(topic, responseMessage);
+    }
+    
     private void handleInform(String body, String requestID) throws ResourceRepositoryException, InvalidModelException {
 
         Request request = stateKeeper.getRequest(requestID);
@@ -283,6 +294,7 @@ public class OrchestratorMDBListener implements MessageListener {
 
         RequestContext requestContext = new RequestContext(requestID);
 
+        String error_message = "";
         requestHandler.parseModel(requestContext, requestModel, IMessageBus.TYPE_CONFIGURE);
 
         this.configureResources(requestContext);
@@ -307,11 +319,13 @@ public class OrchestratorMDBListener implements MessageListener {
             }
 
             RequestContext requestContext = new RequestContext(requestID);
+            String error_message = "";
             requestHandler.parseModel(requestContext, modelDelete, IMessageBus.TYPE_DELETE);
             this.sendDeleteToResources(requestContext);
 
         }else{
             RequestContext requestContext = new RequestContext(requestID);
+            String error_message = "";
             requestHandler.parseModel(requestContext, requestModel, IMessageBus.TYPE_DELETE);
             this.sendDeleteToResources(requestContext);
         }

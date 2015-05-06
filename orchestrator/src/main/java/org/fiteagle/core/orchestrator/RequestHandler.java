@@ -29,8 +29,8 @@ public class RequestHandler {
 
     public void parseModel(RequestContext context, Model requestModel, String method) {
 
-        Model requestedResources = getRequestedResources(requestModel);
-
+        Model requestedResources = this.getRequestedResources(requestModel);
+          
         ResIterator resIterator = requestedResources.listSubjectsWithProperty(Omn_lifecycle.implementedBy);
 
         while (resIterator.hasNext()) {
@@ -42,6 +42,7 @@ public class RequestHandler {
             stateKeeper.addRequest(request);
 
         }
+        
 
     }
 
@@ -52,7 +53,10 @@ public class RequestHandler {
             ResIterator resIterator1 = requestModel.listSubjectsWithProperty(RDF.type,Omn.Topology);
             while (resIterator1.hasNext()){
                 Resource topo = resIterator1.nextResource();
-                requestModel.add(TripletStoreAccessor.getResource(topo.getURI()));
+                
+                Model topoModel = TripletStoreAccessor.getResource(topo.getURI());
+                
+                requestModel.add(topoModel);
                 resIterator = requestModel.listSubjectsWithProperty(Omn.isResourceOf, topo);
                 while (resIterator.hasNext()){
                     Resource resource = resIterator.nextResource();
@@ -66,13 +70,16 @@ public class RequestHandler {
 
                 }
                 resIterator = requestModel.listSubjectsWithProperty(Omn.isResourceOf, topo);
+              
             }
 
         }
 
         while (resIterator.hasNext()) {
             Resource requestedResource = resIterator.nextResource();
+            
             Model resourceModel = TripletStoreAccessor.getResource(requestedResource.getURI());
+           
 
             if(requestModel.contains(requestedResource, Omn_service.publickey) && requestModel.contains(requestedResource, Omn_service.username)) {
               Statement publicKey = requestModel.getProperty(requestedResource, Omn_service.publickey);
@@ -90,6 +97,27 @@ public class RequestHandler {
 
     }
 
+    public String isValidURN(Model requestModel){
+      String error_message = "";
+      ResIterator resIterator = requestModel.listSubjectsWithProperty(RDF.type, Omn.Resource);
+      if(!resIterator.hasNext()){
+        ResIterator resIterator1 = requestModel.listSubjectsWithProperty(RDF.type,Omn.Topology);
+        error_message = checkURN(resIterator1, error_message);
+      }
+      error_message = checkURN(resIterator, error_message);
+      return error_message;
+    }
+    
+    private String checkURN(ResIterator resIterator, String error_message){
+      while (resIterator.hasNext()){
+        Resource resource = resIterator.nextResource();
+        Model model = TripletStoreAccessor.getResource(resource.getURI());
+        if(model.isEmpty() || model == null){
+          error_message += resource.getURI() + " is not a valid urn. Please execute first allocate successfully.";
+          }
+        }
+      return error_message;
+      }
 
     protected void setStateKeeper(OrchestratorStateKeeper stateKeeper) {
         this.stateKeeper = stateKeeper;
