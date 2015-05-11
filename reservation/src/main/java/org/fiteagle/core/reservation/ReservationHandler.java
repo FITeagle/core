@@ -59,7 +59,20 @@ public class ReservationHandler {
            if (TripletStoreAccessor.exists(topology.getURI())) {
                LOGGER.log(Level.INFO, "Topology already exists");
                Model topologyModel = TripletStoreAccessor.getResource(topology.getURI());
-                reservationModel.add(topologyModel);
+               
+               ResIterator iter = topologyModel.listResourcesWithProperty(RDF.type, Omn.Topology);
+               while(iter.hasNext()){
+                 Resource topo = iter.nextResource();
+                 if(topo.hasProperty(MessageBusOntologyModel.endTime)){
+                   Statement endTimeStmt = topo.getProperty(MessageBusOntologyModel.endTime);
+                   reservationModel.add(topo, endTimeStmt.getPredicate(), endTimeStmt.getString());
+                 }
+                 
+                 if(topo.hasProperty(Omn_lifecycle.hasAuthenticationInformation)){
+                   Statement hasAuthenticationInformationStmt = topo.getProperty(Omn_lifecycle.hasAuthenticationInformation);
+                   reservationModel.add(topo, hasAuthenticationInformationStmt.getPredicate(), hasAuthenticationInformationStmt.getObject());
+                 }
+               }
 
             }
         else {
