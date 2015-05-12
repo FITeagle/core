@@ -1,13 +1,18 @@
 package org.fiteagle.core.federationManager;
 
 import com.hp.hpl.jena.rdf.model.Model;
+
 import info.openmultinet.ontology.exceptions.InvalidModelException;
+
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.OntologyModelUtil;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -28,8 +33,15 @@ public class FederationManager {
     @javax.annotation.PostConstruct
     public void setup() {
         initialized = false;
+        
+        File federationOntologie = Paths.get(System.getProperty("user.home")).resolve(".fiteagle").resolve("Federation.ttl").toFile();
+        if(!federationOntologie.exists()){
         federationModel = OntologyModelUtil.loadModel("ontologies/defaultFederation.ttl", IMessageBus.SERIALIZATION_TURTLE);
-
+        }else {
+        	federationModel = OntologyModelUtil.loadModel(federationOntologie.toString(), IMessageBus.SERIALIZATION_TURTLE);
+        }
+        
+        
         timer = new Timer();
         runSetup();
     }
