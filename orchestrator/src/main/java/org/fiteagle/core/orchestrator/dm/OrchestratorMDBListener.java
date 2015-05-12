@@ -467,15 +467,27 @@ public class OrchestratorMDBListener implements MessageListener {
         requestTopology.addProperty(RDF.type, Omn.Topology);
 
         for (Resource resource : request.getResourceList()) {
-            Model messageModel = TripletStoreAccessor.getResource(resource.getURI());
-            requestTopology.addProperty(Omn.hasResource, messageModel.getResource(resource.getURI()));
-            requestModel.add(resource.listProperties());
-            StmtIterator services = requestModel.listStatements(null, Omn_lifecycle.usesService, (RDFNode)null);
-            while(services.hasNext()){
-                Model serviceInfo= TripletStoreAccessor.getResource(services.nextStatement().getObject().asResource().getURI());
-                requestModel.add(serviceInfo);
-            }
+          Model messageModel = TripletStoreAccessor.getResource(resource.getURI());
+          ResIterator resIter = messageModel.listResourcesWithProperty(Omn.hasReservation);
+          
+          while(resIter.hasNext()){
+             Resource res = resIter.nextResource(); 
+             Resource reservationResource = res.getProperty(Omn.hasReservation).getObject().asResource();
+             
+             Model reservationModel = TripletStoreAccessor.getResource(reservationResource.getURI());
+             
+             if(reservationModel.contains(reservationResource, Omn_lifecycle.hasReservationState, Omn_lifecycle.Allocated)){
+               requestTopology.addProperty(Omn.hasResource, messageModel.getResource(resource.getURI()));
+               requestModel.add(resource.listProperties());
+               StmtIterator services = requestModel.listStatements(null, Omn_lifecycle.usesService, (RDFNode)null);
+               while(services.hasNext()){
+                   Model serviceInfo= TripletStoreAccessor.getResource(services.nextStatement().getObject().asResource().getURI());
+                   requestModel.add(serviceInfo);
+               }
+             }
+           }
         }
+          
 
         Model targetModel = TripletStoreAccessor.getResource(request.getTarget());
 //        Resource resource =  targetModel.getResource(request.getTarget());
@@ -510,7 +522,6 @@ public class OrchestratorMDBListener implements MessageListener {
         Message message = MessageUtil.createRDFMessage(requestModel, IMessageBus.TYPE_CREATE, target, IMessageBus.SERIALIZATION_TURTLE, request.getRequestId(), context);
 
         context.createProducer().send(topic, message);
-
     }
     private void sendConfigureToResource(Request request) {
 
