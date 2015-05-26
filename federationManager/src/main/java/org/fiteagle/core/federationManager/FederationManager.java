@@ -12,6 +12,7 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -36,7 +37,12 @@ public class FederationManager {
         
         File federationOntologie = Paths.get(System.getProperty("user.home")).resolve(".fiteagle").resolve("Federation.ttl").toFile();
         if(!federationOntologie.exists()){
-        federationModel = OntologyModelUtil.loadModel("ontologies/defaultFederation.ttl", IMessageBus.SERIALIZATION_TURTLE);
+        	try {
+				federationOntologie.createNewFile();
+			} catch (IOException e) {
+                LOGGER.log(Level.SEVERE,"Couldn't load Federation-Ontology.Tried to create new file '/home/User/.fiteagle/Federation.ttl' but it allready existed");
+			}
+        	federationModel = OntologyModelUtil.loadModel(federationOntologie.toString(), IMessageBus.SERIALIZATION_TURTLE);
         }else {
         	federationModel = OntologyModelUtil.loadModel(federationOntologie.toString(), IMessageBus.SERIALIZATION_TURTLE);
         }
