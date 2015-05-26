@@ -40,7 +40,7 @@ public class FederationManager {
         	try {
 				federationOntologie.createNewFile();
 			} catch (IOException e) {
-                LOGGER.log(Level.SEVERE,"Couldn't load Federation-Ontology.Tried to create new file '/home/User/.fiteagle/Federation.ttl' but it allready existed");
+                LOGGER.log(Level.SEVERE,"Couldn't load Federation-Ontology. Tried to create new file '/home/User/.fiteagle/Federation.ttl' but it already existed");
 			}
         	federationModel = OntologyModelUtil.loadModel(federationOntologie.toString(), IMessageBus.SERIALIZATION_TURTLE);
         }else {
