@@ -26,6 +26,7 @@ public class FederationManager {
 
     private static final Logger LOGGER = Logger.getLogger(FederationManager.class.getName());
     private Model federationModel;
+    private static FederationManager manager;
 
 
     boolean initialized;
@@ -33,6 +34,7 @@ public class FederationManager {
     private Timer timer;
     @javax.annotation.PostConstruct
     public void setup() {
+    	manager = this;
         initialized = false;
         
         File federationOntologie = Paths.get(System.getProperty("user.home")).resolve(".fiteagle").resolve("Federation.ttl").toFile();
@@ -95,5 +97,9 @@ public class FederationManager {
        }
 
 
+   }
+   
+   public static FederationManager getManager(){
+	   return manager;
    }
 }
