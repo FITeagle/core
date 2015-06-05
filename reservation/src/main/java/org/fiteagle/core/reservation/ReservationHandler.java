@@ -116,7 +116,7 @@ public class ReservationHandler {
   private String checkType(Model requestModel) {
     String errorMessage = "";
     ResIterator resIterator = requestModel.listResourcesWithProperty(Omn.isResourceOf);
-    Object type = null;
+    RDFNode type = null;
     Object adapterInstance = null;
     
     while (resIterator.hasNext()) {
@@ -143,17 +143,12 @@ public class ReservationHandler {
       Model model = TripletStoreAccessor.getResource(re.getURI());
       if (model.isEmpty() || model == null) {
         errorMessage += "The requested component id " + re.getURI() + " is not supported";
-      } else {
-        ResIterator resIter = model.listResourcesWithProperty(Omn_lifecycle.canImplement);
-        while (resIter.hasNext()) {
-          Resource res = resIter.nextResource();
-          if (!type.equals(res.getProperty(Omn_lifecycle.canImplement).getObject())) {
-            errorMessage += "The requested type of the resource " + resource1.getURI()
-                + " is not supported. The supported type is "
-                + res.getProperty(Omn_lifecycle.canImplement).getObject().toString();
-          }
+      } else 
+        if(!model.contains(re, Omn_lifecycle.canImplement, type)){
+          errorMessage = "The requested sliver type " + type.toString()
+              + " is not supported. Please see supported sliver types";
         }
-      }
+      
     }
     return errorMessage;
   }
