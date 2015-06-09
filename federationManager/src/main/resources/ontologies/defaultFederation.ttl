@@ -5,13 +5,13 @@
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix omn:  <http://open-multinet.info/ontology/omn#> .
-@prefix av:   <http://federation.av.tu-berlin.de/about#> .
 @prefix omn-federation: <http://open-multinet.info/ontology/omn-federation#> .
+@prefix def: <http://default.ontology.de/testbed#> .
 
 
-av:AV_Smart_Communication_Testbed a omn-federation:Infrastructure,
+def:Default_Communication_Testbed a omn-federation:Infrastructure,
                                         owl:NamedIndividual;
-                                         rdfs:label "AV Smart Communication Testbed" ;
-                                         rdfs:seeAlso "https://federation.av.tu-berlin.de" ;
-                                         wgs:lat       "52.516377" ;
-                                         wgs:long      "13.323732" .
+                                         rdfs:label "Default Ontology Testbed" ;
+                                         rdfs:seeAlso "https://default.ontology.de" ;
+                                         wgs:lat       "30.548795" ;
+                                         wgs:long      "18.649875" .
