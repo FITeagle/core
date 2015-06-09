@@ -41,7 +41,7 @@ Writer writer;
 	  @Produces("text/html")
 	  public Response updateOntology(String ontology) {
 		  try{
-			File ontologyFile = IConfig.PROPERTIES_DIRECTORY.resolve("Federation2.ttl").toFile();
+			File ontologyFile = IConfig.PROPERTIES_DIRECTORY.resolve("Federation.ttl").toFile();
 			if (!ontologyFile.exists()) ontologyFile.createNewFile();
 			
 			writer = new FileWriter(ontologyFile);

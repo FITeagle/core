@@ -39,7 +39,7 @@ public class FederationManager {
         
         File federationOntologie = Paths.get(System.getProperty("user.home")).resolve(".fiteagle").resolve("Federation.ttl").toFile();
         if(federationOntologie.exists()){
-        	if(federationModel != null){
+        	if(federationModel == null){
             	federationModel = OntologyModelUtil.loadModel(federationOntologie.toString(), IMessageBus.SERIALIZATION_TURTLE);
         		
             	if(federationModel.isEmpty()){
