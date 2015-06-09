@@ -6,12 +6,12 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix omn:  <http://open-multinet.info/ontology/omn#> .
 @prefix omn-federation: <http://open-multinet.info/ontology/omn-federation#> .
-@prefix def: <http://default.ontology.de/testbed#> .
+@prefix example: <http://testbed.example.org/about> .
 
 
-def:Default_Communication_Testbed a omn-federation:Infrastructure,
+example:testbed a omn-federation:Infrastructure,
                                         owl:NamedIndividual;
-                                         rdfs:label "Default Ontology Testbed" ;
-                                         rdfs:seeAlso "https://default.ontology.de" ;
-                                         wgs:lat       "30.548795" ;
-                                         wgs:long      "18.649875" .
+                                         rdfs:label "Testbed Name" ;
+                                         rdfs:seeAlso "https://testbed.example.org" ;
+                                         wgs:lat       "-7.5508303" ;
+                                         wgs:long      "110.9850367" .
