@@ -38,16 +38,24 @@ public class FederationManager {
         initialized = false;
         
         File federationOntologie = Paths.get(System.getProperty("user.home")).resolve(".fiteagle").resolve("Federation.ttl").toFile();
-        if(!federationOntologie.exists()){
+        if(federationOntologie.exists()){
+        	if(federationModel != null){
+            	federationModel = OntologyModelUtil.loadModel(federationOntologie.toString(), IMessageBus.SERIALIZATION_TURTLE);
+        		
+            	if(federationModel.isEmpty()){
+                	federationModel = OntologyModelUtil.loadModel("ontologies/defaultFederation.ttl", IMessageBus.SERIALIZATION_TURTLE);
+                    LOGGER.log(Level.SEVERE,"Please add your Federation-Ontology to the '/home/User/.fiteagle/Federation.ttl' File and Re-Deploy the FederationManager ");
+            	}   
+        	}
+    
+        }else {
         	try {
 				federationOntologie.createNewFile();
 			} catch (IOException e) {
-                LOGGER.log(Level.SEVERE,"Couldn't load Federation-Ontology. Tried to create new file '/home/User/.fiteagle/Federation.ttl' but it already existed");
+                LOGGER.log(Level.SEVERE,"Couldn't load Federation-Ontology. Tried to create new file '/home/User/.fiteagle/Federation.ttl' but Errored");
 			}
-        	federationModel = OntologyModelUtil.loadModel(federationOntologie.toString(), IMessageBus.SERIALIZATION_TURTLE);
-            LOGGER.log(Level.SEVERE,"Please add your Federation-Ontology to the '/home/User/.fiteagle/Federation.ttl' File and Re-Deploy the FederationManager ");
-        }else {
         	federationModel = OntologyModelUtil.loadModel("ontologies/defaultFederation.ttl", IMessageBus.SERIALIZATION_TURTLE);
+            LOGGER.log(Level.SEVERE,"Please add your Federation-Ontology to the '/home/User/.fiteagle/Federation.ttl' File and Re-Deploy the FederationManager ");
         }
         
         
