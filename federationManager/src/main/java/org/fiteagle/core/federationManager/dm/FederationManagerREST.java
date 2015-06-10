@@ -47,6 +47,6 @@ Writer writer;
 	  @Consumes("text/turtle")
 	  @Produces("text/html")
 	  public Response failedAuthentication() {
-	    return Response.status(Response.Status.CONFLICT.getStatusCode()).build();
+	    return Response.status(Response.Status.UNAUTHORIZED.getStatusCode()).build();
 	  }
 }
