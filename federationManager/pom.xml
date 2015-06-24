@@ -25,12 +25,6 @@
 			<artifactId>abstract</artifactId>
 			<version>0.1-SNAPSHOT</version>
 		</dependency>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>resteasy-jaxrs</artifactId>
-			<version>3.0.6.Final</version>
-			<scope>provided</scope>
-		</dependency>
 	</dependencies>
 
 	<build>
@@ -42,6 +36,7 @@
 				<version>${wildfly.version}</version>
 				<configuration>
 					<skip>false</skip>
+					<failOnMissingWebXml>false</failOnMissingWebXml>
 					<filename>${project.build.finalName}.war</filename>
 				</configuration>
 			</plugin>

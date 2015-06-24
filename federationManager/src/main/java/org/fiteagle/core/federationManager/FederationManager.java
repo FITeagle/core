@@ -5,6 +5,8 @@ import info.openmultinet.ontology.exceptions.InvalidModelException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -12,17 +14,27 @@ import java.util.logging.Logger;
 
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.core.Application;
 
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.OntologyModelUtil;
+import org.fiteagle.core.federationManager.dm.FederationManagerREST;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 
 import com.hp.hpl.jena.rdf.model.Model;
 
 @Startup
 @Singleton
-public class FederationManager {
+@ApplicationPath("/")
+public class FederationManager extends Application {
 
+    @Override
+    public Set<Class<?>> getClasses() {
+        Set<Class<?>> s = new HashSet<Class<?>>();
+        s.add(FederationManagerREST.class);
+        return s;
+    }
 
     private static final Logger LOGGER = Logger.getLogger(FederationManager.class.getName());
     private Model federationModel;

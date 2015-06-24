@@ -4,7 +4,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
 
+import javax.inject.Inject;
+import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -13,11 +16,12 @@ import javax.ws.rs.core.Response;
 import org.fiteagle.api.core.IConfig;
 import org.fiteagle.core.federationManager.FederationManager;
 
-
 @Path("/")
 public class FederationManagerREST{
 FederationManager restManager;
 Writer writer;
+
+//@Inject ControlFilter filter;
 
 	  @POST
 	  @Path("/ontology")
