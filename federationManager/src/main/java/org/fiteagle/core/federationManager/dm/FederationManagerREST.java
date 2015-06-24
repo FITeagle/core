@@ -45,12 +45,4 @@ Writer writer;
 	    }
 	    return Response.status(Response.Status.CONFLICT.getStatusCode()).build();
 	  }
-	  
-	  @POST
-	  @Path("/failedAuth")
-	  @Consumes("text/turtle")
-	  @Produces("text/html")
-	  public Response failedAuthentication() {
-	    return Response.status(Response.Status.UNAUTHORIZED.getStatusCode()).build();
-	  }
 }
