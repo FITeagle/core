@@ -407,13 +407,16 @@ public class OrchestratorMDBListener implements MessageListener {
             if (r.hasProperty(RDF.type, Omn.Resource)) {
 
 
-                Resource resource = m.getResource(r.getURI());
-                getTopologyAndAddToResponse(responseModel,resource);
-                getReservationAndAddToResponse(responseModel,resource);
-                responseModel.add(m);
+                if(!m.isEmpty()){
+                  Resource resource = m.getResource(r.getURI());
+                  getTopologyAndAddToResponse(responseModel,resource);
+                  getReservationAndAddToResponse(responseModel,resource);
+                  responseModel.add(m);
+                }
             } else if (r.hasProperty(RDF.type, Omn.Topology)) {
                 StmtIterator stmtIterator = m.listStatements(new SimpleSelector(r, Omn.hasResource, (Object) null));
 
+                if(stmtIterator.hasNext()){
                 while (stmtIterator.hasNext()) {
                     Statement statement = stmtIterator.nextStatement();
                     String resourceURI = statement.getObject().asResource().getURI();
@@ -423,8 +426,12 @@ public class OrchestratorMDBListener implements MessageListener {
                     responseModel.add(resourceModel);
 
                 }
+                } 
+                else {
+                  responseModel.add(m);
+                }
 
-            }
+            } 
 
 
         }
