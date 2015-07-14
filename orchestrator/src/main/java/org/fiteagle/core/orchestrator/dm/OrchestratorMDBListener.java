@@ -484,8 +484,11 @@ public class OrchestratorMDBListener implements MessageListener {
              Model reservationModel = TripletStoreAccessor.getResource(reservationResource.getURI());
              
              if(reservationModel.contains(reservationResource, Omn_lifecycle.hasReservationState, Omn_lifecycle.Allocated)){
+
                requestTopology.addProperty(Omn.hasResource, messageModel.getResource(resource.getURI()));
                requestModel.add(resource.listProperties());
+               
+
                StmtIterator services = requestModel.listStatements(null, Omn_lifecycle.usesService, (RDFNode)null);
                while(services.hasNext()){
                    Model serviceInfo= TripletStoreAccessor.getResource(services.nextStatement().getObject().asResource().getURI());
@@ -525,11 +528,82 @@ public class OrchestratorMDBListener implements MessageListener {
 		}
 
         String target = resourceTypeToBeCreated.getObject().asResource().getURI();
+        
+        ResIterator resIter = requestModel.listResourcesWithProperty(Omn.isResourceOf);
+        while(resIter.hasNext()){
+          Resource res1 = resIter.nextResource();
+          StmtIterator stmtIter = res1.listProperties();
+          while(stmtIter.hasNext()){
+            Statement statement = stmtIter.nextStatement();
+            if(statement.getObject().isResource() && !isPrimaryProperty(statement.getPredicate())){
+              if(!requestModel.contains(statement.getObject().asResource(), null)){
+                Model model = TripletStoreAccessor.getResource(statement.getObject().asResource().getURI());
+                
+                Selector selector = new SimpleSelector(statement.getObject().asResource(), null,(Object) null);
+                StmtIterator stmtIterator = model.listStatements(selector);
+                while(stmtIterator.hasNext()){
+                  Statement stat = stmtIterator.nextStatement();
+                  requestModel.add(stat);
+           
+//                  Resource newRes = requestModel.createResource(res.getURI());
+//                  StmtIterator stmtIterator = res.listProperties();
+//                  while(stmtIterator.hasNext()){
+//                    Statement newStatement = stmtIterator.nextStatement();
+//                    newRes.addProperty(newStatement.getPredicate(), newStatement.getObject());
+//                  }
+                 
+                }
+                
+              }
+                
+            }
+          }
+          
+          
+//          Resource res2 = res1.getProperty(Omn.hasResource).getObject().asResource();
+//          SimpleSelector selector= new SimpleSelector(res1, null,(Object) null);
+//          StmtIterator stmtIterator = requestModel.listStatements(selector);
+//          while(stmtIterator.hasNext()){
+//            Statement statement = stmtIterator.nextStatement();
+//            if(statement.getObject().isResource() && !isPrimaryProperty(statement.getPredicate())){
+//              if(!requestModel.contains(statement.getObject().asResource(), null, (RDFNode)null)){
+//                requestModel.removeAll(statement.getObject().asResource(), null, null);
+//                Model model = TripletStoreAccessor.getResource(statement.getObject().asResource().getURI());
+//                requestModel.add(model);
+//                ResIterator resIterator = model.listSubjects();
+//                while(resIterator.hasNext()){
+//                  Resource resou = resIterator.next();
+//                  requestModel.createResource(resou.getURI());
+//                  requestModel.add(resou.listProperties());
+//                }
+                
+//              }
+//            }
+//          }
+        }
+        
 
         Message message = MessageUtil.createRDFMessage(requestModel, IMessageBus.TYPE_CREATE, target, IMessageBus.SERIALIZATION_TURTLE, request.getRequestId(), context);
 
         context.createProducer().send(topic, message);
     }
+    
+    private boolean isPrimaryProperty(Property property){
+      Boolean primanryProperty = true;
+      String propertyLocalname = property.getLocalName();
+     
+      if(!propertyLocalname.equals(Omn_lifecycle.implementedBy.getLocalName())){
+        if(!propertyLocalname.equals(Omn_lifecycle.hasState.getLocalName()))
+          if(!propertyLocalname.equals(Omn.isResourceOf.getLocalName()))
+            if(!propertyLocalname.equals(Omn.hasReservation.getLocalName()))
+              if(!propertyLocalname.equals(Omn_lifecycle.hasID.getLocalName()))
+                if(!propertyLocalname.equals(RDF.type.getLocalName()))
+                primanryProperty = false;
+      }
+      return primanryProperty;
+      
+    }
+    
     private void sendConfigureToResource(Request request) {
 
         Model requestModel = ModelFactory.createDefaultModel();

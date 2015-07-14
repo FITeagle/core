@@ -98,6 +98,18 @@ public class ReservationHandler {
                 while(statementIter.hasNext()){
                     Statement statement = statementIter.nextStatement();
                     newResource.addProperty(statement.getPredicate(), statement.getObject());
+                    
+                    if(statement.getObject().isResource()){
+                      
+                       Resource res = reservationModel.createResource(statement.getObject().asResource().getURI());
+                       SimpleSelector simpleSelector = new SimpleSelector(res, null,(Object) null);
+                      StmtIterator iter = requestModel.listStatements(simpleSelector);
+                      while(iter.hasNext()){
+                        Statement stmt = iter.nextStatement();
+                        res.addProperty(stmt.getPredicate(), stmt.getObject());
+                      }
+                    }
+                    
                     if(statement.getPredicate().equals(Omn_lifecycle.usesService)){
                         StmtIterator serviceModel =requestModel.listStatements(new SimpleSelector(statement.getObject().asResource(),null,(Object) null));
                         reservationModel.add(serviceModel);
