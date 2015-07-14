@@ -92,12 +92,16 @@ public class ReservationHandler {
 
            }
 
-            ResIterator resIter =  requestModel.listResourcesWithProperty(Omn.isResourceOf, topology);
+//            ResIterator resIter =  requestModel.listResourcesWithProperty(Omn.isResourceOf, topology);
+            ResIterator resIter = requestModel.listSubjects();
             
             
             
             while(resIter.hasNext()){
                 Resource resource = resIter.nextResource();
+                
+                if(resource.hasProperty(Omn.isResourceOf)){
+                
                 SimpleSelector selector= new SimpleSelector(resource, null,(Object) null);
 
                 StmtIterator statementIter = requestModel.listStatements(selector);
@@ -110,16 +114,6 @@ public class ReservationHandler {
 
                     newResource.addProperty(statement.getPredicate(), statement.getObject());
                     
-                    if(statement.getObject().isResource()){
-                      
-                       Resource res = reservationModel.createResource(statement.getObject().asResource().getURI());
-                       SimpleSelector simpleSelector = new SimpleSelector(res, null,(Object) null);
-                      StmtIterator iter = requestModel.listStatements(simpleSelector);
-                      while(iter.hasNext()){
-                        Statement stmt = iter.nextStatement();
-                        res.addProperty(stmt.getPredicate(), stmt.getObject());
-                      }
-                    }
                     
                     if(statement.getPredicate().equals(Omn_lifecycle.usesService)){
                         StmtIterator serviceModel =requestModel.listStatements(new SimpleSelector(statement.getObject().asResource(),null,(Object) null));
@@ -128,6 +122,16 @@ public class ReservationHandler {
                
                 }
                 reservationModel.add(topology, Omn.hasResource,newResource);
+                
+            }
+                if(resource.hasProperty(Omn.isResourceOf) || !resource.hasProperty(Omn.hasResource)){
+                  StmtIterator stmtIterator = resource.listProperties();
+                  while(stmtIterator.hasNext()){
+                    Statement statement = stmtIterator.nextStatement();
+                    reservationModel.add(statement);
+                  }
+
+                }
             }
 
 
