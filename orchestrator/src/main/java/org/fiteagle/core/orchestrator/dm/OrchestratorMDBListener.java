@@ -572,7 +572,9 @@ public class OrchestratorMDBListener implements MessageListener {
             if(!propertyLocalname.equals(Omn.hasReservation.getLocalName()))
               if(!propertyLocalname.equals(Omn_lifecycle.hasID.getLocalName()))
                 if(!propertyLocalname.equals(RDF.type.getLocalName()))
-                primanryProperty = false;
+                  if(!propertyLocalname.equals("deployedOn"))
+                    if(!propertyLocalname.equals("requires"))
+                      primanryProperty = false;
       }
       return primanryProperty;
       

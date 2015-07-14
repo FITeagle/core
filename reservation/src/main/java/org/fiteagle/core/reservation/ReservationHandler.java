@@ -2,6 +2,7 @@ package org.fiteagle.core.reservation;
 
 import com.hp.hpl.jena.ontology.impl.ObjectPropertyImpl;
 import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
 import com.hp.hpl.jena.vocabulary.OWL;
 import com.hp.hpl.jena.vocabulary.RDF;
 import com.hp.hpl.jena.vocabulary.RDFS;
@@ -19,6 +20,8 @@ import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,6 +55,8 @@ public class ReservationHandler {
 
     private Model createReservationModel(Model requestModel, Model reservationModel) {
         
+      Map<String, Resource> resourcesIDs = new HashMap<String, Resource>();
+      
         ResIterator iterator = requestModel.listResourcesWithProperty(RDF.type, Omn.Topology);
         while (iterator.hasNext()) {
             Resource topology = iterator.nextResource();
@@ -88,6 +93,9 @@ public class ReservationHandler {
            }
 
             ResIterator resIter =  requestModel.listResourcesWithProperty(Omn.isResourceOf, topology);
+            
+            
+            
             while(resIter.hasNext()){
                 Resource resource = resIter.nextResource();
                 SimpleSelector selector= new SimpleSelector(resource, null,(Object) null);
@@ -95,8 +103,11 @@ public class ReservationHandler {
                 StmtIterator statementIter = requestModel.listStatements(selector);
                 Resource newResource = reservationModel.createResource(resource.getNameSpace()+ UUID.randomUUID().toString());
 
+               resourcesIDs.put(resource.getURI(), newResource);
+                
                 while(statementIter.hasNext()){
                     Statement statement = statementIter.nextStatement();
+
                     newResource.addProperty(statement.getPredicate(), statement.getObject());
                     
                     if(statement.getObject().isResource()){
@@ -114,6 +125,7 @@ public class ReservationHandler {
                         StmtIterator serviceModel =requestModel.listStatements(new SimpleSelector(statement.getObject().asResource(),null,(Object) null));
                         reservationModel.add(serviceModel);
                     }
+               
                 }
                 reservationModel.add(topology, Omn.hasResource,newResource);
             }
@@ -121,7 +133,29 @@ public class ReservationHandler {
 
 
         }
-        return reservationModel;
+        
+        Model newReservationModel = ModelFactory.createDefaultModel();
+        
+        ResIterator resIter = reservationModel.listSubjects();
+        while(resIter.hasNext()){
+          Resource res = resIter.nextResource();
+          StmtIterator stmtIter = res.listProperties();
+          while(stmtIter.hasNext()){
+            Statement stmt = stmtIter.nextStatement();
+            if("deployedOn".equals(stmt.getPredicate().getLocalName()) || "requires".equals(stmt.getPredicate().getLocalName())){
+              Statement newStatement = new StatementImpl(res, stmt.getPredicate(), resourcesIDs.get(stmt.getObject().toString()));
+              newReservationModel.add(newStatement);
+            }
+            else{
+              newReservationModel.add(stmt);
+            }
+          }
+        }
+        
+        
+
+        
+        return newReservationModel;
     }
 
 
