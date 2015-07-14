@@ -2,10 +2,13 @@ package org.fiteagle.core.tripletStoreAccessor;
 
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.vocabulary.OWL;
+
 import info.openmultinet.ontology.Parser;
 import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn_federation;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+import info.openmultinet.ontology.vocabulary.Omn_resource;
+import info.openmultinet.ontology.vocabulary.Omn_service;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -204,6 +207,23 @@ public class TripletStoreAccessor {
             }
         }
         addModel(model);
+    }
+    
+    public static Model getAPIs(){
+    	Query query = QueryFactory.create();
+        query.setQueryDescribeType();
+        query.addResultVar("resource");
+        Triple tripleForPattern = new Triple(new Node_Variable("resource"),new Node_Variable("o"),new Node_Variable("p"));
+        
+        ElementGroup whereClause = new ElementGroup();
+        whereClause.addTriplePattern(new Triple(new Node_Variable("resource"), Omn_resource.hasInterface.asNode(), new Node_Variable("p")));
+        whereClause.addTriplePattern(tripleForPattern);
+        query.setQueryPattern(whereClause);
+
+        QueryExecution execution =  QueryExecutionFactory.sparqlService(QueryExecuter.SESAME_SERVICE, query);
+        Model model = execution.execDescribe();
+        
+    	return model;
     }
 
 
