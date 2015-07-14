@@ -545,12 +545,6 @@ public class OrchestratorMDBListener implements MessageListener {
                   Statement stat = stmtIterator.nextStatement();
                   requestModel.add(stat);
            
-//                  Resource newRes = requestModel.createResource(res.getURI());
-//                  StmtIterator stmtIterator = res.listProperties();
-//                  while(stmtIterator.hasNext()){
-//                    Statement newStatement = stmtIterator.nextStatement();
-//                    newRes.addProperty(newStatement.getPredicate(), newStatement.getObject());
-//                  }
                  
                 }
                 
@@ -560,26 +554,6 @@ public class OrchestratorMDBListener implements MessageListener {
           }
           
           
-//          Resource res2 = res1.getProperty(Omn.hasResource).getObject().asResource();
-//          SimpleSelector selector= new SimpleSelector(res1, null,(Object) null);
-//          StmtIterator stmtIterator = requestModel.listStatements(selector);
-//          while(stmtIterator.hasNext()){
-//            Statement statement = stmtIterator.nextStatement();
-//            if(statement.getObject().isResource() && !isPrimaryProperty(statement.getPredicate())){
-//              if(!requestModel.contains(statement.getObject().asResource(), null, (RDFNode)null)){
-//                requestModel.removeAll(statement.getObject().asResource(), null, null);
-//                Model model = TripletStoreAccessor.getResource(statement.getObject().asResource().getURI());
-//                requestModel.add(model);
-//                ResIterator resIterator = model.listSubjects();
-//                while(resIterator.hasNext()){
-//                  Resource resou = resIterator.next();
-//                  requestModel.createResource(resou.getURI());
-//                  requestModel.add(resou.listProperties());
-//                }
-                
-//              }
-//            }
-//          }
         }
         
 
@@ -647,10 +621,6 @@ public class OrchestratorMDBListener implements MessageListener {
         }
 
         String target = resourceTypeToBeCreated.getObject().asResource().getURI();
-
-//        Resource resource =  targetModel.getResource(request.getTarget());
-//        Resource adapterinstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource();
-
 
 
 
