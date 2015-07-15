@@ -22,7 +22,7 @@ cache:
   - $HOME/.m2
 after_success:
 - mvn clean test jacoco:report coveralls:report
-- curl http://demo.fiteagle.org/trigger.php?c=fiteagle
+- if [ "${TRAVIS_BRANCH}" = "master" ]; then curl http://demo.fiteagle.org/trigger.php?c=fiteagle ; fi
 addons:
   coverity_scan:
     project:
