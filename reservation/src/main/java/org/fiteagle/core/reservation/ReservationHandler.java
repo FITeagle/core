@@ -56,11 +56,12 @@ public class ReservationHandler {
     private Model createReservationModel(Model requestModel, Model reservationModel) {
         
       Map<String, Resource> resourcesIDs = new HashMap<String, Resource>();
+      Model assistantModel = ModelFactory.createDefaultModel();
       
         ResIterator iterator = requestModel.listResourcesWithProperty(RDF.type, Omn.Topology);
         while (iterator.hasNext()) {
             Resource topology = iterator.nextResource();
-            reservationModel.add(topology, RDF.type, Omn.Topology);
+            assistantModel.add(topology, RDF.type, Omn.Topology);
            if (TripletStoreAccessor.exists(topology.getURI())) {
                LOGGER.log(Level.INFO, "Topology already exists");
                Model topologyModel = TripletStoreAccessor.getResource(topology.getURI());
@@ -70,20 +71,20 @@ public class ReservationHandler {
                  Resource topo = iter.nextResource();
                  if(topo.hasProperty(MessageBusOntologyModel.endTime)){
                    Statement endTimeStmt = topo.getProperty(MessageBusOntologyModel.endTime);
-                   reservationModel.add(topo, endTimeStmt.getPredicate(), endTimeStmt.getString());
+                   assistantModel.add(topo, endTimeStmt.getPredicate(), endTimeStmt.getString());
                  }
                  
                  if(topo.hasProperty(Omn_lifecycle.hasAuthenticationInformation)){
                    Statement hasAuthenticationInformationStmt = topo.getProperty(Omn_lifecycle.hasAuthenticationInformation);
-                   reservationModel.add(topo, hasAuthenticationInformationStmt.getPredicate(), hasAuthenticationInformationStmt.getObject());
+                   assistantModel.add(topo, hasAuthenticationInformationStmt.getPredicate(), hasAuthenticationInformationStmt.getObject());
                  }
                }
 
             }
         else {
 
-               Resource newTopology = reservationModel.getResource(topology.getURI());
-               Property property = reservationModel.createProperty(MessageBusOntologyModel.endTime.getNameSpace(), MessageBusOntologyModel.endTime.getLocalName());
+               Resource newTopology = assistantModel.getResource(topology.getURI());
+               Property property = assistantModel.createProperty(MessageBusOntologyModel.endTime.getNameSpace(), MessageBusOntologyModel.endTime.getLocalName());
                property.addProperty(RDF.type, OWL.FunctionalProperty);
                newTopology.addProperty(property, new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(getDefaultExpirationTime()));
                if (topology.getProperty(Omn_lifecycle.hasAuthenticationInformation) != null)
@@ -105,7 +106,7 @@ public class ReservationHandler {
                 SimpleSelector selector= new SimpleSelector(resource, null,(Object) null);
 
                 StmtIterator statementIter = requestModel.listStatements(selector);
-                Resource newResource = reservationModel.createResource(resource.getNameSpace()+ UUID.randomUUID().toString());
+                Resource newResource = assistantModel.createResource(resource.getNameSpace()+ UUID.randomUUID().toString());
 
                resourcesIDs.put(resource.getURI(), newResource);
                 
@@ -117,41 +118,47 @@ public class ReservationHandler {
                     
                     if(statement.getPredicate().equals(Omn_lifecycle.usesService)){
                         StmtIterator serviceModel =requestModel.listStatements(new SimpleSelector(statement.getObject().asResource(),null,(Object) null));
-                        reservationModel.add(serviceModel);
+                        assistantModel.add(serviceModel);
                     }
                
                 }
-                reservationModel.add(topology, Omn.hasResource,newResource);
+                assistantModel.add(topology, Omn.hasResource,newResource);
                 
-            }
-                if(resource.hasProperty(Omn.isResourceOf) || !resource.hasProperty(Omn.hasResource)){
+            } 
+                else if(resource.hasProperty(Omn.hasResource)){
+              
+            } else {
+                
+//                if(resource.hasProperty(Omn.isResourceOf) || !resource.hasProperty(Omn.hasResource)){
                   StmtIterator stmtIterator = resource.listProperties();
                   while(stmtIterator.hasNext()){
                     Statement statement = stmtIterator.nextStatement();
-                    reservationModel.add(statement);
+                    assistantModel.add(statement);
                   }
 
                 }
+                
+                
+                
             }
 
 
 
         }
+
         
-        Model newReservationModel = ModelFactory.createDefaultModel();
-        
-        ResIterator resIter = reservationModel.listSubjects();
+        ResIterator resIter = assistantModel.listSubjects();
         while(resIter.hasNext()){
           Resource res = resIter.nextResource();
           StmtIterator stmtIter = res.listProperties();
           while(stmtIter.hasNext()){
             Statement stmt = stmtIter.nextStatement();
             if("deployedOn".equals(stmt.getPredicate().getLocalName()) || "requires".equals(stmt.getPredicate().getLocalName())){
-              Statement newStatement = new StatementImpl(res, stmt.getPredicate(), resourcesIDs.get(stmt.getObject().toString()));
-              newReservationModel.add(newStatement);
+              Statement newStatement = new StatementImpl(stmt.getSubject(), stmt.getPredicate(), resourcesIDs.get(stmt.getObject().toString()));
+              reservationModel.add(newStatement);
             }
             else{
-              newReservationModel.add(stmt);
+              reservationModel.add(stmt);
             }
           }
         }
@@ -159,7 +166,7 @@ public class ReservationHandler {
         
 
         
-        return newReservationModel;
+        return reservationModel;
     }
 
 
