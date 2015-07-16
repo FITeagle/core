@@ -9,9 +9,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.PreDestroy;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ws.rs.ApplicationPath;
@@ -19,15 +21,17 @@ import javax.ws.rs.core.Application;
 
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.OntologyModelUtil;
+import org.fiteagle.api.core.TimerHelper;
 import org.fiteagle.core.federationManager.dm.FederationManagerREST;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.rdf.model.Model;
 
 @Startup
 @Singleton
 @ApplicationPath("/")
-public class FederationManager extends Application {
+public class FederationManager extends Application{
 
     @Override
     public Set<Class<?>> getClasses() {
@@ -41,9 +45,8 @@ public class FederationManager extends Application {
     private static FederationManager manager;
 
 
-    boolean initialized;
+    public boolean initialized;
 
-    private Timer timer;
     @javax.annotation.PostConstruct
     public void setup() {
     	manager = this;
@@ -72,7 +75,6 @@ public class FederationManager extends Application {
         }
         
         
-        timer = new Timer();
         runSetup();
     }
 
@@ -80,47 +82,39 @@ public class FederationManager extends Application {
     public void runSetup(){
 
         if(!initialized){
-            try{
-                SetupTask task = new SetupTask(500);
-                timer.schedule(task, 0);
-            } catch(IllegalStateException e){
-                LOGGER.log(Level.INFO,"Attempt to schedule task on canceled timer, doesn't matter ");
-            }
+            TimerHelper timer = new TimerHelper(new SetupTask());
         }
     }
-
-   private class SetupTask extends TimerTask {
-
-       long delay;
-
-       SetupTask(long delay){
-           this.delay = delay;
-       }
-       @Override
-       public void run() {
-
-           if(!initialized && delay < 3600000 ) {
-               try {
-                  TripletStoreAccessor.addModel(federationModel);
-                   initialized = true;
-                   timer.cancel();
-               } catch (TripletStoreAccessor.ResourceRepositoryException e) {
-                   LOGGER.log(Level.INFO, e.getMessage());
-                   delay = delay + delay;
-                   timer.schedule(new SetupTask(delay), delay);
-
-               } catch (InvalidModelException e) {
-                   LOGGER.log(Level.INFO, e.getMessage());
-               }
-           }else{
-               timer.cancel();
-           }
-       }
-
-
-   }
    
    public static FederationManager getManager(){
 	   return manager;
    }
+
+   @PreDestroy
+	public void deleteFederationManagerApi() {
+		TimerHelper timer = new TimerHelper(new DeleteFederationApi());
+	}
+   
+   private class SetupTask implements Callable<Void> {
+   	
+		@Override
+		public Void call() throws ResourceRepositoryException, InvalidModelException, Exception  {
+
+			TripletStoreAccessor.addModel(federationModel);
+			FederationManager.manager.initialized = true;
+           return null;
+		}
+
+
+   }
+   
+   final class DeleteFederationApi implements Callable<Void> {
+
+		@Override
+		public Void call() throws ResourceRepositoryException, InvalidModelException {
+				TripletStoreAccessor.deleteModel(federationModel);
+			return null;
+		}
+	}
+
 }
