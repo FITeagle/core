@@ -90,10 +90,10 @@ public class FederationManager extends Application{
 	   return manager;
    }
 
-   @PreDestroy
-	public void deleteFederationManagerApi() {
-		TimerHelper timer = new TimerHelper(new DeleteFederationApi());
-	}
+//   @PreDestroy
+//	public void deleteFederationManagerApi() {
+//		TimerHelper timer = new TimerHelper(new DeleteFederationApi());
+//	}
    
    private class SetupTask implements Callable<Void> {
    	
