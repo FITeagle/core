@@ -16,11 +16,6 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.fiteagle.core</groupId>
-			<artifactId>tripletStoreAccessor</artifactId>
-			<version>0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
 			<groupId>org.fiteagle.adapters</groupId>
 			<artifactId>abstract</artifactId>
 			<version>0.1-SNAPSHOT</version>
