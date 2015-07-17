@@ -15,9 +15,9 @@ import javax.jms.Topic;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 import org.fiteagle.core.federationManager.FederationManager;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.rdf.model.Model;
 

@@ -22,9 +22,9 @@ import javax.ws.rs.core.Application;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.OntologyModelUtil;
 import org.fiteagle.api.core.TimerHelper;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 import org.fiteagle.core.federationManager.dm.FederationManagerREST;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.rdf.model.Model;
 

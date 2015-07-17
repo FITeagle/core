@@ -39,7 +39,6 @@
 		<module>aaa</module>
 		<module>usermanagement</module>
 		<module>bus</module>
-		<module>tripletStoreAccessor</module>
 		<module>reservation</module>
 		<module>orchestrator</module>
 		<module>federationManager</module>
