@@ -37,7 +37,7 @@
 	<modules>
 		<module>config</module>
 		<module>aaa</module>
-		<module>usermanagement</module>
+	<!--	<module>usermanagement</module> -->
 		<module>bus</module>
 		<module>tripletStoreAccessor</module>
 		<module>reservation</module>
