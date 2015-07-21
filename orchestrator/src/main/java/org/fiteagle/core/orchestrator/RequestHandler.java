@@ -1,5 +1,7 @@
 package org.fiteagle.core.orchestrator;
 
+import com.hp.hpl.jena.graph.Node_Variable;
+import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.ResIterator;
@@ -7,6 +9,7 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.vocabulary.RDF;
 
+import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_component;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
@@ -17,6 +20,7 @@ import org.fiteagle.core.orchestrator.dm.OrchestratorStateKeeper;
 import org.fiteagle.core.orchestrator.dm.Request;
 import org.fiteagle.core.orchestrator.dm.RequestContext;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -106,7 +110,7 @@ public class RequestHandler {
                   
                 case IMessageBus.TYPE_DELETE:
                   
-                  if(reservationState.equals(Omn_lifecycle.Provisioned.getURI())){
+                  if(reservationState.equals(Omn_lifecycle.Provisioned.getURI()) || reservationState.equals(Omn_lifecycle.Allocated.getURI())){
                     returnModel.add(resourceModel);
                   }
                   break;
@@ -117,10 +121,6 @@ public class RequestHandler {
               }
               
             }
-            
-            
-            
-
 
         }
         return returnModel;

@@ -319,15 +319,15 @@ public class OrchestratorMDBListener implements MessageListener {
             }
 
             RequestContext requestContext = new RequestContext(requestID);
-            String error_message = "";
             requestHandler.parseModel(requestContext, modelDelete, IMessageBus.TYPE_DELETE);
             this.sendDeleteToResources(requestContext);
-
+            checkIfAllResourcesHandled(requestContext);
+            
         }else{
             RequestContext requestContext = new RequestContext(requestID);
-            String error_message = "";
             requestHandler.parseModel(requestContext, requestModel, IMessageBus.TYPE_DELETE);
             this.sendDeleteToResources(requestContext);
+            checkIfAllResourcesHandled(requestContext);
         }
 
 
@@ -348,40 +348,119 @@ public class OrchestratorMDBListener implements MessageListener {
     }
 
     private void deleteResource(Request request) {
+      
+      
         Model requestModel = ModelFactory.createDefaultModel();
         Resource requestTopology = requestModel.createResource(IConfig.TOPOLOGY_NAMESPACE_VALUE+ UUID.randomUUID());
         requestTopology.addProperty(RDF.type, Omn.Topology);
 
         for (Resource resource : request.getResourceList()) {
+          
+
             Model messageModel = TripletStoreAccessor.getResource(resource.getURI());
             Resource storedResource = messageModel.getResource(resource.getURI());
-            if(storedResource.getProperty(Omn_lifecycle.hasState).getObject().asResource().equals(Omn_lifecycle.Uncompleted)){
+            
+            if(messageModel.contains(storedResource, Omn.hasReservation)){
+              Resource reservation = messageModel.getProperty(storedResource, Omn.hasReservation).getObject().asResource();
+              Model reservationModel = TripletStoreAccessor.getResource(reservation.getURI());
+              String reservationState = reservationModel.getProperty(reservation, Omn_lifecycle.hasReservationState).getObject().asResource().getURI();
+              
+              if(reservationState.equals(Omn_lifecycle.Allocated.getURI())){
+                
+                Resource unallocate = reservationModel.getProperty(reservation, Omn_lifecycle.hasReservationState).getObject().asResource();
+                Triple triple = new Triple(unallocate.asNode(), new Node_Variable(Omn_lifecycle.hasReservationState.getLocalName()), new Node_Variable("o"));
+                TripletStoreAccessor.deleteTriple(triple);
+                
+                unallocate.removeAll(Omn_lifecycle.hasReservationState);
+                unallocate.addProperty(Omn_lifecycle.hasReservationState, Omn_lifecycle.Unallocated);
+                
+                try {
+                  TripletStoreAccessor.updateModel(reservationModel);
+                } catch (ResourceRepositoryException | InvalidModelException e) {
+                  LOGGER.log(Level.SEVERE, "reservation states couldn't be changed to unallocated", e);
+                }
+                
+                request.setHandled();
+              }
+              
+              if(reservationState.equals(Omn_lifecycle.Provisioned.getURI())){
+                
+                if(storedResource.getProperty(Omn_lifecycle.hasState).getObject().asResource().equals(Omn_lifecycle.Uncompleted)){
 
+                }
+                requestTopology.addProperty(Omn.hasResource,storedResource);
+                requestModel.add(resource.listProperties());
+              }
             }
-            requestTopology.addProperty(Omn.hasResource,storedResource);
-            requestModel.add(resource.listProperties());
+            
+            
         }
-
-        Model targetModel = TripletStoreAccessor.getResource(request.getTarget());
-        final Resource resourceToBeDeleted= targetModel.getResource(request.getTarget());
-        StmtIterator resourceTypesToBeDeleted = resourceToBeDeleted.listProperties(RDF.type);
-        Statement resourceTypeToBeDeleted = null;
-        while(resourceTypesToBeDeleted.hasNext()){
-            Statement next = resourceTypesToBeDeleted.next();
-            if(!next.getObject().equals(OWL2.NamedIndividual)){
-                resourceTypeToBeDeleted = next;
-                break;
-            }
+        
+    if (requestModel.contains(null, Omn.hasResource)) {
+      
+      Model targetModel = TripletStoreAccessor.getResource(request.getTarget());
+      final Resource resourceToBeDeleted = targetModel.getResource(request.getTarget());
+      StmtIterator resourceTypesToBeDeleted = resourceToBeDeleted.listProperties(RDF.type);
+      Statement resourceTypeToBeDeleted = null;
+      while (resourceTypesToBeDeleted.hasNext()) {
+        Statement next = resourceTypesToBeDeleted.next();
+        if (!next.getObject().equals(OWL2.NamedIndividual)) {
+          resourceTypeToBeDeleted = next;
+          break;
         }
-        String target = resourceTypeToBeDeleted.getObject().asResource().getURI();
-
-
-        Message message = MessageUtil.createRDFMessage(requestModel, IMessageBus.TYPE_DELETE, target, IMessageBus.SERIALIZATION_TURTLE, request.getRequestId(), context);
-
-        context.createProducer().send(topic, message);
+      }
+      String target = resourceTypeToBeDeleted.getObject().asResource().getURI();
+      
+      Message message = MessageUtil.createRDFMessage(requestModel, IMessageBus.TYPE_DELETE, target,
+          IMessageBus.SERIALIZATION_TURTLE, request.getRequestId(), context);
+      
+      context.createProducer().send(topic, message);
+    }
+    
     }
 
 
+    
+    private void checkIfAllResourcesHandled(RequestContext requestContext){
+      
+      if (requestContext.allAnswersReceived()) {
+        Model response = ModelFactory.createDefaultModel();
+        for (Request request1 : requestContext.getRequestMap().values()) {
+
+            for (Resource resource : request1.getResourceList()) {
+                if (resource.hasProperty(Omn.isResourceOf)) {
+                    String topologyURI = resource.getProperty(Omn.isResourceOf).getObject().asResource().getURI();
+                    Model top = TripletStoreAccessor.getResource(topologyURI);
+                    response.add(top);
+                    resource.removeAll(Omn_lifecycle.hasState);
+                    resource.addProperty(Omn_lifecycle.hasState,Omn_lifecycle.Stopped);
+
+                    response.add(resource.listProperties());
+                    Model reservationModel = TripletStoreAccessor.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
+                    Resource reservation = reservationModel.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
+
+                    reservation.removeAll(Omn_lifecycle.hasReservationState);
+                    reservation.addProperty(Omn_lifecycle.hasReservationState, Omn_lifecycle.Unallocated);
+
+                    response.add(reservationModel);
+                    
+
+                    deleteReservationState(reservation);
+                    try {
+                      TripletStoreAccessor.updateModel(reservationModel);
+                    } catch (ResourceRepositoryException | InvalidModelException e) {
+                      LOGGER.log(Level.SEVERE, "Reservation state couldn't be updated", e);
+                    }
+                }
+
+                stateKeeper.removeRequest(request1.getRequestId());
+            }
+
+        }
+        sendResponse(requestContext.getRequestContextId(), response);
+    }
+
+    }
 
 
     private void sendResponse(String requestID, Model responseModel) {
@@ -464,7 +543,7 @@ public class OrchestratorMDBListener implements MessageListener {
             }
         } 
         else {
-          sendErrorMessage("No allocated resources for provisioning have been found. Please reserve new resources by calling Allocate method and then call Provison", requestContext.getRequestContextId());
+          sendErrorMessage("No allocated resources for provisioning have been found. Please reserve new resources first by calling Allocate method and then call Provison", requestContext.getRequestContextId());
         }
 
         
