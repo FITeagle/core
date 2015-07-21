@@ -336,9 +336,14 @@ public class OrchestratorMDBListener implements MessageListener {
 
     private void sendDeleteToResources(RequestContext requestContext) {
         Map<String, Request> requestMap = requestContext.getRequestMap();
-
-        for (String requestId : requestMap.keySet()) {
+        
+        if(!requestMap.isEmpty()){
+          for (String requestId : requestMap.keySet()) {
             deleteResource(requestMap.get(requestId));
+            }
+        }
+        else {
+          sendErrorMessage("No resources have been found to be deleted. Please reserve or provision new resources first and then call Provison", requestContext.getRequestContextId());
         }
     }
 
@@ -452,10 +457,17 @@ public class OrchestratorMDBListener implements MessageListener {
      private void createResources(RequestContext requestContext) {
 
         Map<String, Request> requestMap = requestContext.getRequestMap();
-
-        for (String requestId : requestMap.keySet()) {
+        
+        if(!requestMap.isEmpty()){
+          for (String requestId : requestMap.keySet()) {
             sendCreateToResource(requestMap.get(requestId));
+            }
+        } 
+        else {
+          sendErrorMessage("No allocated resources for provisioning have been found. Please reserve new resources by calling Allocate method and then call Provison", requestContext.getRequestContextId());
         }
+
+        
     }
 
     private void configureResources(RequestContext requestContext) {
