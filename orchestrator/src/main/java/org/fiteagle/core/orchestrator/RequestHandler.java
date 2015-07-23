@@ -1,5 +1,7 @@
 package org.fiteagle.core.orchestrator;
 
+import com.hp.hpl.jena.graph.Node_Variable;
+import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.ResIterator;
@@ -7,14 +9,18 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.vocabulary.RDF;
 
+import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_component;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import info.openmultinet.ontology.vocabulary.Omn_service;
 
+import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.core.orchestrator.dm.OrchestratorStateKeeper;
 import org.fiteagle.core.orchestrator.dm.Request;
 import org.fiteagle.core.orchestrator.dm.RequestContext;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -29,7 +35,7 @@ public class RequestHandler {
 
     public void parseModel(RequestContext context, Model requestModel, String method) {
 
-        Model requestedResources = this.getRequestedResources(requestModel);
+        Model requestedResources = this.getRequestedResources(requestModel, method);
           
         ResIterator resIterator = requestedResources.listSubjectsWithProperty(Omn_lifecycle.implementedBy);
 
@@ -46,7 +52,7 @@ public class RequestHandler {
 
     }
 
-    private Model getRequestedResources(Model requestModel) {
+    private Model getRequestedResources(Model requestModel, String method) {
         Model returnModel = ModelFactory.createDefaultModel();
         ResIterator resIterator = requestModel.listSubjectsWithProperty(RDF.type, Omn.Resource);
         if(!resIterator.hasNext()){
@@ -88,9 +94,33 @@ public class RequestHandler {
               resourceModel.add(username);
             }
             
-            
-            returnModel.add(resourceModel);
-
+            // provision only resources with reservationState "Allocated"
+            if(resourceModel.contains(requestedResource, Omn.hasReservation)){
+              Resource reservation = resourceModel.getProperty(requestedResource, Omn.hasReservation).getObject().asResource();
+              Model reservationModel = TripletStoreAccessor.getResource(reservation.getURI());
+              String reservationState = reservationModel.getProperty(reservation, Omn_lifecycle.hasReservationState).getObject().asResource().getURI();
+              
+              switch(method){
+                case IMessageBus.TYPE_CREATE:
+                  
+                  if(reservationState.equals(Omn_lifecycle.Allocated.getURI())){
+                    returnModel.add(resourceModel);
+                  }
+                  break;
+                  
+                case IMessageBus.TYPE_DELETE:
+                  
+                  if(reservationState.equals(Omn_lifecycle.Provisioned.getURI()) || reservationState.equals(Omn_lifecycle.Allocated.getURI())){
+                    returnModel.add(resourceModel);
+                  }
+                  break;
+                  
+                  default:
+                    returnModel.add(resourceModel);
+                  
+              }
+              
+            }
 
         }
         return returnModel;
