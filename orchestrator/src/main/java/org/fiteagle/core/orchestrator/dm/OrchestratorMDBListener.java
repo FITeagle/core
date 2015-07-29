@@ -2,6 +2,7 @@ package org.fiteagle.core.orchestrator.dm;
 
 import com.hp.hpl.jena.graph.Node_Variable;
 import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.vocabulary.OWL2;
 
@@ -239,39 +240,7 @@ public class OrchestratorMDBListener implements MessageListener {
                     }
                     requestContext = request.getContext();
                     request.setHandled();
-                    if (requestContext.allAnswersReceived()) {
-                        Model response = ModelFactory.createDefaultModel();
-                        for (Request request1 : requestContext.getRequestMap().values()) {
-
-                            for (Resource resource : request1.getResourceList()) {
-                                if (resource.hasProperty(Omn.isResourceOf)) {
-                                    String topologyURI = resource.getProperty(Omn.isResourceOf).getObject().asResource().getURI();
-                                    Model top = TripletStoreAccessor.getResource(topologyURI);
-                                    response.add(top);
-                                    resource.removeAll(Omn_lifecycle.hasState);
-                                    resource.addProperty(Omn_lifecycle.hasState,Omn_lifecycle.Stopped);
-
-                                    response.add(resource.listProperties());
-                                    Model reservationModel = TripletStoreAccessor.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
-                                    Resource reservation = reservationModel.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
-
-                                    reservation.removeAll(Omn_lifecycle.hasReservationState);
-                                    reservation.addProperty(Omn_lifecycle.hasReservationState, Omn_lifecycle.Unallocated);
-
-                                    response.add(reservationModel);
-                                    
-
-                                    deleteReservationState(reservation);
-                                    TripletStoreAccessor.updateModel(reservationModel);
-                                }
-
-                                stateKeeper.removeRequest(requestID);
-                            }
-
-                        }
-                        sendResponse(requestContext.getRequestContextId(), response);
-                    }
-
+                    checkAllResourcesDeleted(requestContext, Omn_lifecycle.Unallocated, requestID);
                     break;
                 default: LOGGER.log(Level.INFO, "Sing it baby!");
 
@@ -321,13 +290,13 @@ public class OrchestratorMDBListener implements MessageListener {
             RequestContext requestContext = new RequestContext(requestID);
             requestHandler.parseModel(requestContext, modelDelete, IMessageBus.TYPE_DELETE);
             this.sendDeleteToResources(requestContext);
-            checkIfAllResourcesHandled(requestContext);
+            checkAllResourcesDeleted(requestContext, Omn_lifecycle.Unallocated, null);
             
         }else{
             RequestContext requestContext = new RequestContext(requestID);
             requestHandler.parseModel(requestContext, requestModel, IMessageBus.TYPE_DELETE);
             this.sendDeleteToResources(requestContext);
-            checkIfAllResourcesHandled(requestContext);
+            checkAllResourcesDeleted(requestContext, Omn_lifecycle.Unallocated, null);
         }
 
 
@@ -421,7 +390,7 @@ public class OrchestratorMDBListener implements MessageListener {
 
 
     
-    private void checkIfAllResourcesHandled(RequestContext requestContext){
+    private void checkAllResourcesDeleted(RequestContext requestContext, OntClass state, String requestID){
       
       if (requestContext.allAnswersReceived()) {
         Model response = ModelFactory.createDefaultModel();
@@ -453,7 +422,12 @@ public class OrchestratorMDBListener implements MessageListener {
                     }
                 }
 
-                stateKeeper.removeRequest(request1.getRequestId());
+                if(requestID == null){
+                  stateKeeper.removeRequest(request1.getRequestId());
+                }
+                else 
+                  stateKeeper.removeRequest(requestID);
+                
             }
 
         }
