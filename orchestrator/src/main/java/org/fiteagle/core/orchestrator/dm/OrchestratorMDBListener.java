@@ -318,10 +318,36 @@ public class OrchestratorMDBListener implements MessageListener {
 
     private void deleteResource(Request request) {
       
-      
         Model requestModel = ModelFactory.createDefaultModel();
-        Resource requestTopology = requestModel.createResource(IConfig.TOPOLOGY_NAMESPACE_VALUE+ UUID.randomUUID());
-        requestTopology.addProperty(RDF.type, Omn.Topology);
+        
+        Resource requestTopology = null;
+        
+        for (Resource resource : request.getResourceList()) {
+          
+          Model model = TripletStoreAccessor.getResource(resource.getURI());
+          
+          ResIterator resIterator = model.listResourcesWithProperty(Omn.hasResource);
+          
+          while(resIterator.hasNext()){
+            Resource topology = resIterator.nextResource();
+            Model topologyModel = TripletStoreAccessor.getResource(topology.getURI());
+            Resource topologyResource = topologyModel.getResource(topology.getURI());
+            if(topologyResource.hasProperty(RDF.type, Omn.Topology)){
+              requestTopology = requestModel.createResource(topologyResource.getURI());
+              requestTopology.addProperty(RDF.type, Omn.Topology);
+              break;
+            }
+          }
+          if(requestTopology != null){
+            break;
+          }
+        }
+        
+        if(requestTopology == null){
+          requestTopology = requestModel.createResource(IConfig.TOPOLOGY_NAMESPACE_VALUE+ UUID.randomUUID());
+          requestTopology.addProperty(RDF.type, Omn.Topology);
+        }
+ 
 
         for (Resource resource : request.getResourceList()) {
           
@@ -361,7 +387,6 @@ public class OrchestratorMDBListener implements MessageListener {
                 requestModel.add(resource.listProperties());
               }
             }
-            
             
         }
         
