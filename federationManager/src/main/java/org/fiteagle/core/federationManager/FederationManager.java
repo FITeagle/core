@@ -7,21 +7,19 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
-import javax.ejb.Timeout;
-import javax.ejb.Timer;
-import javax.ejb.TimerConfig;
-import javax.ejb.TimerService;
+import javax.inject.Inject;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
-import org.apache.jena.atlas.web.HttpException;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.OntologyModelUtil;
+import org.fiteagle.api.core.TimerHelper;
 import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 import org.fiteagle.core.federationManager.dm.FederationManagerREST;
@@ -44,10 +42,9 @@ public class FederationManager extends Application {
 			.getLogger(FederationManager.class.getName());
 	protected Model federationModel;
 	protected static FederationManager manager;
-	private int failureCounter = 0;
-
-	@javax.annotation.Resource
-	public TimerService timerService;
+	
+	@Inject
+	private TimerHelper helper;
 
 	public boolean initialized;
 
@@ -97,42 +94,22 @@ public class FederationManager extends Application {
 	public void runSetup() {
 
 		if (!initialized) {
-			timerService.createIntervalTimer(0, 5000, new TimerConfig());
+			helper.setNewTimer(new Ontology());
 		}
 	}
 
 	public static FederationManager getManager() {
 		return manager;
 	}
-
-	@Timeout
-	public void timerMethod(Timer timer) {
-		if (failureCounter < 10) {
-			try {
-				TripletStoreAccessor.addModel(federationModel);
-				initialized = true;
-				timer.cancel();
-			} catch (HttpException e) {
-				LOGGER.log(Level.INFO,
-						 "Couldn't find RDF Database - will try again");
-				failureCounter++;
-			} catch (ResourceRepositoryException e) {
-
-				LOGGER.log(Level.INFO,
-						 "Errored while adding something to Database - will try again");
-				failureCounter++;
-
-			} catch (InvalidModelException e) {
-				e.printStackTrace();
-				failureCounter++;
-
-			}
-		} else {
-			LOGGER.log(
-					Level.SEVERE,
-					"Tried to add something to Database several times, but failed. Please check the OpenRDF-Database");
+	
+	class Ontology implements Callable<Void> {
+		 
+		@Override
+		public Void call() throws ResourceRepositoryException, InvalidModelException {
+			TripletStoreAccessor.addModel(federationModel);
+			initialized = true;
+			return null;
 		}
-
-	}
+}
 
 }
