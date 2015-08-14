@@ -332,7 +332,8 @@ public class OrchestratorMDBListener implements MessageListener {
             Resource topology = resIterator.nextResource();
             Model topologyModel = TripletStoreAccessor.getResource(topology.getURI());
             Resource topologyResource = topologyModel.getResource(topology.getURI());
-            if(topologyResource.hasProperty(RDF.type, Omn.Topology)){
+//            if(topologyResource.hasProperty(RDF.type, Omn.Topology)){
+            if(topologyResource.hasProperty(Omn_lifecycle.hasState, Omn_lifecycle.Started)){
               requestTopology = requestModel.createResource(topologyResource.getURI());
               requestTopology.addProperty(RDF.type, Omn.Topology);
               break;

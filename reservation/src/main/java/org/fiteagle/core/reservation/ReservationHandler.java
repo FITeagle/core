@@ -27,6 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jms.JMSContext;
+import javax.jms.JMSException;
 import javax.jms.Message;
 
 /**
@@ -46,6 +47,11 @@ public class ReservationHandler {
           reserve(reservationModel);
           String serializedResponse = MessageUtil.serializeModel(reservationModel, serialization);
           responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
+          try {
+            responseMessage.setStringProperty(IMessageBus.MESSAGE_SOURCE, IMessageBus.SOURCE_RESERVATION);
+          } catch (JMSException e) {
+            LOGGER.log(Level.SEVERE, e.getMessage());
+          }
         }
         else {
           responseMessage = MessageUtil.createErrorMessage(errorMessage, requestID, context);
