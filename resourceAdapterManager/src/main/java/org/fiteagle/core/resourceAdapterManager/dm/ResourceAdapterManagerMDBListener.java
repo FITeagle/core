@@ -23,8 +23,6 @@ import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepos
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 @MessageDriven(name = "ResourceAdapterManagerMDBListener", activationConfig = {
     @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -35,11 +33,12 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
   
   private static Logger LOGGER = Logger.getLogger(ResourceAdapterManagerMDBListener.class.toString());
   
+
   @Inject
   private JMSContext context;
   @javax.annotation.Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
   private Topic topic;
-  
+    
   public void onMessage(final Message message) {
     String messageType = MessageUtil.getMessageType(message);
     String serialization = MessageUtil.getMessageSerialization(message);
@@ -87,12 +86,12 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
   private void handleCreate(Model model, String serialization, String requestID) {
     ResIterator resIterator = model.listSubjectsWithProperty(Omn_lifecycle.canImplement);
     while (resIterator.hasNext()) {
-      Resource resource = resIterator.next();
-      try {
-        TripletStoreAccessor.addResource(resource);
-      } catch (ResourceRepositoryException e) {
-        LOGGER.log(Level.SEVERE, "Could not add " + resource, e);
-      }
+    Resource resource = resIterator.next();
+    try {
+            TripletStoreAccessor.addResource(resource);
+          } catch (ResourceRepositoryException e) {
+            LOGGER.log(Level.SEVERE, "Could not add " + resource, e);
+          }
     }
     Message message = MessageUtil.createRDFMessage(model, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
     context.createProducer().send(topic, message);

@@ -27,7 +27,7 @@
 	</repositories>
 
 	<dependencies>
-		<dependency>
+				<dependency>
 			<groupId>org.fiteagle</groupId>
 			<artifactId>api</artifactId>
 			<version>0.1-SNAPSHOT</version>
@@ -37,7 +37,6 @@
 	<modules>
 		<module>config</module>
 		<module>aaa</module>
-	<!--	<module>usermanagement</module> -->
 		<module>bus</module>
 		<module>reservation</module>
 		<module>orchestrator</module>
