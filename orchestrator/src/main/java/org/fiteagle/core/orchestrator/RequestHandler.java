@@ -19,8 +19,11 @@ import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.core.orchestrator.dm.OrchestratorStateKeeper;
 import org.fiteagle.core.orchestrator.dm.Request;
 import org.fiteagle.core.orchestrator.dm.RequestContext;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
+//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
+//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
+
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;

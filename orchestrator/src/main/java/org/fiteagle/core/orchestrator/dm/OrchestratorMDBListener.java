@@ -9,6 +9,7 @@ import com.hp.hpl.jena.vocabulary.OWL2;
 import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+import info.openmultinet.ontology.vocabulary.Omn_resource;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -26,8 +27,11 @@ import info.openmultinet.ontology.vocabulary.Omn_service;
 
 import org.fiteagle.api.core.*;
 import org.fiteagle.core.orchestrator.RequestHandler;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
+//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
+//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
+
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.vocabulary.RDF;
 
@@ -653,6 +657,8 @@ public class OrchestratorMDBListener implements MessageListener {
         context.createProducer().send(topic, message);
     }
     
+    
+    // TODO: find another solution to solve this issue.
     private boolean isPrimaryProperty(Property property){
       Boolean primanryProperty = true;
       String propertyLocalname = property.getLocalName();
@@ -665,7 +671,11 @@ public class OrchestratorMDBListener implements MessageListener {
                 if(!propertyLocalname.equals(RDF.type.getLocalName()))
                   if(!propertyLocalname.equals("deployedOn"))
                     if(!propertyLocalname.equals("requires"))
-                      primanryProperty = false;
+                      if(!propertyLocalname.equals(Omn_lifecycle.managedBy.getLocalName()))
+                        if(!propertyLocalname.equals(Omn_resource.hasSliverType.getLocalName()))
+                          primanryProperty = false;
+                      
+                      
       }
       return primanryProperty;
       
