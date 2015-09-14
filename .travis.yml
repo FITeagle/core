@@ -7,10 +7,12 @@ env:
   - secure: cGXOeQnggkagzrFabSyrG+9JviGsGrfR++RsCHlUZGe5vfIavZpbnY5eVkQZ/viBfjrwu7LGRffhwz6zr2oRYzF7DE7gd+bHvukzAsFsD2A3nFBf/r4U3NKvPiGBP6AhoMhxtHu0/uUuTOfoQbuQbJ5E9MXeAuB/iUSiXB3YXEQ=
   - secure: eOf7nXdKlxwCr4fxnCosV/t6gZCgTE7llSfoYZxeni5+jhimT394Rb/k5XUc1U1BUExzC8xhuG+bRXs/sniA2jbokUPeIlCtoJvlOe9ePge8qX11kxgyCivE6iRTvA1w+UADYzGm7DEmaIUIgrF7wzeaZr9AtD5OpVQpm8L2cXE=
   - secure: GT82lHQfx5A82XrclGsisKHptPesPxo6WVWkHG+lJMr2nad2unLT8jOUL22qLy1cW6auK37DbgP8XbwT/7TRNF11eRdagFtod1GjChmqNig8/9MOd2Y/YYT4AJytucwXN/zQJcnrnZEPnngEOhkzYmnA8nXA5Nl0hgXKvE0Wq8A=
+before_install:
+  - sed -i.bak -e 's|https://nexus.codehaus.org/snapshots/|https://oss.sonatype.org/content/repositories/codehaus-snapshots/|g' ~/.m2/settings.xml
 script:
-- if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then travis_retry mvn clean install site ; fi
+- if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then mvn site ; fi
 - ! 'if [ ${TRAVIS_PULL_REQUEST} = ''false'' ] && [ ${TRAVIS_BRANCH} = ''master'' ] ; then
-  mvn clean deploy --settings .travis/settings.xml ; else true ; fi'
+  mvn deploy --settings .travis/settings.xml ; else true ; fi'
 notifications:
   slack:
     secure: lYVE1qJ5globXWgN6b7SGaZLBiFceaq1/zJPfobu56WtiOWbQQcpGrYgWkZK7hudZpUxTZr6TovkLnwMUeExmlvmlUt7Lt/bWrKVLk5J/KHN/kN3FT906H/rrpnFVtmKgTP+yS1xZVVsKVuRp/bA01N+9D5oNIYLbcTU6ggrA9o=
@@ -21,7 +23,7 @@ cache:
   directories:
   - $HOME/.m2
 after_success:
-- mvn clean test jacoco:report coveralls:report
+- mvn test jacoco:report coveralls:report
 - if [ "${TRAVIS_BRANCH}" = "master" ]; then curl http://demo.fiteagle.org/trigger.php?c=fiteagle ; fi
 addons:
   coverity_scan:
