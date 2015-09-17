@@ -6,12 +6,22 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix omn:  <http://open-multinet.info/ontology/omn#> .
 @prefix omn-federation: <http://open-multinet.info/ontology/omn-federation#> .
-@prefix example: <http://testbed.example.org/about> .
+@prefix example: <http://localhost/> .
+
+example:testbed a omn-federation:Infrastructure, owl:NamedIndividual;
+    rdfs:label   "Localhost Testbed" ;
+    rdfs:seeAlso "https://localhost:8443" ;
+    wgs:lat      "-7.5508303" ;
+    wgs:long     "110.9850367" ;
+    omn:hasResource <http://localhost/resource/MotorGarage-1> ;
+    omn-federation:isAdministeredBy example:organisation .
+
+example:organisation a omn-federation:FederationMember, owl:NamedIndividual ;
+    rdfs:label   "Localhost Organisation" ;
+    omn-federation:partOfFederation example:federation ;
+    omn-federation:administers example:testbed .
 
 
-example:testbed a omn-federation:Infrastructure,
-                                        owl:NamedIndividual;
-                                         rdfs:label "Testbed Name" ;
-                                         rdfs:seeAlso "https://testbed.example.org" ;
-                                         wgs:lat       "-7.5508303" ;
-                                         wgs:long      "110.9850367" .
+example:federation a omn-federation:Federation, owl:NamedIndividual ;
+    rdfs:label   "Localhost Federation" ;
+    omn-federation:hasFederationMember example:organisation .
