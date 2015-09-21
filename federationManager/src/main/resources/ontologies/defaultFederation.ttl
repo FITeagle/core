@@ -13,7 +13,6 @@ example:testbed a omn-federation:Infrastructure, owl:NamedIndividual;
     rdfs:seeAlso "https://localhost:8443" ;
     wgs:lat      "-7.5508303" ;
     wgs:long     "110.9850367" ;
-    omn:hasResource <http://localhost/resource/MotorGarage-1> ;
     omn-federation:isAdministeredBy example:organisation .
 
 example:organisation a omn-federation:FederationMember, owl:NamedIndividual ;
