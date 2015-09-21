@@ -17,8 +17,9 @@ import javax.jms.Topic;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.core.resourceAdapterManager.ResourceAdapterManager;
+
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ResIterator;
@@ -38,67 +39,23 @@ public class ResourceAdapterManagerMDBListener implements MessageListener {
   private JMSContext context;
   @javax.annotation.Resource(mappedName = IMessageBus.TOPIC_CORE_NAME)
   private Topic topic;
+
+
+    @Inject
+    ResourceAdapterManager resourceAdapterManager;
+
+   //TODO add message queue for for incoming messages which raise exception
     
   public void onMessage(final Message message) {
-    String messageType = MessageUtil.getMessageType(message);
-    String serialization = MessageUtil.getMessageSerialization(message);
-    String rdfString = MessageUtil.getStringBody(message);
-    LOGGER.log(Level.INFO, "Received a " + messageType + " message");
-    try {
-        if (messageType != null && rdfString != null) {
-            if (messageType.equals(IMessageBus.TYPE_CREATE)) {
-                Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
-                handleCreate(messageModel, serialization, MessageUtil.getJMSCorrelationID(message));
+      if(!resourceAdapterManager.initialized()){
+          resourceAdapterManager.storeMessage(message);
+      }else {
 
-            } else if (messageType.equals(IMessageBus.TYPE_GET)) {
-                handleGet(message, serialization, MessageUtil.getJMSCorrelationID(message));
+          resourceAdapterManager.handleMessage(message);
 
-            } else if (messageType.equals(IMessageBus.TYPE_DELETE)) {
-                Model messageModel = MessageUtil.parseSerializedModel(rdfString, serialization);
-                handleDelete(messageModel);
-            }
-        }
-    }catch (ResourceRepositoryException e) {
-        e.printStackTrace();
-    } catch (InvalidModelException e) {
-        e.printStackTrace();
-    }
-
-  }
-
-  private void handleGet(Message message, String serialization, String requestID) {
-    Message responseMessage = null;
-
-      String serializedResponse = null;
-
-      try {
-          serializedResponse = TripletStoreAccessor.getResources();
-      } catch (ResourceRepositoryException e) {
-          LOGGER.log(Level.SEVERE, "Could not get resource", e );
       }
-
-      responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
-
-      context.createProducer().send(topic, responseMessage);
-
   }
-  
-  private void handleCreate(Model model, String serialization, String requestID) {
-    ResIterator resIterator = model.listSubjectsWithProperty(Omn_lifecycle.canImplement);
-    while (resIterator.hasNext()) {
-    Resource resource = resIterator.next();
-    try {
-            TripletStoreAccessor.addResource(resource);
-          } catch (ResourceRepositoryException e) {
-            LOGGER.log(Level.SEVERE, "Could not add " + resource, e);
-          }
-    }
-    Message message = MessageUtil.createRDFMessage(model, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
-    context.createProducer().send(topic, message);
-  }
-  
-  private void handleDelete(Model model) throws InvalidModelException, ResourceRepositoryException {
-        TripletStoreAccessor.deleteModel(model);
-  }
+
+
   
 }
