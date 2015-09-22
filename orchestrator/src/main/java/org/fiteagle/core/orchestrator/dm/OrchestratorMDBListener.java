@@ -161,6 +161,7 @@ public class OrchestratorMDBListener implements MessageListener {
                                     Model top = TripletStoreAccessor.getResource(topologyURI);
                                     response.add(top);
                                     response.add(resource.listProperties());
+                                    
                                     Model reservationModel = TripletStoreAccessor.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
                                     Resource reservation = reservationModel.getResource(resource.getProperty(Omn.hasReservation).getObject().asResource().getURI());
 
@@ -172,6 +173,8 @@ public class OrchestratorMDBListener implements MessageListener {
                                     deleteReservationState(reservation);
                                     
                                     TripletStoreAccessor.updateModel(reservationModel);
+                                    
+                                    addResourceDetailsToResponse(response,resource);
 
                                     StmtIterator stmtIterator = model.listStatements(new SimpleSelector(resource, Omn.hasService, (Object)null));
                                     while(stmtIterator.hasNext()){
@@ -254,6 +257,21 @@ public class OrchestratorMDBListener implements MessageListener {
 
 
         }
+    }
+    
+    private void addResourceDetailsToResponse(Model response, Resource resource){
+      StmtIterator stmtIterator = resource.listProperties();
+      while(stmtIterator.hasNext()){
+        Statement statement = stmtIterator.nextStatement();
+        if(statement.getObject().isResource()){
+          if(TripletStoreAccessor.exists(statement.getObject().asResource().getURI())){
+            if(!Omn_lifecycle.implementedBy.getLocalName().equals(statement.getPredicate().getLocalName())){
+              Model resourceModel = TripletStoreAccessor.getResource(statement.getObject().asResource().getURI());
+              response.add(resourceModel);
+            }
+          }
+        }
+      }
     }
 
     private void deleteReservationState(Resource resource){

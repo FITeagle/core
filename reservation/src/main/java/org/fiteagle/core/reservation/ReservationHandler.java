@@ -113,6 +113,27 @@ public class ReservationHandler {
 
                 StmtIterator statementIter = requestModel.listStatements(selector);
                 Resource newResource = assistantModel.createResource(resource.getNameSpace()+ UUID.randomUUID().toString());
+                
+                if(!resource.hasProperty(Omn_lifecycle.implementedBy)){
+                  
+                  SimpleSelector typeSelector = new SimpleSelector(resource, RDF.type, (RDFNode) null);
+                  StmtIterator typeStatementIterator = requestModel.listStatements(typeSelector);
+                  while(typeStatementIterator.hasNext()){
+                    Statement typeStatement = typeStatementIterator.next();
+                    Model model = TripletStoreAccessor.getResource(typeStatement.getObject().asResource().getURI());
+                    if(!model.isEmpty() && model != null && model.contains((Resource) null, Omn_lifecycle.canImplement, typeStatement.getObject().asResource())){
+                      SimpleSelector adapterInstanceSelector = new SimpleSelector(null, Omn_lifecycle.canImplement, (RDFNode) null);
+                      StmtIterator adapterInstanceIterator = model.listStatements(adapterInstanceSelector);
+                      while(adapterInstanceIterator.hasNext()){
+                        Statement adapterInstanceStatement = adapterInstanceIterator.nextStatement();
+                        if(typeStatement.getObject().asResource().getURI().equals(adapterInstanceStatement.getObject().asResource().getURI())){
+                          newResource.addProperty(Omn_lifecycle.implementedBy, adapterInstanceStatement.getSubject());
+                          break;
+                        }
+                      }
+                    }
+                  }
+                }
 
                resourcesIDs.put(resource.getURI(), newResource);
                 
@@ -199,19 +220,36 @@ public class ReservationHandler {
       }
       if (resource1.hasProperty(Omn_lifecycle.implementedBy)) {
         adapterInstance = resource1.getProperty(Omn_lifecycle.implementedBy).getObject();
-      }
+        
+        Model mo = ModelFactory.createDefaultModel();
+        Resource re = mo.createResource(adapterInstance.toString());
+        Model model = TripletStoreAccessor.getResource(re.getURI());
+        if (model.isEmpty() || model == null) {
+          errorMessage += "The requested component id " + re.getURI() + " is not supported";
+        } else 
+          if(!model.contains(re, Omn_lifecycle.canImplement, type)){
+            errorMessage = "The requested sliver type " + type.toString()
+                + " is not supported. Please see supported sliver types";
+          }
+      } 
       
-      Model mo = ModelFactory.createDefaultModel();
-      Resource re = mo.createResource(adapterInstance.toString());
-      Model model = TripletStoreAccessor.getResource(re.getURI());
-      if (model.isEmpty() || model == null) {
-        errorMessage += "The requested component id " + re.getURI() + " is not supported";
-      } else 
-        if(!model.contains(re, Omn_lifecycle.canImplement, type)){
-          errorMessage = "The requested sliver type " + type.toString()
-              + " is not supported. Please see supported sliver types";
+      else {
+        
+        SimpleSelector typeSelector = new SimpleSelector(resource1, RDF.type, (RDFNode) null);
+        StmtIterator typeStatementIterator = requestModel.listStatements(typeSelector);
+        Boolean resourceFound = false;
+        while(typeStatementIterator.hasNext()){
+          Statement typeStatement = typeStatementIterator.next();
+          Model model = TripletStoreAccessor.getResource(typeStatement.getObject().asResource().getURI());
+          if(!model.isEmpty() && model != null && model.contains((Resource) null, Omn_lifecycle.canImplement, typeStatement.getObject().asResource())){
+            resourceFound = true;
+            break;
+          }
         }
-      
+        if(!resourceFound){
+          errorMessage += "The requested resource " + resource1.getLocalName() + " is not supported";
+        }
+      }
     }
     return errorMessage;
   }
