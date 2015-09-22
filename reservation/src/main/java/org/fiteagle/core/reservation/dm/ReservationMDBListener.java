@@ -174,7 +174,22 @@ public class ReservationMDBListener implements MessageListener {
         StmtIterator stmtIterator = resultModel.listStatements(new SimpleSelector(null, Omn.hasResource,(Object)null));
         while(stmtIterator.hasNext()){
             Resource resource = stmtIterator.nextStatement().getObject().asResource();
-            resultModel.add(TripletStoreAccessor.getResource(resource.getURI()));
+            Model resourceModel = TripletStoreAccessor.getResource(resource.getURI());
+            resultModel.add(resourceModel);
+            
+            Resource res = resourceModel.getResource(resource.getURI());
+            StmtIterator stmtIter = res.listProperties();
+            while(stmtIter.hasNext()){
+              Statement statement = stmtIter.nextStatement();
+              if(statement.getObject().isResource()){
+                if(TripletStoreAccessor.exists(statement.getObject().asResource().getURI())){
+                  if(!Omn_lifecycle.implementedBy.getLocalName().equals(statement.getPredicate().getLocalName())){
+                    Model model = TripletStoreAccessor.getResource(statement.getObject().asResource().getURI());
+                    resultModel.add(model);
+                  }
+                }
+              }
+            }
         }
     }
 
