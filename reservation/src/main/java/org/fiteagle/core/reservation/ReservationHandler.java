@@ -116,23 +116,8 @@ public class ReservationHandler {
                 
                 if(!resource.hasProperty(Omn_lifecycle.implementedBy)){
                   
-                  SimpleSelector typeSelector = new SimpleSelector(resource, RDF.type, (RDFNode) null);
-                  StmtIterator typeStatementIterator = requestModel.listStatements(typeSelector);
-                  while(typeStatementIterator.hasNext()){
-                    Statement typeStatement = typeStatementIterator.next();
-                    Model model = TripletStoreAccessor.getResource(typeStatement.getObject().asResource().getURI());
-                    if(!model.isEmpty() && model != null && model.contains((Resource) null, Omn_lifecycle.canImplement, typeStatement.getObject().asResource())){
-                      SimpleSelector adapterInstanceSelector = new SimpleSelector(null, Omn_lifecycle.canImplement, (RDFNode) null);
-                      StmtIterator adapterInstanceIterator = model.listStatements(adapterInstanceSelector);
-                      while(adapterInstanceIterator.hasNext()){
-                        Statement adapterInstanceStatement = adapterInstanceIterator.nextStatement();
-                        if(typeStatement.getObject().asResource().getURI().equals(adapterInstanceStatement.getObject().asResource().getURI())){
-                          newResource.addProperty(Omn_lifecycle.implementedBy, adapterInstanceStatement.getSubject());
-                          break;
-                        }
-                      }
-                    }
-                  }
+                  newResource.addProperty(Omn_lifecycle.implementedBy, getAdapterForResource(requestModel, resource));
+                  
                 }
 
                resourcesIDs.put(resource.getURI(), newResource);
@@ -196,6 +181,49 @@ public class ReservationHandler {
         return reservationModel;
     }
 
+    
+  private Resource getAdapterForResource(Model requestModel, Resource resource){
+    
+    Resource adapter = null;
+    SimpleSelector typeSelector = new SimpleSelector(resource, RDF.type, (RDFNode) null);
+    StmtIterator typeStatementIterator = requestModel.listStatements(typeSelector);
+    
+    while(typeStatementIterator.hasNext()){
+      
+      Statement typeStatement = typeStatementIterator.next();
+      Resource typeResource = typeStatement.getObject().asResource();
+      String typeURI = typeResource.getURI();
+      
+      Model adapterModel = TripletStoreAccessor.getResource(typeURI);
+      
+      if(modelHasProperty(adapterModel, typeResource)){
+        
+        SimpleSelector adapterInstanceSelector = new SimpleSelector(null, Omn_lifecycle.canImplement, (RDFNode) null);
+        StmtIterator adapterInstanceIterator = adapterModel.listStatements(adapterInstanceSelector);
+        
+        while(adapterInstanceIterator.hasNext()){
+          
+          Statement adapterInstanceStatement = adapterInstanceIterator.nextStatement();
+          String adapterInstanceURI = adapterInstanceStatement.getObject().asResource().getURI();
+          
+          if(typeURI.equals(adapterInstanceURI)){
+            adapter = adapterInstanceStatement.getSubject();
+            break;
+          }
+        }
+      }
+    }
+    return adapter;
+  }
+  
+  private boolean modelHasProperty(Model model, Resource value){
+    if(!model.isEmpty() && model != null ){
+      if(model.contains((Resource) null, Omn_lifecycle.canImplement, value)){
+        return true;
+      } else return false;
+    } else return false;
+      
+  }
 
   private String checkType(Model requestModel) {
     String errorMessage = "";
