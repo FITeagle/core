@@ -19,8 +19,10 @@ import org.fiteagle.api.core.*;
 import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -29,6 +31,7 @@ import java.util.logging.Logger;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.xml.transform.ErrorListener;
 
 /**
  * Created by dne on 15.02.15.
@@ -40,7 +43,7 @@ public class ReservationHandler {
 
         LOGGER.log(Level.INFO, "handle reservation ...");
         Message responseMessage = null;
-        String errorMessage = checkType(requestModel);
+        String errorMessage = checkReservationRequest(requestModel);
         if(errorMessage == null || errorMessage.isEmpty()){
           Model reservationModel = ModelFactory.createDefaultModel();
           createReservationModel(requestModel, reservationModel);
@@ -225,62 +228,121 @@ public class ReservationHandler {
       
   }
 
-  private String checkType(Model requestModel) {
-    String errorMessage = "";
-    ResIterator resIterator = requestModel.listResourcesWithProperty(Omn.isResourceOf);
-    RDFNode type = null;
-    Object adapterInstance = null;
+  /**
+   * checks reservation request
+   * @param requestModel
+   * @return error message
+   */
+  private String checkReservationRequest(Model requestModel){
+    
+    final List<String> errorsList = new ArrayList<String>();
+    
+    ResIterator resIterator = requestModel.listResourcesWithProperty(Omn.isResourceOf); 
     
     while (resIterator.hasNext()) {
+      Resource resource = resIterator.nextResource();
       
-      Resource resource1 = resIterator.nextResource();
-      
-      if (resource1.hasProperty(RDF.type)) {
+      checkResourceAdapterInstance(resource, requestModel, errorsList);
         
-        StmtIterator stmtIterator = resource1.listProperties(RDF.type);
-        while (stmtIterator.hasNext()) {
-          
-          Statement statement1 = stmtIterator.nextStatement();
-          if (!Omn_resource.Node.equals(statement1.getObject())) {
-            type = statement1.getObject();
-          }
-        }
+      
+      
+    }
+    
+    
+    return getErrorMessage(errorsList);
+  }
+  
+  private String getErrorMessage(final List<String> errorsList){
+    String errorMessage = "";
+    if(!errorsList.isEmpty()){
+      for (String error : errorsList){
+        errorMessage += error + " .";
       }
-      if (resource1.hasProperty(Omn_lifecycle.implementedBy)) {
-        adapterInstance = resource1.getProperty(Omn_lifecycle.implementedBy).getObject();
-        
-        Model mo = ModelFactory.createDefaultModel();
-        Resource re = mo.createResource(adapterInstance.toString());
-        Model model = TripletStoreAccessor.getResource(re.getURI());
-        if (model.isEmpty() || model == null) {
-          errorMessage += "The requested component id " + re.getURI() + " is not supported";
-        } else 
-          if(!model.contains(re, Omn_lifecycle.canImplement, type)){
-            errorMessage = "The requested sliver type " + type.toString()
-                + " is not supported. Please see supported sliver types";
-          }
-      } 
+    }
+      return errorMessage;
+  }
+  
+  private void checkResourceAdapterInstance(Resource resource, Model requestModel, final List<String> errorList){
+    
+    RDFNode type = getResourceType(resource);
+    
+    if (resource.hasProperty(Omn_lifecycle.implementedBy)) {
+      Object adapterInstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject();
+      checkResourceAdapterType(type, adapterInstance, errorList);
+    }
+    else {
+      // check if resource's type is supported by any adapter instance.
+      findAdapterSupportsType(resource, requestModel, errorList);
+    }
+  }
+  
+  /**
+   * checks if resource type is supported by any adapter instance.
+   * @param resource
+   * @param requestModel
+   * @param errorMessage
+   */
+  private void findAdapterSupportsType(Resource resource, Model requestModel, final List<String> errorList){
+    SimpleSelector typeSelector = new SimpleSelector(resource, RDF.type, (RDFNode) null);
+    StmtIterator typeStatementIterator = requestModel.listStatements(typeSelector);
+    Boolean resourceFound = false;
+    while(typeStatementIterator.hasNext()){
+      Statement typeStatement = typeStatementIterator.next();
+      Model model = TripletStoreAccessor.getResource(typeStatement.getObject().asResource().getURI());
+      if(!model.isEmpty() && model != null && model.contains((Resource) null, Omn_lifecycle.canImplement, typeStatement.getObject().asResource())){
+        resourceFound = true;
+        break;
+      }
+    }
+    if(!resourceFound){
+      String errorMessage = "The requested resource " + resource.getLocalName() + " is not supported";
+      errorList.add(errorMessage);
+    }
+  }
+  
+  /**
+   * checks if resource type is supported by the requested adapter instance
+   * @param type
+   * @param adapterInstance
+   * @param errorMessage
+   */
+  private void checkResourceAdapterType(RDFNode type, Object adapterInstance, final List<String> errorList){
+    
+    Model mo = ModelFactory.createDefaultModel();
+    Resource re = mo.createResource(adapterInstance.toString());
+    Model model = TripletStoreAccessor.getResource(re.getURI());
+    if (model.isEmpty() || model == null) {
+      errorList.add("The requested component id " + re.getURI() + " is not supported");
+    } else 
+      if(!model.contains(re, Omn_lifecycle.canImplement, type)){
+        String errorMessage = "The requested sliver type " + type.toString()
+            + " is not supported. Please see supported sliver types";
+        errorList.add(errorMessage); 
+      }
+    
+  }
+  
+  /**
+   * 
+   * @param resource
+   * @return the type of the resource
+   */
+  private RDFNode getResourceType(Resource resource){
+    RDFNode type = null;
+    if (resource.hasProperty(RDF.type)) {
       
-      else {
+      StmtIterator stmtIterator = resource.listProperties(RDF.type);
+      while (stmtIterator.hasNext()) {
         
-        SimpleSelector typeSelector = new SimpleSelector(resource1, RDF.type, (RDFNode) null);
-        StmtIterator typeStatementIterator = requestModel.listStatements(typeSelector);
-        Boolean resourceFound = false;
-        while(typeStatementIterator.hasNext()){
-          Statement typeStatement = typeStatementIterator.next();
-          Model model = TripletStoreAccessor.getResource(typeStatement.getObject().asResource().getURI());
-          if(!model.isEmpty() && model != null && model.contains((Resource) null, Omn_lifecycle.canImplement, typeStatement.getObject().asResource())){
-            resourceFound = true;
-            break;
-          }
-        }
-        if(!resourceFound){
-          errorMessage += "The requested resource " + resource1.getLocalName() + " is not supported";
+        Statement statement = stmtIterator.nextStatement();
+        if (!Omn_resource.Node.equals(statement.getObject())) {
+          type = statement.getObject();
         }
       }
     }
-    return errorMessage;
+    return type;
   }
+  
     
     public void reserve(Model model) {
 
