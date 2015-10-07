@@ -207,11 +207,19 @@ public class ReservationHandler {
         while(adapterInstanceIterator.hasNext()){
           
           Statement adapterInstanceStatement = adapterInstanceIterator.nextStatement();
-          String adapterInstanceURI = adapterInstanceStatement.getObject().asResource().getURI();
+          String resourceURI = adapterInstanceStatement.getObject().asResource().getURI();
           
-          if(typeURI.equals(adapterInstanceURI)){
-            adapter = adapterInstanceStatement.getSubject();
-            break;
+          if(typeURI.equals(resourceURI)){
+            if(isExclusive(requestModel, resource)){
+              if(getAdapterCurrentAbility(adapterInstanceStatement.getSubject().getURI(), resource)){
+                adapter = adapterInstanceStatement.getSubject();
+                break;
+              }
+            }
+            else {
+              adapter = adapterInstanceStatement.getSubject();
+              break;
+            }
           }
         }
       }
@@ -243,9 +251,11 @@ public class ReservationHandler {
       Resource resource = resIterator.nextResource();
       
       checkResourceAdapterInstance(resource, requestModel, errorsList);
-      checkExclusiveResource(requestModel, resource, errorsList);
       
-    }
+      if(isExclusive(requestModel, resource)){
+        checkExclusiveResource(resource, requestModel, errorsList);
+        }
+      }
     return getErrorMessage(errorsList);
   }
   
@@ -259,26 +269,46 @@ public class ReservationHandler {
       return errorMessage;
   }
   
-  // supports only requested resources with componentID. 
-  // TODO: support requested resources without componentID.
-  private void checkExclusiveResource(Model requestModel, Resource resource, final List<String> errorsList){
+  
+  private void checkExclusiveResource(Resource resource, Model requestModel, final List<String> errorsList) {
     
-    if(isExclusive(requestModel, resource)){
-      if (resource.hasProperty(Omn_lifecycle.implementedBy)) {
-        Object adapterInstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject();
-        Model model = getResourceAdapterModel(adapterInstance);
-        int maxInstances = getMaxInstances(model);
-        int handledResourcesNum = gethandledResourcesNum(resource, adapterInstance);
-        if(handledResourcesNum >= maxInstances){
-          errorsList.add(" Requested resource is exclusive. Adapter instance can't handle resources more than its limit");
+    if (resource.hasProperty(Omn_lifecycle.implementedBy)) {
+      Object adapterInstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject();
+      if (!getAdapterCurrentAbility(adapterInstance, resource)) {
+        errorsList.add(" Requested resource is exclusive. Adapter instance can't handle resources more than its limit");
+      }
+    } else { // requested resource without componentID
+      List<Resource> adapterInstancesList = getAdapterInstancesList(resource, requestModel);
+      if (!adapterInstancesList.isEmpty()) {
+        boolean adapterInstanceFound = false;
+        for (Resource adapterInstance : adapterInstancesList) {
+          if (getAdapterCurrentAbility(adapterInstance, resource)) {
+            adapterInstanceFound = true;
+            break;
+          }
         }
-      } 
-      else {
-        // TODO:
+        if (!adapterInstanceFound) {
+          errorsList.add(" No available adapter instance has been found to support the requested resource "
+              + resource.getLocalName());
+        }
       }
     }
   }
   
+  /**
+   * checks if the adapter instance can create a new resource
+   * @param adapterInstance
+   * @param resource
+   * @return
+   */
+  private boolean getAdapterCurrentAbility(Object adapterInstance, Resource resource){
+    Model model = getResourceAdapterModel(adapterInstance);
+    int maxInstances = getMaxInstances(model);
+    int handledResourcesNum = gethandledResourcesNum(resource, adapterInstance, model);
+    if(maxInstances > handledResourcesNum)
+      return true;
+    else return false;
+  }
   
   /**
    * this method look in DB for reserved and provisioned instances by the adapter instance.
@@ -286,8 +316,7 @@ public class ReservationHandler {
    * @param adapterInstance
    * @return the number of reserved and provisioned instances.
    */
-  private int gethandledResourcesNum(Resource requestedResource, Object adapterInstance){
-    Model adapterInstanceModel = getResourceAdapterModel(adapterInstance);
+  private int gethandledResourcesNum(Resource requestedResource, Object adapterInstance, Model adapterInstanceModel){
     
     List<Resource> resourcesList = getResourcesList(adapterInstanceModel, adapterInstance);
     
@@ -370,14 +399,15 @@ public class ReservationHandler {
     StmtIterator stmtIterator = requestModel.listStatements(selector);
     while(stmtIterator.hasNext()){
       Statement statement = stmtIterator.nextStatement();
-      boolean ss = statement.getBoolean();
-      if(ss){
+      if(statement.getBoolean()){
         return true;
       }
     }
     return false;
     
   }
+  
+  
   private void checkResourceAdapterInstance(Resource resource, Model requestModel, final List<String> errorList){
     
     RDFNode type = getResourceType(resource);
@@ -388,7 +418,11 @@ public class ReservationHandler {
     }
     else {
       // check if resource's type is supported by any adapter instance.
-      findAdapterSupportsType(resource, requestModel, errorList);
+      List<Resource> adapterInstancesList = getAdapterInstancesList(resource, requestModel);
+      if(adapterInstancesList.isEmpty()){
+        String errorMessage = "The requested resource " + resource.getLocalName() + " is not supported";
+        errorList.add(errorMessage);
+      }
     }
   }
   
@@ -398,22 +432,51 @@ public class ReservationHandler {
    * @param requestModel
    * @param errorMessage
    */
-  private void findAdapterSupportsType(Resource resource, Model requestModel, final List<String> errorList){
+//  private void findAdapterSupportsType(Resource resource, Model requestModel, final List<String> errorList){
+//    SimpleSelector typeSelector = new SimpleSelector(resource, RDF.type, (RDFNode) null);
+//    StmtIterator typeStatementIterator = requestModel.listStatements(typeSelector);
+//    Boolean resourceFound = false;
+//    while(typeStatementIterator.hasNext()){
+//      Statement typeStatement = typeStatementIterator.next();
+//      Model model = TripletStoreAccessor.getResource(typeStatement.getObject().asResource().getURI());
+//      if(!model.isEmpty() && model != null && model.contains((Resource) null, Omn_lifecycle.canImplement, typeStatement.getObject().asResource())){
+//        resourceFound = true;
+//        break;
+//      }
+//    }
+//    if(!resourceFound){
+//      String errorMessage = "The requested resource " + resource.getLocalName() + " is not supported";
+//      errorList.add(errorMessage);
+//    }
+//  }
+  
+  /**
+   * this method looks for adapter instances supporting requested resource type.
+   * @param resource
+   * @param requestModel
+   * @return
+   */
+  private List<Resource> getAdapterInstancesList(Resource resource, Model requestModel) {
+    List<Resource> adapterInstancesList = new ArrayList<Resource>();
+    
     SimpleSelector typeSelector = new SimpleSelector(resource, RDF.type, (RDFNode) null);
     StmtIterator typeStatementIterator = requestModel.listStatements(typeSelector);
-    Boolean resourceFound = false;
+    
     while(typeStatementIterator.hasNext()){
       Statement typeStatement = typeStatementIterator.next();
       Model model = TripletStoreAccessor.getResource(typeStatement.getObject().asResource().getURI());
+      
       if(!model.isEmpty() && model != null && model.contains((Resource) null, Omn_lifecycle.canImplement, typeStatement.getObject().asResource())){
-        resourceFound = true;
-        break;
+        ResIterator adapterInstanceIter = model.listResourcesWithProperty(Omn_lifecycle.canImplement, typeStatement.getObject());
+        
+        while(adapterInstanceIter.hasNext()){
+          Resource adapterInstance = adapterInstanceIter.nextResource();
+          adapterInstancesList.add(adapterInstance);
+        }
       }
     }
-    if(!resourceFound){
-      String errorMessage = "The requested resource " + resource.getLocalName() + " is not supported";
-      errorList.add(errorMessage);
-    }
+    
+    return adapterInstancesList;
   }
   
   /**
