@@ -243,12 +243,9 @@ public class ReservationHandler {
       Resource resource = resIterator.nextResource();
       
       checkResourceAdapterInstance(resource, requestModel, errorsList);
-        
-      
+      checkExclusiveResource(requestModel, resource, errorsList);
       
     }
-    
-    
     return getErrorMessage(errorsList);
   }
   
@@ -262,6 +259,125 @@ public class ReservationHandler {
       return errorMessage;
   }
   
+  // supports only requested resources with componentID. 
+  // TODO: support requested resources without componentID.
+  private void checkExclusiveResource(Model requestModel, Resource resource, final List<String> errorsList){
+    
+    if(isExclusive(requestModel, resource)){
+      if (resource.hasProperty(Omn_lifecycle.implementedBy)) {
+        Object adapterInstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject();
+        Model model = getResourceAdapterModel(adapterInstance);
+        int maxInstances = getMaxInstances(model);
+        int handledResourcesNum = gethandledResourcesNum(resource, adapterInstance);
+        if(handledResourcesNum >= maxInstances){
+          errorsList.add(" Requested resource is exclusive. Adapter instance can't handle resources more than its limit");
+        }
+      } 
+      else {
+        // TODO:
+      }
+    }
+  }
+  
+  
+  /**
+   * this method look in DB for reserved and provisioned instances by the adapter instance.
+   * @param resource
+   * @param adapterInstance
+   * @return the number of reserved and provisioned instances.
+   */
+  private int gethandledResourcesNum(Resource requestedResource, Object adapterInstance){
+    Model adapterInstanceModel = getResourceAdapterModel(adapterInstance);
+    
+    List<Resource> resourcesList = getResourcesList(adapterInstanceModel, adapterInstance);
+    
+    if(!resourcesList.isEmpty()){
+      return checkResourcesList(resourcesList, requestedResource);
+    } else return 0;
+    
+  }
+  
+
+  /**
+   * counts only handled resources which have the same name as requested resource 
+   * @param resourcesList
+   * @param requestedResource
+   * @return
+   */
+  private int checkResourcesList(List<Resource> resourcesList, Resource requestedResource){
+    int matchedResourcesNum = 0;
+    RDFNode requestedResourceType = getResourceType(requestedResource);
+    for(Resource resource : resourcesList){
+      Model resourceModel = TripletStoreAccessor.getResource(resource.getURI());
+      
+      SimpleSelector selector = new SimpleSelector(resource, RDF.type, (RDFNode) null);
+      StmtIterator stmtIterator = resourceModel.listStatements(selector);
+      while(stmtIterator.hasNext()){
+        Statement statement = stmtIterator.nextStatement();
+        if(requestedResourceType.equals(statement.getObject())){
+          matchedResourcesNum += 1;
+        }
+      }
+    }
+    return matchedResourcesNum;
+  }
+  
+  
+  /**
+   * this method returns back a list of resources URIs which are reserved and provisioned by the adapter instance
+   * @param adapterInstanceModel
+   * @param adapterInstance
+   * @param resource
+   * @return list of resources
+   */
+  private List<Resource> getResourcesList(Model adapterInstanceModel, Object adapterInstance){
+    List<Resource> resourcesList = new ArrayList<Resource>();
+    if(adapterInstanceModel.contains((Resource) null, Omn_lifecycle.implementedBy, (RDFNode) null)){
+      SimpleSelector selector = new SimpleSelector((Resource) null, Omn_lifecycle.implementedBy, (RDFNode) null);
+      StmtIterator stmtIterator = adapterInstanceModel.listStatements(selector);
+      while(stmtIterator.hasNext()){
+        Statement statement = stmtIterator.nextStatement();
+        resourcesList.add(statement.getSubject());
+      }
+    }
+    
+    return resourcesList;
+  }
+  
+  private Model getResourceAdapterModel(Object adapterInstance){
+    Model mo = ModelFactory.createDefaultModel();
+    Resource re = mo.createResource(adapterInstance.toString());
+    Model model = TripletStoreAccessor.getResource(re.getURI());
+    
+    return model;
+  }
+  
+  /**
+   * This method is to give back the maximum instances which an adapter instance can provide.
+   * @param model
+   * @return
+   */
+  private int getMaxInstances(Model model){
+    if(model.contains((Resource) null, MessageBusOntologyModel.maxInstances, (RDFNode) null)){
+       return (int) model.getProperty((Resource) null, MessageBusOntologyModel.maxInstances).getLong();
+    }
+    else return 1;
+  }
+  
+  
+  private boolean isExclusive(Model requestModel, Resource resource){
+    SimpleSelector selector = new SimpleSelector(resource, Omn_resource.isExclusive, (RDFNode) null);
+    StmtIterator stmtIterator = requestModel.listStatements(selector);
+    while(stmtIterator.hasNext()){
+      Statement statement = stmtIterator.nextStatement();
+      boolean ss = statement.getBoolean();
+      if(ss){
+        return true;
+      }
+    }
+    return false;
+    
+  }
   private void checkResourceAdapterInstance(Resource resource, Model requestModel, final List<String> errorList){
     
     RDFNode type = getResourceType(resource);
