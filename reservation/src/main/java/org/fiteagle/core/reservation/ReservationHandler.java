@@ -211,7 +211,7 @@ public class ReservationHandler {
           
           if(typeURI.equals(resourceURI)){
             if(isExclusive(requestModel, resource)){
-              if(getAdapterCurrentAbility(adapterInstanceStatement.getSubject().getURI(), resource)){
+              if(getAdapterCurrentAbility(adapterInstanceStatement.getSubject().getURI(), resource, 1)){
                 adapter = adapterInstanceStatement.getSubject();
                 break;
               }
@@ -273,26 +273,51 @@ public class ReservationHandler {
   private void checkExclusiveResource(Resource resource, Model requestModel, final List<String> errorsList) {
     
     if (resource.hasProperty(Omn_lifecycle.implementedBy)) {
+      
       Object adapterInstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject();
-      if (!getAdapterCurrentAbility(adapterInstance, resource)) {
+      
+      int sameResFromSameAdpater = getNumOfSameResFromSameAdapter(resource, requestModel, adapterInstance);
+      
+      if (!getAdapterCurrentAbility(adapterInstance, resource, sameResFromSameAdpater)) {
         errorsList.add(" Requested resource is exclusive. Adapter instance can't handle resources more than its limit");
       }
+      
     } else { // requested resource without componentID
       List<Resource> adapterInstancesList = getAdapterInstancesList(resource, requestModel);
       if (!adapterInstancesList.isEmpty()) {
         boolean adapterInstanceFound = false;
         for (Resource adapterInstance : adapterInstancesList) {
-          if (getAdapterCurrentAbility(adapterInstance, resource)) {
+          if (getAdapterCurrentAbility(adapterInstance, resource, 1)) {
             adapterInstanceFound = true;
             break;
           }
         }
         if (!adapterInstanceFound) {
-          errorsList.add(" No available adapter instance has been found to support the requested resource "
+          errorsList.add(" No available component ID has been found to support the requested resource "
               + resource.getLocalName());
         }
       }
     }
+  }
+  
+  
+  private int getNumOfSameResFromSameAdapter(Resource requestedResource, Model requestModel, Object adapterInstance){
+    int sameResFromSameAdapter = 1;
+    RDFNode resourceType = getResourceType(requestedResource);
+    SimpleSelector resourceSelector = new SimpleSelector((Resource) null, RDF.type, resourceType);
+    StmtIterator resourceStatementIterator = requestModel.listStatements(resourceSelector);
+    while (resourceStatementIterator.hasNext()){
+      Statement resourceStatement = resourceStatementIterator.nextStatement();
+      Resource resource = resourceStatement.getSubject();
+      if (resource.hasProperty(Omn_lifecycle.implementedBy)) {
+        Object adapter = resource.getProperty(Omn_lifecycle.implementedBy).getObject();
+        if(adapterInstance.equals(adapter)){
+          sameResFromSameAdapter += 1;
+        }
+      }
+    }
+    
+    return sameResFromSameAdapter;
   }
   
   /**
@@ -301,11 +326,11 @@ public class ReservationHandler {
    * @param resource
    * @return
    */
-  private boolean getAdapterCurrentAbility(Object adapterInstance, Resource resource){
+  private boolean getAdapterCurrentAbility(Object adapterInstance, Resource resource, int numberOfRequestedResources){
     Model model = getResourceAdapterModel(adapterInstance);
     int maxInstances = getMaxInstances(model);
     int handledResourcesNum = gethandledResourcesNum(resource, adapterInstance, model);
-    if(maxInstances > handledResourcesNum)
+    if(maxInstances >= (handledResourcesNum + numberOfRequestedResources))
       return true;
     else return false;
   }
@@ -425,30 +450,6 @@ public class ReservationHandler {
       }
     }
   }
-  
-  /**
-   * checks if resource type is supported by any adapter instance.
-   * @param resource
-   * @param requestModel
-   * @param errorMessage
-   */
-//  private void findAdapterSupportsType(Resource resource, Model requestModel, final List<String> errorList){
-//    SimpleSelector typeSelector = new SimpleSelector(resource, RDF.type, (RDFNode) null);
-//    StmtIterator typeStatementIterator = requestModel.listStatements(typeSelector);
-//    Boolean resourceFound = false;
-//    while(typeStatementIterator.hasNext()){
-//      Statement typeStatement = typeStatementIterator.next();
-//      Model model = TripletStoreAccessor.getResource(typeStatement.getObject().asResource().getURI());
-//      if(!model.isEmpty() && model != null && model.contains((Resource) null, Omn_lifecycle.canImplement, typeStatement.getObject().asResource())){
-//        resourceFound = true;
-//        break;
-//      }
-//    }
-//    if(!resourceFound){
-//      String errorMessage = "The requested resource " + resource.getLocalName() + " is not supported";
-//      errorList.add(errorMessage);
-//    }
-//  }
   
   /**
    * this method looks for adapter instances supporting requested resource type.
