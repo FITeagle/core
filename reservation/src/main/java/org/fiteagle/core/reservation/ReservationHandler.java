@@ -119,7 +119,7 @@ public class ReservationHandler {
                 
                 if(!resource.hasProperty(Omn_lifecycle.implementedBy)){
                   
-                  newResource.addProperty(Omn_lifecycle.implementedBy, getAdapterForResource(requestModel, resource));
+                  newResource.addProperty(Omn_lifecycle.implementedBy, getAdapterForResource(requestModel, resource, assistantModel));
                   
                 }
 
@@ -185,7 +185,7 @@ public class ReservationHandler {
     }
 
     
-  private Resource getAdapterForResource(Model requestModel, Resource resource){
+  private Resource getAdapterForResource(Model requestModel, Resource resource, Model reservationModel){
     
     Resource adapter = null;
     SimpleSelector typeSelector = new SimpleSelector(resource, RDF.type, (RDFNode) null);
@@ -194,30 +194,34 @@ public class ReservationHandler {
     while(typeStatementIterator.hasNext()){
       
       Statement typeStatement = typeStatementIterator.next();
-      Resource typeResource = typeStatement.getObject().asResource();
-      String typeURI = typeResource.getURI();
+      Resource resourceType = typeStatement.getObject().asResource();
+      String typeURI = resourceType.getURI();
       
       Model adapterModel = TripletStoreAccessor.getResource(typeURI);
       
-      if(modelHasProperty(adapterModel, typeResource)){
+      if(modelHasProperty(adapterModel, resourceType)){
         
-        SimpleSelector adapterInstanceSelector = new SimpleSelector(null, Omn_lifecycle.canImplement, (RDFNode) null);
-        StmtIterator adapterInstanceIterator = adapterModel.listStatements(adapterInstanceSelector);
+        SimpleSelector adapterInstancesSelector = new SimpleSelector(null, Omn_lifecycle.canImplement, (RDFNode) null);
+        StmtIterator adapterInstancesIterator = adapterModel.listStatements(adapterInstancesSelector);
         
-        while(adapterInstanceIterator.hasNext()){
+        while(adapterInstancesIterator.hasNext()){
           
-          Statement adapterInstanceStatement = adapterInstanceIterator.nextStatement();
+          Statement adapterInstanceStatement = adapterInstancesIterator.nextStatement();
           String resourceURI = adapterInstanceStatement.getObject().asResource().getURI();
+          Resource adapterInstance = adapterInstanceStatement.getSubject();
           
           if(typeURI.equals(resourceURI)){
             if(isExclusive(requestModel, resource)){
-              if(getAdapterCurrentAbility(adapterInstanceStatement.getSubject().getURI(), resource, 1)){
-                adapter = adapterInstanceStatement.getSubject();
+              
+              int reservedResources = getReservedResources(reservationModel, resourceType, adapterInstance);
+                  
+              if(adapterAbleToCreate(adapterInstanceStatement.getSubject().getURI(), resource, reservedResources+1)){
+                adapter = adapterInstance;
                 break;
               }
             }
             else {
-              adapter = adapterInstanceStatement.getSubject();
+              adapter = adapterInstance;
               break;
             }
           }
@@ -225,6 +229,27 @@ public class ReservationHandler {
       }
     }
     return adapter;
+  }
+  
+  /**
+   * This method counts reserved resources with the same type by certain adapter instance.
+   * @param reservationModel
+   * @param requestedResourceType
+   * @param adapterInstance
+   * @return
+   */
+  private int getReservedResources(Model reservationModel, Resource requestedResourceType, Resource adapterInstance){
+    int reservedResources = 0;
+    StmtIterator resourceIterator = reservationModel.listStatements(new SimpleSelector((Resource) null, Omn_lifecycle.implementedBy, adapterInstance));
+    while(resourceIterator.hasNext()){
+      Statement statement = resourceIterator.nextStatement();
+      Resource resource = statement.getSubject();
+      String reservedResourceType = resource.getProperty(RDF.type).getObject().asResource().getURI();
+      if(requestedResourceType.getURI().equals(reservedResourceType)){
+        reservedResources += 1;
+      }
+    }
+    return reservedResources;
   }
   
   private boolean modelHasProperty(Model model, Resource value){
@@ -259,6 +284,11 @@ public class ReservationHandler {
     return getErrorMessage(errorsList);
   }
   
+  /**
+   * converts errors list to a string 
+   * @param errorsList
+   * @return
+   */
   private String getErrorMessage(final List<String> errorsList){
     String errorMessage = "";
     if(!errorsList.isEmpty()){
@@ -278,21 +308,17 @@ public class ReservationHandler {
       
       int sameResFromSameAdpater = getNumOfSameResFromSameAdapter(resource, requestModel, adapterInstance);
       
-      if (!getAdapterCurrentAbility(adapterInstance, resource, sameResFromSameAdpater)) {
+      if (!adapterAbleToCreate(adapterInstance, resource, sameResFromSameAdpater)) {
         errorsList.add(" Requested resource is exclusive. Adapter instance can't handle resources more than its limit");
       }
       
     } else { // requested resource without componentID
       List<Resource> adapterInstancesList = getAdapterInstancesList(resource, requestModel);
       if (!adapterInstancesList.isEmpty()) {
-        boolean adapterInstanceFound = false;
-        for (Resource adapterInstance : adapterInstancesList) {
-          if (getAdapterCurrentAbility(adapterInstance, resource, 1)) {
-            adapterInstanceFound = true;
-            break;
-          }
-        }
-        if (!adapterInstanceFound) {
+        int numberOfSameResourceType = getNumberOfSameResourceType(resource, requestModel);
+        LOGGER.log(Level.INFO, "Number of requested resources from the same type is " + numberOfSameResourceType);
+        
+        if(!checkAdaptersAbility(adapterInstancesList, resource, numberOfSameResourceType)){
           errorsList.add(" No available component ID has been found to support the requested resource "
               + resource.getLocalName());
         }
@@ -300,6 +326,38 @@ public class ReservationHandler {
     }
   }
   
+  /**
+   * this method checks if a list of potential adapters can create the number of the requested resources.
+   * @param adapterInstancesList
+   * @param requestedResource
+   * @param numberOfSameResources
+   * @return
+   */
+  private boolean checkAdaptersAbility(List<Resource> adapterInstancesList, Resource requestedResource, int numberOfSameResources){
+    boolean adapterAbleToCreate = false;
+    int rest = numberOfSameResources;
+    for(Resource adapterInstance : adapterInstancesList){
+      rest = rest - getAdapterAbility(adapterInstance, requestedResource);
+    }
+    if(rest <= 0) 
+      adapterAbleToCreate = true;
+    return adapterAbleToCreate;
+    
+  }
+  
+  /**
+   * this methods check reservation request and calculate the number of resources with same resource type.
+   * @param requestedResource
+   * @param requestModel
+   * @return
+   */
+  private int getNumberOfSameResourceType(Resource requestedResource, Model requestModel){
+    RDFNode resourceType = getResourceType(requestedResource);
+    StmtIterator stmtIterator = requestModel.listStatements(new SimpleSelector((Resource) null, RDF.type, resourceType));
+    int numberOfSameResources = stmtIterator.toList().size();
+    
+    return numberOfSameResources;
+  }
   
   private int getNumOfSameResFromSameAdapter(Resource requestedResource, Model requestModel, Object adapterInstance){
     int sameResFromSameAdapter = 1;
@@ -326,13 +384,31 @@ public class ReservationHandler {
    * @param resource
    * @return
    */
-  private boolean getAdapterCurrentAbility(Object adapterInstance, Resource resource, int numberOfRequestedResources){
-    Model model = getResourceAdapterModel(adapterInstance);
-    int maxInstances = getMaxInstances(model);
-    int handledResourcesNum = gethandledResourcesNum(resource, adapterInstance, model);
-    if(maxInstances >= (handledResourcesNum + numberOfRequestedResources))
+  private boolean adapterAbleToCreate(Object adapterInstance, Resource resource, int numberOfRequestedResources){
+    
+    Model model = ModelFactory.createDefaultModel();
+    Resource adapter = model.createResource(adapterInstance.toString());
+    int adapterAbility = getAdapterAbility(adapter, resource);
+    if(adapterAbility >= numberOfRequestedResources)
       return true;
     else return false;
+    
+  }
+  
+  /**
+   * this method calculate the number of resources which the adapter instance currently can create.
+   * @param adapterInstance
+   * @param requestedResource
+   * @return
+   */
+  private int getAdapterAbility(Resource adapterInstance, Resource requestedResource){
+    Model adapterInstanceModel = TripletStoreAccessor.getResource(adapterInstance.getURI());
+    int maxInstances = getMaxInstances(adapterInstanceModel);
+    int handledResourcesNum = gethandledResourcesNum(requestedResource, adapterInstanceModel);
+    if((maxInstances - handledResourcesNum) < 0)
+      return 0;
+    else return (maxInstances - handledResourcesNum);
+    
   }
   
   /**
@@ -341,9 +417,9 @@ public class ReservationHandler {
    * @param adapterInstance
    * @return the number of reserved and provisioned instances.
    */
-  private int gethandledResourcesNum(Resource requestedResource, Object adapterInstance, Model adapterInstanceModel){
+  private int gethandledResourcesNum(Resource requestedResource, Model adapterInstanceModel){
     
-    List<Resource> resourcesList = getResourcesList(adapterInstanceModel, adapterInstance);
+    List<Resource> resourcesList = getResourcesList(adapterInstanceModel);
     
     if(!resourcesList.isEmpty()){
       return checkResourcesList(resourcesList, requestedResource);
@@ -379,12 +455,11 @@ public class ReservationHandler {
   
   /**
    * this method returns back a list of resources URIs which are reserved and provisioned by the adapter instance
-   * @param adapterInstanceModel
    * @param adapterInstance
    * @param resource
    * @return list of resources
    */
-  private List<Resource> getResourcesList(Model adapterInstanceModel, Object adapterInstance){
+  private List<Resource> getResourcesList(Model adapterInstanceModel){
     List<Resource> resourcesList = new ArrayList<Resource>();
     if(adapterInstanceModel.contains((Resource) null, Omn_lifecycle.implementedBy, (RDFNode) null)){
       SimpleSelector selector = new SimpleSelector((Resource) null, Omn_lifecycle.implementedBy, (RDFNode) null);
