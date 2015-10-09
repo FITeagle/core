@@ -107,7 +107,7 @@ public class FederationManager extends Application {
 
 	@Timeout
 	public void timerMethod(Timer timer) {
-		if (failureCounter < 10) {
+		if (failureCounter < 100) {
 			try {
 				TripletStoreAccessor.addModel(federationModel);
 				initialized = true;
@@ -131,6 +131,7 @@ public class FederationManager extends Application {
 			LOGGER.log(
 					Level.SEVERE,
 					"Tried to add something to Database several times, but failed. Please check the OpenRDF-Database");
+			timer.cancel();
 		}
 
 	}
