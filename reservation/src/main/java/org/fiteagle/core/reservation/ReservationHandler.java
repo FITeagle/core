@@ -360,7 +360,7 @@ public class ReservationHandler {
   }
   
   private int getNumOfSameResFromSameAdapter(Resource requestedResource, Model requestModel, Object adapterInstance){
-    int sameResFromSameAdapter = 1;
+    int sameResFromSameAdapter = 0;
     RDFNode resourceType = getResourceType(requestedResource);
     SimpleSelector resourceSelector = new SimpleSelector((Resource) null, RDF.type, resourceType);
     StmtIterator resourceStatementIterator = requestModel.listStatements(resourceSelector);
