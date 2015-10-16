@@ -181,7 +181,7 @@ public class ReservationHandler {
             }
             else{
               reservationModel.add(stmt);
-            }
+           }
           }
         }
         
