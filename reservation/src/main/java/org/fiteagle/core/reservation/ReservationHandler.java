@@ -210,7 +210,7 @@ public class ReservationHandler {
           String resourceURI = adapterInstanceStatement.getObject().asResource().getURI();
           Resource adapterInstance = adapterInstanceStatement.getSubject();
           
-          if(typeURI.equals(resourceURI)){
+          if(typeURI.equals(resourceURI) && checkResourceAdapterAvailability(adapterInstance)){
             if(isExclusive(requestModel, resource)){
               
               int reservedResources = getReservedResources(reservationModel, resourceType, adapterInstance);
@@ -306,11 +306,15 @@ public class ReservationHandler {
       
       Object adapterInstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject();
       
-      int sameResFromSameAdpater = getNumOfSameResFromSameAdapter(resource, requestModel, adapterInstance);
-      
-      if (!adapterAbleToCreate(adapterInstance, resource, sameResFromSameAdpater)) {
-        errorsList.add(" Requested resource is exclusive. Adapter instance can't handle resources more than its limit");
-      }
+      if(checkResourceAdapterAvailability(adapterInstance)){
+        int sameResFromSameAdpater = getNumOfSameResFromSameAdapter(resource, requestModel, adapterInstance);
+        
+        if (!adapterAbleToCreate(adapterInstance, resource, sameResFromSameAdpater)) {
+          errorsList.add(" Requested resource is exclusive. Adapter instance can't handle resources more than its limit");
+        }
+      } else 
+        errorsList.add(" Requested component id is not available");
+
       
     } else { // requested resource without componentID
       List<Resource> adapterInstancesList = getAdapterInstancesList(resource, requestModel);
@@ -515,6 +519,10 @@ public class ReservationHandler {
     if (resource.hasProperty(Omn_lifecycle.implementedBy)) {
       Object adapterInstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject();
       checkResourceAdapterType(type, adapterInstance, errorList);
+      if(!checkResourceAdapterAvailability(adapterInstance)){
+        String errorMessage = "the requested component_id " + adapterInstance.toString() + "is not available";
+        errorList.add(errorMessage);
+      }
     }
     else {
       // check if resource's type is supported by any adapter instance.
@@ -547,7 +555,9 @@ public class ReservationHandler {
         
         while(adapterInstanceIter.hasNext()){
           Resource adapterInstance = adapterInstanceIter.nextResource();
-          adapterInstancesList.add(adapterInstance);
+          if(checkResourceAdapterAvailability(adapterInstance)){
+            adapterInstancesList.add(adapterInstance);
+          }
         }
       }
     }
@@ -575,6 +585,22 @@ public class ReservationHandler {
         errorList.add(errorMessage); 
       }
     
+  }
+  
+  /**
+   * checks if the adapter instance is available
+   * @param adapterInstance
+   * @param errorList
+   */
+  private boolean checkResourceAdapterAvailability(Object adapterInstance){
+   
+    boolean available = true;
+    Model model = getResourceAdapterModel(adapterInstance);
+    if(model.contains((Resource) null, Omn_resource.isAvailable, (RDFNode) null)){
+        Statement statement = model.getProperty((Resource)null, Omn_resource.isAvailable);
+        available = statement.getBoolean();
+      }
+    return available;
   }
   
   /**
