@@ -1,17 +1,7 @@
 package org.fiteagle.core.orchestrator.dm;
 
-import com.hp.hpl.jena.graph.Node_Variable;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.ontology.OntClass;
-import com.hp.hpl.jena.rdf.model.*;
-import com.hp.hpl.jena.vocabulary.OWL2;
-
-import info.openmultinet.ontology.exceptions.InvalidModelException;
-import info.openmultinet.ontology.vocabulary.Omn;
-import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
-import info.openmultinet.ontology.vocabulary.Omn_resource;
-
-import java.util.*;
+import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,17 +13,36 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
-import info.openmultinet.ontology.vocabulary.Omn_service;
-
-import org.fiteagle.api.core.*;
+import org.fiteagle.api.core.IConfig;
+import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.MessageFilters;
+import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 import org.fiteagle.core.orchestrator.RequestHandler;
 //import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 //import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
-import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
-import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
-
+import com.hp.hpl.jena.graph.Node_Variable;
+import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.ResIterator;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Selector;
+import com.hp.hpl.jena.rdf.model.SimpleSelector;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.vocabulary.OWL2;
 import com.hp.hpl.jena.vocabulary.RDF;
+
+import info.openmultinet.ontology.exceptions.InvalidModelException;
+import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+import info.openmultinet.ontology.vocabulary.Omn_resource;
 
 @MessageDriven(activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -101,7 +110,7 @@ public class OrchestratorMDBListener implements MessageListener {
 
     private void handleUpdate(String messageBody) throws InvalidModelException, ResourceRepositoryException {
         LOGGER.log(Level.INFO, "Orchestrator received an update");
-        LOGGER.log(Level.INFO, messageBody);
+        LOGGER.log(Level.FINE, "CONTENT:\n" + messageBody);
         Model model = null;
         model = MessageUtil.parseSerializedModel(messageBody, IMessageBus.SERIALIZATION_TURTLE);
         TripletStoreAccessor.updateModel(model);

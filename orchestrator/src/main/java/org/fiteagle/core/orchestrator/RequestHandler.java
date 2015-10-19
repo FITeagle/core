@@ -1,7 +1,16 @@
 package org.fiteagle.core.orchestrator;
 
-import com.hp.hpl.jena.graph.Node_Variable;
-import com.hp.hpl.jena.graph.Triple;
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+
+import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.core.orchestrator.dm.OrchestratorStateKeeper;
+import org.fiteagle.core.orchestrator.dm.Request;
+import org.fiteagle.core.orchestrator.dm.RequestContext;
+//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
+//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
+
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.ResIterator;
@@ -9,24 +18,9 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.vocabulary.RDF;
 
-import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
-import info.openmultinet.ontology.vocabulary.Omn_component;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import info.openmultinet.ontology.vocabulary.Omn_service;
-
-import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.core.orchestrator.dm.OrchestratorStateKeeper;
-import org.fiteagle.core.orchestrator.dm.Request;
-import org.fiteagle.core.orchestrator.dm.RequestContext;
-//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
-//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
-
-import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
-import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
-
-import javax.ejb.Stateless;
-import javax.inject.Inject;
 
 /**
  * Created by dne on 12.02.15.
