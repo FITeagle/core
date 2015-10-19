@@ -1,30 +1,35 @@
 package org.fiteagle.core.resourceAdapterManager;
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ResIterator;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.vocabulary.RDF;
-import info.openmultinet.ontology.exceptions.InvalidModelException;
-import info.openmultinet.ontology.vocabulary.Omn;
-import info.openmultinet.ontology.vocabulary.Omn_federation;
-import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
-import org.apache.jena.atlas.web.HttpException;
-import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageUtil;
-import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Stack;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.*;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+import javax.ejb.Timeout;
+import javax.ejb.Timer;
+import javax.ejb.TimerConfig;
+import javax.ejb.TimerService;
 import javax.inject.Inject;
 import javax.jms.JMSContext;
 import javax.jms.Message;
 import javax.jms.Topic;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Stack;
-import java.util.logging.Level;
+
+import org.apache.jena.atlas.web.HttpException;
+import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.api.core.OntologyModelUtil;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+import org.jboss.logging.Logger;
+
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ResIterator;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.vocabulary.RDF;
+
+import info.openmultinet.ontology.exceptions.InvalidModelException;
+import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_federation;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
 /**
  * Created by dne on 18.09.15.
@@ -42,7 +47,7 @@ public class ResourceAdapterManager {
     private boolean initialized;
     private int failureCounter;
 
-    Logger LOGGER = LoggerFactory.getLogger(this.getClass().getName());
+    private static Logger LOGGER = Logger.getLogger(ResourceAdapterManager.class);
     private Resource infrastructure;
     private Stack<Message> messageStore;
 
@@ -110,7 +115,7 @@ public class ResourceAdapterManager {
             Resource resource = resIterator.next();
             infrastructure.addProperty(Omn.hasResource, resource);
             try {
-
+        	LOGGER.info("START: Adding adapter: " + OntologyModelUtil.toString(resource.getModel()));
                 TripletStoreAccessor.addResource(resource);
                 TripletStoreAccessor.updateModel(infrastructure.getModel());
             } catch (TripletStoreAccessor.ResourceRepositoryException e) {
@@ -122,6 +127,7 @@ public class ResourceAdapterManager {
     }
 
     public void delete(Model model) throws InvalidModelException, TripletStoreAccessor.ResourceRepositoryException {
+	LOGGER.info("START: Removing adapter: " + OntologyModelUtil.toString(model));
         TripletStoreAccessor.deleteModel(model);
     }
 

@@ -1,17 +1,17 @@
 package org.fiteagle.core.orchestrator.dm;
 
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.OWL;
 import com.hp.hpl.jena.vocabulary.RDF;
-import info.openmultinet.ontology.vocabulary.Omn;
-import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import info.openmultinet.ontology.vocabulary.Omn;
 
 /**
  * Created by dne on 04.02.15.
