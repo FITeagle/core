@@ -1,6 +1,8 @@
 package org.fiteagle.core.resourceAdapterManager;
 
 import java.util.Stack;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Singleton;
@@ -19,7 +21,6 @@ import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.OntologyModelUtil;
 import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
-import org.jboss.logging.Logger;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ResIterator;
@@ -47,7 +48,7 @@ public class ResourceAdapterManager {
     private boolean initialized;
     private int failureCounter;
 
-    private static Logger LOGGER = Logger.getLogger(ResourceAdapterManager.class);
+    private static Logger LOGGER = Logger.getLogger(ResourceAdapterManager.class.getName());
     private Resource infrastructure;
     private Stack<Message> messageStore;
 
@@ -96,8 +97,7 @@ public class ResourceAdapterManager {
 
             }
         } else {
-            LOGGER.error(
-
+            LOGGER.severe(
                     "Tried read Database several times, but failed. Please check the OpenRDF-Database");
         }
 
@@ -115,13 +115,15 @@ public class ResourceAdapterManager {
             Resource resource = resIterator.next();
             infrastructure.addProperty(Omn.hasResource, resource);
             try {
-        	LOGGER.info("START: Adding adapter: " + OntologyModelUtil.toString(resource.getModel()));
+        	LOGGER.info("START: Adding adapter");
+        	LOGGER.fine("CONTENT: \n" + OntologyModelUtil.toString(resource.getModel()));
                 TripletStoreAccessor.addResource(resource);
                 TripletStoreAccessor.updateModel(infrastructure.getModel());
+                LOGGER.info("END: Adding adapter");
             } catch (TripletStoreAccessor.ResourceRepositoryException e) {
-                LOGGER.info("Could not add " + resource, e);
+                LOGGER.log(Level.INFO, "Could not add " + resource, e);
             } catch (InvalidModelException e) {
-                LOGGER.info("Could not add " + resource, e);
+        	LOGGER.log(Level.INFO, "Could not add " + resource, e);
             }
         }
     }
@@ -136,7 +138,7 @@ public class ResourceAdapterManager {
         try {
            response =  TripletStoreAccessor.getResources();
         } catch (TripletStoreAccessor.ResourceRepositoryException e) {
-            LOGGER.info("Could not get resource", e);
+            LOGGER.log(Level.INFO, "Could not get resource", e);
         }
 
         return response;

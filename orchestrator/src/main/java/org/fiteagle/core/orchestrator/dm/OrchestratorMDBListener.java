@@ -110,7 +110,7 @@ public class OrchestratorMDBListener implements MessageListener {
 
     private void handleUpdate(String messageBody) throws InvalidModelException, ResourceRepositoryException {
         LOGGER.log(Level.INFO, "Orchestrator received an update");
-        LOGGER.log(Level.INFO, messageBody);
+        LOGGER.log(Level.FINE, "CONTENT:\n" + messageBody);
         Model model = null;
         model = MessageUtil.parseSerializedModel(messageBody, IMessageBus.SERIALIZATION_TURTLE);
         TripletStoreAccessor.updateModel(model);
