@@ -1,11 +1,6 @@
 package org.fiteagle.core.reservation.dm;
 
 
-import info.openmultinet.ontology.exceptions.InvalidModelException;
-import info.openmultinet.ontology.vocabulary.Omn;
-import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
-
-import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,20 +12,25 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 
-import com.hp.hpl.jena.rdf.model.*;
-
 import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageFilters;
 import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 import org.fiteagle.core.reservation.ReservationHandler;
-import org.fiteagle.core.tripletStoreAccessor.QueryExecuter;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.ResIterator;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.SimpleSelector;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
+
+import info.openmultinet.ontology.exceptions.InvalidModelException;
+import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 
 @MessageDriven(name = "ReservationMDBListener", activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
@@ -194,7 +194,7 @@ public class ReservationMDBListener implements MessageListener {
     }
 
 
-    private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException {
+    private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException, ResourceRepositoryException {
         LOGGER.log(Level.INFO, "handling reservation request ...");
         ReservationHandler reservationHandler = new ReservationHandler();
         Message responseMessage = reservationHandler.handleReservation(requestModel, serialization, requestID, context);
