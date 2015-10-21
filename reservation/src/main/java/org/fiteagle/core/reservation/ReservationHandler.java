@@ -1,5 +1,22 @@
 package org.fiteagle.core.reservation;
 
+
+import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
+import com.hp.hpl.jena.vocabulary.OWL;
+import com.hp.hpl.jena.vocabulary.RDF;
+import com.hp.hpl.jena.vocabulary.RDFS;
+
+import info.openmultinet.ontology.exceptions.InvalidModelException;
+import info.openmultinet.ontology.vocabulary.Omn;
+
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+import info.openmultinet.ontology.vocabulary.Omn_resource;
+
+import org.fiteagle.api.core.*;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -14,31 +31,6 @@ import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
-import org.fiteagle.api.core.Config;
-import org.fiteagle.api.core.IConfig;
-import org.fiteagle.api.core.IMessageBus;
-import org.fiteagle.api.core.MessageBusOntologyModel;
-import org.fiteagle.api.core.MessageUtil;
-import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
-
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.Property;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.ResIterator;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.SimpleSelector;
-import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
-import com.hp.hpl.jena.vocabulary.OWL;
-import com.hp.hpl.jena.vocabulary.RDF;
-import com.hp.hpl.jena.vocabulary.RDFS;
-
-import info.openmultinet.ontology.exceptions.InvalidModelException;
-import info.openmultinet.ontology.vocabulary.Omn;
-import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
-import info.openmultinet.ontology.vocabulary.Omn_resource;
 
 /**
  * Created by dne on 15.02.15.
@@ -431,8 +423,8 @@ public class ReservationHandler {
   
   /**
    * this method look in DB for reserved and provisioned instances by the adapter instance.
-   * @param resource
-   * @param adapterInstance
+   * @param requestedResource
+   * @param adapterInstanceModel
    * @return the number of reserved and provisioned instances.
    */
   private int gethandledResourcesNum(Resource requestedResource, Model adapterInstanceModel){
@@ -473,8 +465,7 @@ public class ReservationHandler {
   
   /**
    * this method returns back a list of resources URIs which are reserved and provisioned by the adapter instance
-   * @param adapterInstance
-   * @param resource
+   * @param adapterInstanceModel
    * @return list of resources
    */
   private List<Resource> getResourcesList(Model adapterInstanceModel){
@@ -583,7 +574,7 @@ public class ReservationHandler {
    * checks if resource type is supported by the requested adapter instance
    * @param type
    * @param adapterInstance
-   * @param errorMessage
+   * @param errorList
    */
   private void checkResourceAdapterType(RDFNode type, Object adapterInstance, final List<String> errorList){
     
