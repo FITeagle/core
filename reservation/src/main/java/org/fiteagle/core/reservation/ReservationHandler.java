@@ -4,8 +4,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,12 +50,15 @@ public class ReservationHandler {
 
     public Message handleReservation(Model requestModel, String serialization, String requestID, JMSContext context) throws TripletStoreAccessor.ResourceRepositoryException {
 
-        LOGGER.log(Level.INFO, "handle reservation ...");
+        LOGGER.log(Level.INFO, "START: handle reservation");
         Message responseMessage = null;
+        LOGGER.log(Level.INFO, "Checking reservation request");
         String errorMessage = checkReservationRequest(requestModel);
         if(errorMessage == null || errorMessage.isEmpty()){
           Model reservationModel = ModelFactory.createDefaultModel();
+          LOGGER.log(Level.INFO, "Creating reservation model");
           createReservationModel(requestModel, reservationModel);
+          LOGGER.log(Level.INFO, "Reserving model");
           reserve(reservationModel);
           String serializedResponse = MessageUtil.serializeModel(reservationModel, serialization);
           responseMessage = MessageUtil.createRDFMessage(serializedResponse, IMessageBus.TYPE_INFORM, null, serialization, requestID, context);
@@ -66,6 +71,8 @@ public class ReservationHandler {
         else {
           responseMessage = MessageUtil.createErrorMessage(errorMessage, requestID, context);
         }
+        
+        LOGGER.log(Level.INFO, "END: handle reservation");
         return responseMessage;
     }
 
@@ -289,9 +296,13 @@ public class ReservationHandler {
     while (resIterator.hasNext()) {
       Resource resource = resIterator.nextResource();
       
+      String uri = resource.getURI();
+      LOGGER.info("Checking resource adapter instance: " + uri);
+  
       checkResourceAdapterInstance(resource, requestModel, errorsList);
       
       if(isExclusive(requestModel, resource)){
+	  LOGGER.info("Checking resource exclusivity");
         checkExclusiveResource(resource, requestModel, errorsList);
         }
       }
@@ -532,14 +543,16 @@ public class ReservationHandler {
     
     if (resource.hasProperty(Omn_lifecycle.implementedBy)) {
       Object adapterInstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject();
+      LOGGER.info("Checking resource adapter type");
       checkResourceAdapterType(type, adapterInstance, errorList);
+      LOGGER.info("Checking resource adapter availability");
       if(!checkResourceAdapterAvailability(adapterInstance)){
         String errorMessage = "the requested component_id " + adapterInstance.toString() + "is not available";
         errorList.add(errorMessage);
       }
     }
     else {
-      // check if resource's type is supported by any adapter instance.
+	LOGGER.info("Checking if resource's type is supported by any adapter instance");
       List<Resource> adapterInstancesList = getAdapterInstancesList(resource, requestModel);
       if(adapterInstancesList.isEmpty()){
         String errorMessage = "The requested resource " + resource.getLocalName() + " is not supported";
@@ -562,7 +575,10 @@ public class ReservationHandler {
     
     while(typeStatementIterator.hasNext()){
       Statement typeStatement = typeStatementIterator.next();
-      Model model = TripletStoreAccessor.getResource(typeStatement.getObject().asResource().getURI());
+      String uri = typeStatement.getObject().asResource().getURI();
+      
+      LOGGER.info("Getting resource: " + uri);
+      Model model = TripletStoreAccessor.getResource(uri);
       
       if(!model.isEmpty() && model != null && model.contains((Resource) null, Omn_lifecycle.canImplement, typeStatement.getObject().asResource())){
         ResIterator adapterInstanceIter = model.listResourcesWithProperty(Omn_lifecycle.canImplement, typeStatement.getObject());
@@ -589,8 +605,9 @@ public class ReservationHandler {
     
     Model mo = ModelFactory.createDefaultModel();
     Resource re = mo.createResource(adapterInstance.toString());
+    //fixme: do not describe complete resource, ask instead for "Omn_lifecycle.canImplement type"
     Model model = TripletStoreAccessor.getResource(re.getURI());
-    if (model.isEmpty() || model == null) {
+    if (model == null || model.isEmpty()) {
       errorList.add("The requested component id " + re.getURI() + " is not supported");
     } else 
       if(!model.contains(re, Omn_lifecycle.canImplement, type)){
@@ -598,7 +615,6 @@ public class ReservationHandler {
             + " is not supported. Please see supported sliver types";
         errorList.add(errorMessage); 
       }
-    
   }
   
   /**
