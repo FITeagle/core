@@ -16,7 +16,8 @@ import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import info.openmultinet.ontology.vocabulary.Omn_resource;
 
 import org.fiteagle.api.core.*;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
+//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.api.tripletStoreAccessor.*;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -87,6 +88,11 @@ public class ReservationHandler {
                    Statement hasAuthenticationInformationStmt = topo.getProperty(Omn_lifecycle.hasAuthenticationInformation);
                    assistantModel.add(topo, hasAuthenticationInformationStmt.getPredicate(), hasAuthenticationInformationStmt.getObject());
                  }
+                 
+                 if(topo.hasProperty(Omn_lifecycle.project)){
+                   Statement project = topo.getProperty(Omn_lifecycle.project);
+                   assistantModel.add(topo, project.getPredicate(), project.getObject());
+                 }
                }
 
             }
@@ -98,7 +104,9 @@ public class ReservationHandler {
                newTopology.addProperty(property, new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(getDefaultExpirationTime()));
                if (topology.getProperty(Omn_lifecycle.hasAuthenticationInformation) != null)
                    newTopology.addProperty(Omn_lifecycle.hasAuthenticationInformation, topology.getProperty(Omn_lifecycle.hasAuthenticationInformation).getObject());
-
+               
+               if(topology.hasProperty(Omn_lifecycle.project))
+                 newTopology.addProperty(Omn_lifecycle.project, topology.getProperty(Omn_lifecycle.project).getObject());
 
            }
 
