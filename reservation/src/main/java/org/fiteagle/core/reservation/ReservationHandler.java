@@ -1,5 +1,21 @@
 package org.fiteagle.core.reservation;
 
+import com.hp.hpl.jena.ontology.impl.ObjectPropertyImpl;
+import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
+import com.hp.hpl.jena.vocabulary.OWL;
+import com.hp.hpl.jena.vocabulary.RDF;
+import com.hp.hpl.jena.vocabulary.RDFS;
+
+import info.openmultinet.ontology.exceptions.InvalidModelException;
+import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_component;
+import info.openmultinet.ontology.vocabulary.Omn_domain_pc;
+import info.openmultinet.ontology.vocabulary.Omn_federation;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+import info.openmultinet.ontology.vocabulary.Omn_resource;
+
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -101,6 +117,11 @@ public class ReservationHandler {
                    Statement hasAuthenticationInformationStmt = topo.getProperty(Omn_lifecycle.hasAuthenticationInformation);
                    assistantModel.add(topo, hasAuthenticationInformationStmt.getPredicate(), hasAuthenticationInformationStmt.getObject());
                  }
+                 
+                 if(topo.hasProperty(Omn_lifecycle.project)){
+                   Statement project = topo.getProperty(Omn_lifecycle.project);
+                   assistantModel.add(topo, project.getPredicate(), project.getObject());
+                 }
                }
 
             }
@@ -112,7 +133,9 @@ public class ReservationHandler {
                newTopology.addProperty(property, new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(getDefaultExpirationTime()));
                if (topology.getProperty(Omn_lifecycle.hasAuthenticationInformation) != null)
                    newTopology.addProperty(Omn_lifecycle.hasAuthenticationInformation, topology.getProperty(Omn_lifecycle.hasAuthenticationInformation).getObject());
-
+               
+               if(topology.hasProperty(Omn_lifecycle.project))
+                 newTopology.addProperty(Omn_lifecycle.project, topology.getProperty(Omn_lifecycle.project).getObject());
 
            }
 

@@ -15,11 +15,11 @@
 	</parent>	
 	
 	<dependencies>
-    <dependency>
-    <groupId>org.fiteagle.core</groupId>
-    <artifactId>tripletStoreAccessor</artifactId>
-    <version>0.1-SNAPSHOT</version>
-    </dependency>
+<!--     <dependency> -->
+<!--     <groupId>org.fiteagle.core</groupId> -->
+<!--     <artifactId>tripletStoreAccessor</artifactId> -->
+<!--     <version>0.1-SNAPSHOT</version> -->
+<!--     </dependency> -->
   </dependencies>
 
 	<build>
