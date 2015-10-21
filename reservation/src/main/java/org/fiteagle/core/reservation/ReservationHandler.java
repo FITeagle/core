@@ -484,16 +484,10 @@ public class ReservationHandler {
     int matchedResourcesNum = 0;
     RDFNode requestedResourceType = getResourceType(requestedResource);
     for(Resource resource : resourcesList){
-      Model resourceModel = TripletStoreAccessor.getResource(resource.getURI());
       
-      SimpleSelector selector = new SimpleSelector(resource, RDF.type, (RDFNode) null);
-      StmtIterator stmtIterator = resourceModel.listStatements(selector);
-      while(stmtIterator.hasNext()){
-        Statement statement = stmtIterator.nextStatement();
-        if(requestedResourceType.equals(statement.getObject())){
-          matchedResourcesNum += 1;
-        }
-      }
+      if(TripletStoreAccessor.exists(resource, RDF.type, requestedResourceType))
+        matchedResourcesNum += 1;
+
     }
     return matchedResourcesNum;
   }
