@@ -1,23 +1,5 @@
 package org.fiteagle.core.reservation;
 
-import com.hp.hpl.jena.ontology.impl.ObjectPropertyImpl;
-import com.hp.hpl.jena.rdf.model.*;
-import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
-import com.hp.hpl.jena.vocabulary.OWL;
-import com.hp.hpl.jena.vocabulary.RDF;
-import com.hp.hpl.jena.vocabulary.RDFS;
-
-import info.openmultinet.ontology.exceptions.InvalidModelException;
-import info.openmultinet.ontology.vocabulary.Omn;
-import info.openmultinet.ontology.vocabulary.Omn_component;
-import info.openmultinet.ontology.vocabulary.Omn_domain_pc;
-import info.openmultinet.ontology.vocabulary.Omn_federation;
-import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
-import info.openmultinet.ontology.vocabulary.Omn_resource;
-
-import org.fiteagle.api.core.*;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -31,7 +13,32 @@ import java.util.logging.Logger;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.xml.transform.ErrorListener;
+
+import org.fiteagle.api.core.Config;
+import org.fiteagle.api.core.IConfig;
+import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.MessageBusOntologyModel;
+import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.ResIterator;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.SimpleSelector;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
+import com.hp.hpl.jena.vocabulary.OWL;
+import com.hp.hpl.jena.vocabulary.RDF;
+import com.hp.hpl.jena.vocabulary.RDFS;
+
+import info.openmultinet.ontology.exceptions.InvalidModelException;
+import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+import info.openmultinet.ontology.vocabulary.Omn_resource;
 
 /**
  * Created by dne on 15.02.15.
@@ -190,6 +197,7 @@ public class ReservationHandler {
     Resource adapter = null;
     SimpleSelector typeSelector = new SimpleSelector(resource, RDF.type, (RDFNode) null);
     StmtIterator typeStatementIterator = requestModel.listStatements(typeSelector);
+    Map<String, Model> cache = new HashMap<String, Model>();
     
     while(typeStatementIterator.hasNext()){
       
@@ -197,15 +205,21 @@ public class ReservationHandler {
       Resource resourceType = typeStatement.getObject().asResource();
       String typeURI = resourceType.getURI();
       
-      Model adapterModel = TripletStoreAccessor.getResource(typeURI);
+      LOGGER.info("TODO: we should either not get the complete resource here or cache the result");
+      Model adapterModel;
+      if (cache.containsKey(typeURI))
+	  adapterModel = cache.get(typeURI);
+      else
+	  adapterModel = TripletStoreAccessor.getResource(typeURI);
       
       if(modelHasProperty(adapterModel, resourceType)){
         
+        LOGGER.info("Model has property");
         SimpleSelector adapterInstancesSelector = new SimpleSelector(null, Omn_lifecycle.canImplement, (RDFNode) null);
         StmtIterator adapterInstancesIterator = adapterModel.listStatements(adapterInstancesSelector);
         
         while(adapterInstancesIterator.hasNext()){
-          
+          LOGGER.info("Adapter instance has instance");
           Statement adapterInstanceStatement = adapterInstancesIterator.nextStatement();
           String resourceURI = adapterInstanceStatement.getObject().asResource().getURI();
           Resource adapterInstance = adapterInstanceStatement.getSubject();
