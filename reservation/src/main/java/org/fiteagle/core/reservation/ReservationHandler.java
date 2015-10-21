@@ -1,21 +1,5 @@
 package org.fiteagle.core.reservation;
 
-import com.hp.hpl.jena.ontology.impl.ObjectPropertyImpl;
-import com.hp.hpl.jena.rdf.model.*;
-import com.hp.hpl.jena.rdf.model.impl.StatementImpl;
-import com.hp.hpl.jena.vocabulary.OWL;
-import com.hp.hpl.jena.vocabulary.RDF;
-import com.hp.hpl.jena.vocabulary.RDFS;
-
-import info.openmultinet.ontology.exceptions.InvalidModelException;
-import info.openmultinet.ontology.vocabulary.Omn;
-import info.openmultinet.ontology.vocabulary.Omn_component;
-import info.openmultinet.ontology.vocabulary.Omn_domain_pc;
-import info.openmultinet.ontology.vocabulary.Omn_federation;
-import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
-import info.openmultinet.ontology.vocabulary.Omn_resource;
-
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -313,8 +297,8 @@ public class ReservationHandler {
   private String checkReservationRequest(Model requestModel){
     
     final List<String> errorsList = new ArrayList<String>();
-    
-    ResIterator resIterator = requestModel.listResourcesWithProperty(Omn.isResourceOf); 
+    final Set<String> cache = new HashSet<String>();
+    final ResIterator resIterator = requestModel.listResourcesWithProperty(Omn.isResourceOf); 
     
     while (resIterator.hasNext()) {
       Resource resource = resIterator.nextResource();
@@ -322,6 +306,16 @@ public class ReservationHandler {
       String uri = resource.getURI();
       LOGGER.info("Checking resource adapter instance: " + uri);
   
+      String implURI = resource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource().getURI();
+      LOGGER.info("Processing: " + implURI);
+      if (cache.contains(implURI)) {
+	  LOGGER.info("CACHE: HIT");
+	  continue;
+      } else {
+	  LOGGER.info("CACHE: MISS");
+	  cache.add(implURI);
+      }
+      
       checkResourceAdapterInstance(resource, requestModel, errorsList);
       
       if(isExclusive(requestModel, resource)){
