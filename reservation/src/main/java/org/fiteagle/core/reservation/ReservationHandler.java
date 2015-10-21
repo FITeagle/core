@@ -628,16 +628,12 @@ public class ReservationHandler {
     
     Model mo = ModelFactory.createDefaultModel();
     Resource re = mo.createResource(adapterInstance.toString());
-    //fixme: do not describe complete resource, ask instead for "Omn_lifecycle.canImplement type"
-    Model model = TripletStoreAccessor.getResource(re.getURI());
-    if (model == null || model.isEmpty()) {
-      errorList.add("The requested component id " + re.getURI() + " is not supported");
-    } else 
-      if(!model.contains(re, Omn_lifecycle.canImplement, type)){
-        String errorMessage = "The requested sliver type " + type.toString()
-            + " is not supported. Please see supported sliver types";
-        errorList.add(errorMessage); 
-      }
+    if(!TripletStoreAccessor.exists(re, Omn_lifecycle.canImplement, type)){
+      String errorMessage = "The requested sliver type " + type.toString()
+          + " is not supported. Please see supported sliver types";
+      errorList.add(errorMessage); 
+    }
+    
   }
   
   /**
