@@ -306,14 +306,20 @@ public class ReservationHandler {
       String uri = resource.getURI();
       LOGGER.info("Checking resource adapter instance: " + uri);
   
-      String implURI = resource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource().getURI();
-      LOGGER.info("Processing: " + implURI);
-      if (cache.contains(implURI)) {
-	  LOGGER.info("CACHE: HIT");
-	  continue;
+      Statement implementdBy = resource.getProperty(Omn_lifecycle.implementedBy);
+      if (null == implementdBy) {
+	  LOGGER.warning("Resource is not implemented: " + uri);
       } else {
-	  LOGGER.info("CACHE: MISS");
-	  cache.add(implURI);
+	  LOGGER.info("Resource implemented by: " + implementdBy);
+	  String implURI = implementdBy.getObject().asResource().getURI();
+	      LOGGER.info("Caching: " + implURI);
+	      if (cache.contains(implURI)) {
+		  LOGGER.info("CACHE: HIT");
+		  continue;
+	      } else {
+		  LOGGER.info("CACHE: MISS");
+		  cache.add(implURI);
+	      }  
       }
       
       checkResourceAdapterInstance(resource, requestModel, errorsList);
