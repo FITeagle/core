@@ -76,7 +76,7 @@ public class ReservationHandler {
         return responseMessage;
     }
 
-    private Model createReservationModel(Model requestModel, Model reservationModel) {
+    public Model createReservationModel(Model requestModel, Model reservationModel) {
         
       Map<String, Resource> resourcesIDs = new HashMap<String, Resource>();
       Model assistantModel = ModelFactory.createDefaultModel();
@@ -294,10 +294,13 @@ public class ReservationHandler {
    * @param requestModel
    * @return error message
    */
-  private String checkReservationRequest(Model requestModel){
+  public String checkReservationRequest(Model requestModel){
     
     final List<String> errorsList = new ArrayList<String>();
     final Set<String> cache = new HashSet<String>();
+    
+    if(requestModel.contains((Resource) null, Omn.isResourceOf)){
+      
     final ResIterator resIterator = requestModel.listResourcesWithProperty(Omn.isResourceOf); 
     
     while (resIterator.hasNext()) {
@@ -329,6 +332,8 @@ public class ReservationHandler {
         checkExclusiveResource(resource, requestModel, errorsList);
         }
       }
+    } else 
+      errorsList.add("No requested resources have been found in the request");
     return getErrorMessage(errorsList);
   }
   
