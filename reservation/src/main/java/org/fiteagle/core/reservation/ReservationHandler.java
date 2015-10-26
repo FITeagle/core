@@ -299,7 +299,7 @@ public class ReservationHandler {
     final List<String> errorsList = new ArrayList<String>();
     final Set<String> cache = new HashSet<String>();
     
-    if(requestModel.contains((Resource) null, Omn.isResourceOf)){
+   
       
     final ResIterator resIterator = requestModel.listResourcesWithProperty(Omn.isResourceOf); 
     
@@ -332,8 +332,7 @@ public class ReservationHandler {
         checkExclusiveResource(resource, requestModel, errorsList);
         }
       }
-    } else 
-      errorsList.add("No requested resources have been found in the request");
+    
     return getErrorMessage(errorsList);
   }
   
