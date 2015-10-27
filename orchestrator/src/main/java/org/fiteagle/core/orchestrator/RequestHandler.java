@@ -1,10 +1,13 @@
 package org.fiteagle.core.orchestrator;
 
+import java.util.logging.Logger;
+
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.core.orchestrator.dm.OrchestratorMDBListener;
 import org.fiteagle.core.orchestrator.dm.OrchestratorStateKeeper;
 import org.fiteagle.core.orchestrator.dm.Request;
 import org.fiteagle.core.orchestrator.dm.RequestContext;
@@ -30,12 +33,19 @@ public class RequestHandler {
     @Inject
     OrchestratorStateKeeper stateKeeper;
 
+    private static Logger LOGGER = Logger
+            .getLogger(RequestHandler.class.toString());
+
     public void parseModel(RequestContext context, Model requestModel, String method) {
 
         Model requestedResources = this.getRequestedResources(requestModel, method);
           
         ResIterator resIterator = requestedResources.listSubjectsWithProperty(Omn_lifecycle.implementedBy);
 
+        if (resIterator.toList().isEmpty()) {
+            LOGGER.warning("Couldn't find any implementing resource in model");
+        }
+        
         while (resIterator.hasNext()) {
             Resource requestedResource = resIterator.nextResource();
             String target = requestedResource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource().getURI();
