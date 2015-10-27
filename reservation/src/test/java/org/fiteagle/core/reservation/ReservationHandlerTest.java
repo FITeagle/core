@@ -6,7 +6,7 @@ import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.vocabulary.RDF;
 import info.openmultinet.ontology.vocabulary.Omn;
-import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
