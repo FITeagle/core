@@ -71,7 +71,9 @@ public class OrchestratorMDBListener implements MessageListener {
         String serialization = MessageUtil.getMessageSerialization(message);
         String messageBody = MessageUtil.getStringBody(message);
         String messageTarget = MessageUtil.getMessageTarget(message);
-        LOGGER.log(Level.INFO, "Received a " + messageType + " message");
+        LOGGER.log(Level.INFO, "Received a/an " + messageType + " message");
+        LOGGER.log(Level.INFO, "Target: " + messageTarget);
+        LOGGER.log(Level.INFO, "CONTENT: " + messageBody);
 
         if (messageType != null && messageBody != null) {
             if (messageType.equals(IMessageBus.TYPE_CONFIGURE)) {
@@ -87,12 +89,13 @@ public class OrchestratorMDBListener implements MessageListener {
             } else if (messageType.equals(IMessageBus.TYPE_INFORM)) {
                 try {
                     if(IMessageBus.TARGET_ORCHESTRATOR.equals(messageTarget)){
+                	LOGGER.info("For me");
                         handleUpdate(messageBody);
                     }else{
-                        handleInform(messageBody,
+                	LOGGER.info("Not for me: " + MessageUtil.getJMSCorrelationID(message));
+                	handleInform(messageBody,
                                 MessageUtil.getJMSCorrelationID(message));
                     }
-
                 } catch (ResourceRepositoryException e) {
                     LOGGER.log(Level.WARNING, e.getMessage());
                 } catch (InvalidModelException e) {
@@ -105,6 +108,8 @@ public class OrchestratorMDBListener implements MessageListener {
             } else if (messageType.equals(IMessageBus.TYPE_GET)) {
                 handleGet(messageBody, MessageUtil.getJMSCorrelationID(message));
             }
+        } else {
+            LOGGER.warning("Empty message");
         }
     }
 
@@ -141,7 +146,7 @@ public class OrchestratorMDBListener implements MessageListener {
     }
     
     private void handleInform(String body, String requestID) throws ResourceRepositoryException, InvalidModelException {
-
+	LOGGER.info("Handling: " + requestID);
         Request request = stateKeeper.getRequest(requestID);
         Model model = null;
         ResIterator resIterator = null;
@@ -263,8 +268,7 @@ public class OrchestratorMDBListener implements MessageListener {
             }
 
         }else{
-
-
+            LOGGER.warning("State keeper had no match.");
         }
     }
     
