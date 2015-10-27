@@ -20,7 +20,30 @@
 <!--     <artifactId>tripletStoreAccessor</artifactId> -->
 <!--     <version>0.1-SNAPSHOT</version> -->
 <!--     </dependency> -->
+
+       <dependency>
+            <groupId>org.easymock</groupId>
+            <artifactId>easymock</artifactId>
+            <version>3.3.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <version>${powermock.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-easymock</artifactId>
+            <version>${powermock.version}</version>
+            <scope>test</scope>
+        </dependency>
   </dependencies>
+  
+  <properties>
+        <powermock.version>1.6.1</powermock.version>
+    </properties>
 
 	<build>
 		<finalName>${project.artifactId}</finalName>

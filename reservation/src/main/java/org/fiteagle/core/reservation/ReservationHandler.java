@@ -68,7 +68,7 @@ public class ReservationHandler {
         return responseMessage;
     }
 
-    private Model createReservationModel(Model requestModel, Model reservationModel) {
+    public Model createReservationModel(Model requestModel, Model reservationModel) {
         
       Map<String, Resource> resourcesIDs = new HashMap<String, Resource>();
       Model assistantModel = ModelFactory.createDefaultModel();
@@ -258,7 +258,7 @@ public class ReservationHandler {
    * @param adapterInstance
    * @return
    */
-  private int getReservedResources(Model reservationModel, Resource requestedResourceType, Resource adapterInstance){
+  public int getReservedResources(Model reservationModel, Resource requestedResourceType, Resource adapterInstance){
     int reservedResources = 0;
     StmtIterator resourceIterator = reservationModel.listStatements(new SimpleSelector((Resource) null, Omn_lifecycle.implementedBy, adapterInstance));
     while(resourceIterator.hasNext()){
@@ -286,10 +286,13 @@ public class ReservationHandler {
    * @param requestModel
    * @return error message
    */
-  private String checkReservationRequest(Model requestModel){
+  public String checkReservationRequest(Model requestModel){
     
     final List<String> errorsList = new ArrayList<String>();
     final Set<String> cache = new HashSet<String>();
+    
+   
+      
     final ResIterator resIterator = requestModel.listResourcesWithProperty(Omn.isResourceOf); 
     
     while (resIterator.hasNext()) {
@@ -298,14 +301,20 @@ public class ReservationHandler {
       String uri = resource.getURI();
       LOGGER.info("Checking resource adapter instance: " + uri);
   
-      String implURI = resource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource().getURI();
-      LOGGER.info("Processing: " + implURI);
-      if (cache.contains(implURI)) {
-	  LOGGER.info("CACHE: HIT");
-	  continue;
+      Statement implementdBy = resource.getProperty(Omn_lifecycle.implementedBy);
+      if (null == implementdBy) {
+	  LOGGER.warning("Resource is not implemented: " + uri);
       } else {
-	  LOGGER.info("CACHE: MISS");
-	  cache.add(implURI);
+	  LOGGER.info("Resource implemented by: " + implementdBy);
+	  String implURI = implementdBy.getObject().asResource().getURI();
+	      LOGGER.info("Caching: " + implURI);
+	      if (cache.contains(implURI)) {
+		  LOGGER.info("CACHE: HIT");
+		  continue;
+	      } else {
+		  LOGGER.info("CACHE: MISS");
+		  cache.add(implURI);
+	      }  
       }
       
       checkResourceAdapterInstance(resource, requestModel, errorsList);
@@ -315,6 +324,7 @@ public class ReservationHandler {
         checkExclusiveResource(resource, requestModel, errorsList);
         }
       }
+    
     return getErrorMessage(errorsList);
   }
   
@@ -389,7 +399,7 @@ public class ReservationHandler {
    * @param requestModel
    * @return
    */
-  private int getNumberOfSameResourceType(Resource requestedResource, Model requestModel){
+  public int getNumberOfSameResourceType(Resource requestedResource, Model requestModel){
     RDFNode resourceType = getResourceType(requestedResource);
     StmtIterator stmtIterator = requestModel.listStatements(new SimpleSelector((Resource) null, RDF.type, resourceType));
     int numberOfSameResources = stmtIterator.toList().size();
@@ -397,7 +407,14 @@ public class ReservationHandler {
     return numberOfSameResources;
   }
   
-  private int getNumOfSameResFromSameAdapter(Resource requestedResource, Model requestModel, Object adapterInstance){
+  /**
+   * 
+   * @param requestedResource
+   * @param requestModel
+   * @param adapterInstance
+   * @return
+   */
+  public int getNumOfSameResFromSameAdapter(Resource requestedResource, Model requestModel, Object adapterInstance){
     int sameResFromSameAdapter = 0;
     RDFNode resourceType = getResourceType(requestedResource);
     SimpleSelector resourceSelector = new SimpleSelector((Resource) null, RDF.type, resourceType);
@@ -490,7 +507,7 @@ public class ReservationHandler {
    * @param adapterInstanceModel
    * @return list of resources
    */
-  private List<Resource> getResourcesList(Model adapterInstanceModel){
+  public List<Resource> getResourcesList(Model adapterInstanceModel){
     List<Resource> resourcesList = new ArrayList<Resource>();
     if(adapterInstanceModel.contains((Resource) null, Omn_lifecycle.implementedBy, (RDFNode) null)){
       SimpleSelector selector = new SimpleSelector((Resource) null, Omn_lifecycle.implementedBy, (RDFNode) null);
@@ -695,4 +712,7 @@ public class ReservationHandler {
         return new Date(t + (120 * 60000));
     }
 
+    public boolean ttt(String uri){
+      return TripletStoreAccessor.exists(uri);
+    }
 }

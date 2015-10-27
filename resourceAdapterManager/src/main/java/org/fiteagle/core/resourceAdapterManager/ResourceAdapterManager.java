@@ -23,14 +23,17 @@ import org.fiteagle.api.core.OntologyModelUtil;
 import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
 
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.vocabulary.RDF;
 
 import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_federation;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+import info.openmultinet.ontology.vocabulary.Wgs84;
 
 /**
  * Created by dne on 18.09.15.
@@ -117,6 +120,9 @@ public class ResourceAdapterManager {
             try {
         	LOGGER.info("START: Adding adapter");
         	LOGGER.fine("CONTENT: \n" + OntologyModelUtil.toString(resource.getModel()));
+        	
+        	addDefaultGeoInformation(model);
+        	        	
                 TripletStoreAccessor.addResource(resource);
                 TripletStoreAccessor.updateModel(infrastructure.getModel());
                 LOGGER.info("END: Adding adapter");
@@ -126,6 +132,23 @@ public class ResourceAdapterManager {
         	LOGGER.log(Level.INFO, "Could not add " + resource, e);
             }
         }
+    }
+
+
+    public void addDefaultGeoInformation(Model model) {
+	LOGGER.info("Looking for GEO information");
+	ResIterator adapters = model.listSubjectsWithProperty(Omn_lifecycle.implements_);
+	while (adapters.hasNext()) {
+	    Resource adapter = adapters.next();
+	    LOGGER.info("Checking: " + adapter.getURI());
+	    if (null == adapter.getProperty(Wgs84.lat)) {
+		RDFNode globalLat = infrastructure.getProperty(Wgs84.lat).getObject();
+	    	RDFNode globalLong = infrastructure.getProperty(Wgs84.long_).getObject();
+	    	LOGGER.info("Adding: " + globalLat + ", " + globalLong);
+		adapter.addProperty(Wgs84.lat, globalLat);
+		adapter.addProperty(Wgs84.long_, globalLong);
+	    }        	    
+	}
     }
 
     public void delete(Model model) throws InvalidModelException, TripletStoreAccessor.ResourceRepositoryException {
