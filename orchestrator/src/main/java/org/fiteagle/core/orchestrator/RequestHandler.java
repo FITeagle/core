@@ -1,5 +1,7 @@
 package org.fiteagle.core.orchestrator;
 
+import java.util.logging.Logger;
+
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 
@@ -30,6 +32,9 @@ public class RequestHandler {
     @Inject
     OrchestratorStateKeeper stateKeeper;
 
+    private static Logger LOGGER = Logger
+            .getLogger(RequestHandler.class.toString());
+
     public void parseModel(RequestContext context, Model requestModel, String method) {
 
         Model requestedResources = this.getRequestedResources(requestModel, method);
@@ -43,16 +48,14 @@ public class RequestHandler {
             request.setMethod(method);
             request.addOrUpdate(requestedResource);
             stateKeeper.addRequest(request);
-
         }
-        
-
     }
 
     private Model getRequestedResources(Model requestModel, String method) {
         Model returnModel = ModelFactory.createDefaultModel();
         ResIterator resIterator = requestModel.listSubjectsWithProperty(RDF.type, Omn.Resource);
         if(!resIterator.hasNext()){
+            LOGGER.info("Looking for resource");
             ResIterator resIterator1 = requestModel.listSubjectsWithProperty(RDF.type,Omn.Topology);
             while (resIterator1.hasNext()){
                 Resource topo = resIterator1.nextResource();
@@ -76,11 +79,13 @@ public class RequestHandler {
               
             }
 
+        } else {
+            LOGGER.info("Found resource");
         }
 
         while (resIterator.hasNext()) {
             Resource requestedResource = resIterator.nextResource();
-            
+            LOGGER.info("Resource: " + requestedResource.getURI());
             Model resourceModel = TripletStoreAccessor.getResource(requestedResource.getURI());
            
 
@@ -98,6 +103,11 @@ public class RequestHandler {
               String reservationState = reservationModel.getProperty(reservation, Omn_lifecycle.hasReservationState).getObject().asResource().getURI();
               
               switch(method){
+              case IMessageBus.TYPE_CONFIGURE:
+        	  LOGGER.info("Adding model for CONFIGURE");
+        	  returnModel.add(resourceModel);
+        	  returnModel.add(requestedResource.getModel());
+        	  break;
                 case IMessageBus.TYPE_CREATE:
                   
                   if(reservationState.equals(Omn_lifecycle.Allocated.getURI())){
@@ -115,8 +125,10 @@ public class RequestHandler {
                   default:
                     returnModel.add(resourceModel);
                   
-              }
+              } 
               
+            }else {
+      	  LOGGER.info("No reservation");
             }
 
         }

@@ -3,6 +3,7 @@ package org.fiteagle.core.orchestrator.dm;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
@@ -24,6 +25,8 @@ public  class Request {
     private final RequestContext context;
     private List<Resource> resourceList;
     private String method;
+    private static Logger LOGGER = Logger
+            .getLogger(Request.class.toString());
 
     public Request(String requestId, String target, RequestContext context) {
 
@@ -60,12 +63,11 @@ public  class Request {
         //TODO check type and only add Resources
         if(resource.hasProperty(Omn.isResourceOf)) {
             if (!containsResource(resource)) {
+        	LOGGER.info("Adding resource");
                 resourceList.add(resource);
             } else {
-
+        	LOGGER.info("Updating resource");
                 updateResource(resource);
-
-
             }
         }
 
@@ -75,10 +77,12 @@ public  class Request {
         //TODO update functional properties if given
         for(Iterator<Resource> iterator = resourceList.iterator();iterator.hasNext();){
             Resource resource1 = iterator.next();
+            LOGGER.info("Handling resource: " + resource1.getURI());
            if(resource1.getURI().equals(resource.getURI())){
                StmtIterator stmtIterator = resource.listProperties();
                while(stmtIterator.hasNext()){
                    Statement statement = stmtIterator.next();
+                   LOGGER.info("Handling statement: " + statement);
                    Property property = statement.getPredicate();
                    if(property.hasProperty(RDF.type)){
                        if(property.getProperty(RDF.type).getObject().equals(OWL.FunctionalProperty)){
@@ -88,9 +92,9 @@ public  class Request {
                    }
                   resource1.getModel().add(statement);
                }
+           } else {
+               LOGGER.info("Not my resource: " + resource1.getURI());
            }
-
-
         }
     }
 
@@ -103,6 +107,7 @@ public  class Request {
             }
 
         }
+        LOGGER.info("Contains Resource: " + ret);
         return ret;
     }
 
