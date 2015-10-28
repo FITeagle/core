@@ -294,11 +294,10 @@ public class OrchestratorMDBListener implements MessageListener {
     
     private void handleConfigureRequest(Model requestModel,
                                         String serialization, String requestID) {
-        LOGGER.log(Level.INFO, "handling configure request ...");
+        LOGGER.log(Level.INFO, "handling configure request: " + requestID);
 
         RequestContext requestContext = new RequestContext(requestID);
 
-        String error_message = "";
         requestHandler.parseModel(requestContext, requestModel, IMessageBus.TYPE_CONFIGURE);
 
         this.configureResources(requestContext);
@@ -731,30 +730,30 @@ public class OrchestratorMDBListener implements MessageListener {
 //        Resource adapterinstance = resource.getProperty(Omn_lifecycle.implementedBy).getObject().asResource();
 
         //TODO perhaps better use "canImplement" to identify target
-        final Resource resourceToBeCreated = targetModel.getResource(request.getTarget());
-        LOGGER.log(Level.INFO, "Configure  resource: " + resourceToBeCreated);
+        final Resource resourceToBeConfigured = targetModel.getResource(request.getTarget());
+        LOGGER.log(Level.INFO, "Configure  resource: " + resourceToBeConfigured);
 
-        StmtIterator resourceTypesToBeCreated = resourceToBeCreated.listProperties(RDF.type);
-        Statement resourceTypeToBeCreated = null;
+        StmtIterator resourceTypesToBeCreated = resourceToBeConfigured.listProperties(RDF.type);
+        Statement resourceTypeToBeConfigured = null;
         while(resourceTypesToBeCreated.hasNext()){
             Statement next = resourceTypesToBeCreated.next();
             if(!next.getObject().equals(OWL2.NamedIndividual)){
-                resourceTypeToBeCreated = next;
+                resourceTypeToBeConfigured = next;
                 break;
             }
         }
 
-        LOGGER.log(Level.INFO, "Creating new resource of type: " + resourceTypeToBeCreated);
+        LOGGER.log(Level.INFO, "Configuring resource of type: " + resourceTypeToBeConfigured);
 
-        if (null == resourceTypeToBeCreated) {
+        if (null == resourceTypeToBeConfigured) {
             //@todo: send a proper error message, since "operation timeout is not useful"
-            final String errorText = "The type of the requested resource '" + resourceToBeCreated + "' is null!";
+            final String errorText = "The type of the requested resource '" + resourceToBeConfigured + "' is null!";
             //Message errorMessage = MessageUtil.createErrorMessage(errorText, request.getContext().getRequestContextId(), context);
             //context.createProducer().send(topic, errorMessage);
             throw new RuntimeException(errorText);
         }
 
-        String target = resourceTypeToBeCreated.getObject().asResource().getURI();
+        String target = resourceTypeToBeConfigured.getObject().asResource().getURI();
 
 
 
