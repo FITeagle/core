@@ -276,17 +276,40 @@ public class OrchestratorMDBListener implements MessageListener {
       StmtIterator stmtIterator = resource.listProperties();
       while(stmtIterator.hasNext()){
         Statement statement = stmtIterator.nextStatement();
-        if(statement.getObject().isResource()){
-          if(TripletStoreAccessor.exists(statement.getObject().asResource().getURI())){
-            if(!Omn_lifecycle.implementedBy.getLocalName().equals(statement.getPredicate().getLocalName())){
-              Model resourceModel = TripletStoreAccessor.getResource(statement.getObject().asResource().getURI());
-              response.add(resourceModel);
-            }
-          }
+        if(checkStatement(statement)){
+          addDetails(statement, response);
         }
       }
     }
 
+    private void addDetails(Statement statement, Model response){
+      Resource resource = statement.getObject().asResource();
+      Model resourceModel = TripletStoreAccessor.getResource(resource.getURI());
+      
+      if(!response.contains(statement.getObject().asResource(), null)){
+        response.add(resourceModel);
+        StmtIterator iter = resourceModel.listStatements(new SimpleSelector(resource, null, (Object) null));
+        while(iter.hasNext()){
+          Statement stmt = iter.nextStatement();
+          if(checkStatement(stmt)){
+            addDetails(stmt, response);
+          }
+        }
+      }
+    }
+    
+    private boolean checkStatement(Statement statement){
+      if(statement.getObject().isResource()){
+        if(TripletStoreAccessor.exists(statement.getObject().asResource().getURI())){
+          if(!Omn_lifecycle.implementedBy.getLocalName().equals(statement.getPredicate().getLocalName())){
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    
+    
     private void deleteReservationState(Resource resource){
       Triple triple = new Triple(resource.asNode(), new Node_Variable(Omn_lifecycle.hasReservationState.getLocalName()), new Node_Variable("o"));
       TripletStoreAccessor.deleteTriple(triple);
@@ -660,21 +683,9 @@ public class OrchestratorMDBListener implements MessageListener {
           StmtIterator stmtIter = res1.listProperties();
           while(stmtIter.hasNext()){
             Statement statement = stmtIter.nextStatement();
-            if(statement.getObject().isResource() && !isPrimaryProperty(statement.getPredicate())){
-              if(!requestModel.contains(statement.getObject().asResource(), null)){
-                Model model = TripletStoreAccessor.getResource(statement.getObject().asResource().getURI());
-                
-                Selector selector = new SimpleSelector(statement.getObject().asResource(), null,(Object) null);
-                StmtIterator stmtIterator = model.listStatements(selector);
-                while(stmtIterator.hasNext()){
-                  Statement stat = stmtIterator.nextStatement();
-                  requestModel.add(stat);
-           
-                 
-                }
-                
-              }
-                
+            
+            if(checkObject(statement, requestModel)){
+              addDetailsToRequest(statement, requestModel);
             }
           }
           
@@ -687,6 +698,30 @@ public class OrchestratorMDBListener implements MessageListener {
         context.createProducer().send(topic, message);
     }
     
+    
+    private void addDetailsToRequest(Statement statement, Model requestModel){
+      Resource resource = statement.getObject().asResource();
+      Model model = TripletStoreAccessor.getResource(resource.getURI());
+      
+      StmtIterator stmtIterator = model.listStatements(new SimpleSelector(resource, null,(Object) null));
+      while(stmtIterator.hasNext()){
+        Statement stat = stmtIterator.nextStatement();
+        requestModel.add(stat);
+        if(checkObject(stat, requestModel)){
+          addDetailsToRequest(stat, requestModel);
+        }
+      }
+    }
+    
+    
+    private boolean checkObject(Statement statement, Model requestModel){
+      if(statement.getObject().isResource() && !isPrimaryProperty(statement.getPredicate())){
+        if(!requestModel.contains(statement.getObject().asResource(), null)){
+          return true;
+        }
+      }
+      return false;
+    }
     
     // TODO: find another solution to solve this issue.
     private boolean isPrimaryProperty(Property property){
