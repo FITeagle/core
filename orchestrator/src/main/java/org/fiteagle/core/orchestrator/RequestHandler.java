@@ -13,13 +13,21 @@ import org.fiteagle.core.orchestrator.dm.RequestContext;
 //import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
 //import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
+
+
+
+
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.SimpleSelector;
 import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
 
+import info.openmultinet.ontology.vocabulary.Acs;
 import info.openmultinet.ontology.vocabulary.Omn;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import info.openmultinet.ontology.vocabulary.Omn_service;
@@ -105,8 +113,10 @@ public class RequestHandler {
               switch(method){
               case IMessageBus.TYPE_CONFIGURE:
         	  LOGGER.info("Adding model for CONFIGURE");
+        	  addConfigurations(resourceModel, requestModel);
         	  returnModel.add(resourceModel);
         	  returnModel.add(requestedResource.getModel());
+        	  
         	  break;
                 case IMessageBus.TYPE_CREATE:
                   
@@ -135,7 +145,22 @@ public class RequestHandler {
         return returnModel;
 
     }
+    
 
+    private void addConfigurations(Model resourceModel, Model requestModel){
+      
+      Statement adapterInstanceStatement = resourceModel.getProperty((Resource) null, Omn_lifecycle.implementedBy);
+      Resource adapterInstance = adapterInstanceStatement.getObject().asResource();
+      if (requestModel.contains(adapterInstance, null)){
+        StmtIterator iter = requestModel.listStatements(new SimpleSelector(adapterInstance, null, (RDFNode) null));
+        while(iter.hasNext()){
+          Statement stmt = iter.nextStatement();
+          resourceModel.add(adapterInstanceStatement.getSubject(), stmt.getPredicate(), stmt.getObject());
+        }
+      }
+    }
+    
+    
     public String isValidURN(Model requestModel){
       String error_message = "";
       ResIterator resIterator = requestModel.listSubjectsWithProperty(RDF.type, Omn.Resource);
