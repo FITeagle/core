@@ -925,6 +925,40 @@ public class OrchestratorMDBListener implements MessageListener {
 								Statement grandchildProperty = grandchildProperties
 										.next();
 								requestModel.add(grandchildProperty);
+
+								// get the fourth level of properties fanning
+								// out from
+								// the resource
+								if (grandchildProperty.getObject().isResource()) {
+									Resource greatgrandchild = grandchildProperty
+											.getObject().asResource();
+									StmtIterator greatgrandchildProperties = greatgrandchild
+											.listProperties();
+									while (greatgrandchildProperties.hasNext()) {
+										Statement greatgrandchildProperty = greatgrandchildProperties
+												.next();
+										requestModel
+												.add(greatgrandchildProperty);
+
+										// get the fifth level of properties
+										// fanning out from
+										// the resource
+										if (greatgrandchildProperty.getObject()
+												.isResource()) {
+											Resource greatgreatgrandchild = greatgrandchildProperty
+													.getObject().asResource();
+											StmtIterator greatgreatgrandchildProperties = greatgreatgrandchild
+													.listProperties();
+											while (greatgreatgrandchildProperties
+													.hasNext()) {
+												Statement greatgreatgrandchildProperty = greatgreatgrandchildProperties
+														.next();
+												requestModel
+														.add(greatgreatgrandchildProperty);
+											}
+										}
+									}
+								}
 							}
 						}
 					}
