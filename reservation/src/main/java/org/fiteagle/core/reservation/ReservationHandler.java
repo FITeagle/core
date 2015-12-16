@@ -179,17 +179,46 @@ public class ReservationHandler {
         while(resIter.hasNext()){
           Resource res = resIter.nextResource();
           StmtIterator stmtIter = res.listProperties();
-          while(stmtIter.hasNext()){
-            Statement stmt = stmtIter.nextStatement();
-            if("deployedOn".equals(stmt.getPredicate().getLocalName()) || "requires".equals(stmt.getPredicate().getLocalName())){
-              Statement newStatement = new StatementImpl(stmt.getSubject(), stmt.getPredicate(), resourcesIDs.get(stmt.getObject().toString()));
-              reservationModel.add(newStatement);
-            }
-            else{
+          while (stmtIter.hasNext()) {
+              Statement stmt = stmtIter.nextStatement();
+              // removed temporarily for testing 5g (fiveg) adapter robynml
+              // if("deployedOn".equals(stmt.getPredicate().getLocalName()) ||
+              // "requires".equals(stmt.getPredicate().getLocalName())){
+              // Statement newStatement = new StatementImpl(stmt.getSubject(),
+              // stmt.getPredicate(),
+              // resourcesIDs.get(stmt.getObject().toString()));
+              // reservationModel.add(newStatement);
+              // }
+              // else{
               reservationModel.add(stmt);
-           }
+              // }
           }
         }
+
+        // check whether replaced resources were also used as objects, replace
+        // old uri with new
+        List<Statement> toAdd = new ArrayList<Statement>();
+        List<Statement> toDelete = new ArrayList<Statement>();
+        Model model = ModelFactory.createDefaultModel();
+        for (Map.Entry<String, Resource> entry : resourcesIDs.entrySet()) {
+          String oldUri = entry.getKey();
+          Resource newResource = entry.getValue();
+          StmtIterator statements = reservationModel.listStatements();
+          while (statements.hasNext()) {
+              Statement stmt = statements.nextStatement();
+              if (stmt.getObject().isURIResource()
+                    && stmt.getObject().asResource().getURI()
+                            .equals(oldUri)) {
+                  toDelete.add(stmt);
+                  Statement statementToAdd = model
+                        .createStatement(stmt.getSubject(),
+                              stmt.getPredicate(), newResource);
+                  toAdd.add(statementToAdd);
+              }
+          }
+        }
+        reservationModel.add(toAdd);
+        reservationModel.remove(toDelete);
         
         
 
