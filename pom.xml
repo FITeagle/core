@@ -42,5 +42,6 @@
 		<module>orchestrator</module>
 		<module>federationManager</module>
 		<module>resourceAdapterManager</module>
+		<module>usercerts</module>
 	</modules>
 </project>
