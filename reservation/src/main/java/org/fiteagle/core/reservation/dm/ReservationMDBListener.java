@@ -96,7 +96,7 @@ public class ReservationMDBListener implements MessageListener {
 
                 Resource reservation = iterator.nextResource();
                 String uri = reservation.getURI();
-                resultModel = TripletStoreAccessor.getResource(uri);
+                resultModel.add(TripletStoreAccessor.getResource(uri));
                 addResourcesForReservations(resultModel);
                 addWrappingTopology(resultModel);
             }
