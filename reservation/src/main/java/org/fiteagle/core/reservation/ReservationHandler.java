@@ -18,14 +18,7 @@ import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
 
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -104,9 +97,22 @@ public class ReservationHandler {
         else {
 
                Resource newTopology = assistantModel.getResource(topology.getURI());
-               Property property = assistantModel.createProperty(MessageBusOntologyModel.endTime.getNameSpace(), MessageBusOntologyModel.endTime.getLocalName());
-               property.addProperty(RDF.type, OWL.FunctionalProperty);
-               newTopology.addProperty(property, new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(getDefaultExpirationTime()));
+               if(topology.getProperty(MessageBusOntologyModel.endTime)!= null){
+                   newTopology.getModel().add(topology.getProperty(MessageBusOntologyModel.endTime));
+               }else {
+                   Property property = assistantModel.createProperty(MessageBusOntologyModel.endTime.getNameSpace(), MessageBusOntologyModel.endTime.getLocalName());
+                   property.addProperty(RDF.type, OWL.FunctionalProperty);
+                   newTopology.addProperty(property, new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(getDefaultExpirationTime()));
+               }
+               if(topology.getProperty(MessageBusOntologyModel.startTime)!= null){
+                   newTopology.getModel().add(topology.getProperty(MessageBusOntologyModel.startTime));
+               }else {
+                   Property property = assistantModel.createProperty(MessageBusOntologyModel.startTime.getNameSpace(), MessageBusOntologyModel.startTime.getLocalName());
+                   property.addProperty(RDF.type, OWL.FunctionalProperty);
+                   newTopology.addProperty(property, new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(Calendar.getInstance().getTime()));
+               }
+
+
                if (topology.getProperty(Omn_lifecycle.hasAuthenticationInformation) != null)
                    newTopology.addProperty(Omn_lifecycle.hasAuthenticationInformation, topology.getProperty(Omn_lifecycle.hasAuthenticationInformation).getObject());
                
@@ -664,7 +670,6 @@ public class ReservationHandler {
   /**
    * checks if the adapter instance is available
    * @param adapterInstance
-   * @param errorList
    */
   private boolean checkResourceAdapterAvailability(Object adapterInstance){
    
@@ -712,9 +717,9 @@ public class ReservationHandler {
             reservation.addProperty(RDF.type,Omn.Reservation);
             requestedResource.addProperty(Omn.hasReservation, reservation);
             reservation.addProperty(Omn.isReservationOf, requestedResource);
-            Date afterAdding2h = getDefaultExpirationTime();
-            reservation.addProperty(MessageBusOntologyModel.endTime, new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(afterAdding2h));
             reservation.addProperty(Omn_lifecycle.hasReservationState, Omn_lifecycle.Allocated);
+            addTimes(reservation);
+
             Property property  = model.createProperty(Omn_lifecycle.hasState.getNameSpace(), Omn_lifecycle.hasState.getLocalName());
             property.addProperty(RDF.type, OWL.FunctionalProperty);
             requestedResource.addProperty(property,Omn_lifecycle.Uncompleted);
@@ -732,6 +737,27 @@ public class ReservationHandler {
         } catch (InvalidModelException e) {
             LOGGER.log(Level.SEVERE, e.getMessage());
         }
+    }
+
+    private void addTimes(Resource reservation) {
+
+        ResIterator resIterator =  reservation.getModel().listResourcesWithProperty(RDF.type, Omn.Topology);
+        //only one topology
+        Resource topology = resIterator.nextResource();
+        if(topology.getProperty(MessageBusOntologyModel.endTime)!=null){
+
+            reservation.addProperty(MessageBusOntologyModel.endTime,topology.getProperty(MessageBusOntologyModel.endTime).getObject());
+
+        }
+
+        if(topology.getProperty(MessageBusOntologyModel.startTime)!=null){
+
+            reservation.addProperty(MessageBusOntologyModel.startTime,topology.getProperty(MessageBusOntologyModel.startTime).getObject());
+
+        }
+
+
+
     }
 
 
