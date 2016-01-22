@@ -233,4 +233,15 @@ public class RequestHandler {
 		this.stateKeeper = stateKeeper;
 	}
 
+	public String checkValidity(Model messageModel) {
+		String error_message = isValidURN(messageModel);
+		if(error_message == null || error_message.isEmpty()){
+			error_message = checkTimes(messageModel);
+		}
+		return error_message;
+	}
+
+	private String checkTimes(Model messageModel) {
+		return null;
+	}
 }

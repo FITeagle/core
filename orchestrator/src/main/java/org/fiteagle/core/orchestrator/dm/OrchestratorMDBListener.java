@@ -128,9 +128,9 @@ public class OrchestratorMDBListener implements MessageListener {
 		LOGGER.log(Level.INFO, "Orchestrator received a create");
 
 		RequestContext requestContext = new RequestContext(jmsCorrelationID);
+		String error_message = requestHandler.checkValidity(messageModel);
 
-		String error_message = requestHandler.isValidURN(messageModel);
-		if (error_message.isEmpty() || error_message == null) {
+		if (error_message == null ||error_message.isEmpty()) {
 			requestHandler.parseModel(requestContext, messageModel,
 					IMessageBus.TYPE_CREATE);
 			this.createResources(requestContext);
