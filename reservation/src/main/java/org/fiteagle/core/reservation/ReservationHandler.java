@@ -469,10 +469,51 @@ public class ReservationHandler {
 				int sameResFromSameAdpater = getNumOfSameResFromSameAdapter(
 						resource, requestModel, adapterInstance);
 
-				if (!adapterAbleToCreate(adapterInstance, resource,
-						sameResFromSameAdpater)) {
-					errorsList
-							.add(" Requested resource is exclusive. Adapter instance can't handle resources more than its limit");
+				ResIterator resIterator = requestModel
+						.listResourcesWithProperty(RDF.type, Omn.Topology);
+				// only one topology
+
+				Resource topology = resIterator.nextResource();
+				if (topology.hasProperty(MessageBusOntologyModel.endTime)
+						&& topology
+								.hasProperty(MessageBusOntologyModel.startTime)) {
+					LOGGER.warning("checkExclusiveResource: has start and end time");
+
+					String endTime = topology
+							.getProperty(MessageBusOntologyModel.endTime)
+							.getObject().asLiteral().getString();
+					String startTime = topology
+							.getProperty(MessageBusOntologyModel.startTime)
+							.getObject().asLiteral().getString();
+
+					try {
+						LOGGER.warning("checkExclusiveResource: start date not in past?"
+								+ TimeHelperMethods
+										.dateNotInPast(TimeHelperMethods
+												.getTimeFromString(startTime)));
+
+						if (!TimeHelperMethods.dateNotInPast(TimeHelperMethods
+								.getTimeFromString(startTime))) {
+							errorsList
+									.add("Start date must not be in the past.");
+						}
+					} catch (TimeParsingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+					if (!adapterAbleToCreateAtTime(adapterInstance, resource,
+							sameResFromSameAdpater, startTime, endTime)) {
+						errorsList
+								.add(" Requested resource is exclusive. Adapter instance can't handle resources more than its limit at the time interval specified.");
+					}
+				} else {
+					LOGGER.warning("checkExclusiveResource: does not have start and end time");
+					if (!adapterAbleToCreate(adapterInstance, resource,
+							sameResFromSameAdpater)) {
+						errorsList
+								.add(" Requested resource is exclusive. Adapter instance can't handle resources more than its limit.");
+					}
 				}
 			} else
 				errorsList.add(" Requested component id is not available");
@@ -590,6 +631,32 @@ public class ReservationHandler {
 	}
 
 	/**
+	 * checks if the adapter instance can create a new resource within the
+	 * specified time interval
+	 * 
+	 * @param adapterInstance
+	 * @param resource
+	 * @return
+	 */
+	private boolean adapterAbleToCreateAtTime(Object adapterInstance,
+			Resource resource, int numberOfRequestedResources,
+			String startTime, String endTime) {
+
+		LOGGER.info("adapterAbleToCreateAtTime");
+
+		Model model = ModelFactory.createDefaultModel();
+		Resource adapter = model.createResource(adapterInstance.toString());
+
+		int adapterAbility = getAdapterAbilityAtTime(adapter, resource,
+				startTime, endTime);
+		if (adapterAbility >= numberOfRequestedResources) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
 	 * this method calculate the number of resources which the adapter instance
 	 * currently can create.
 	 * 
@@ -609,6 +676,32 @@ public class ReservationHandler {
 		else
 			return (maxInstances - handledResourcesNum);
 
+	}
+
+	/**
+	 * this method calculate the number of resources which the adapter instance
+	 * can create within a specified time interval
+	 * 
+	 * @param adapterInstance
+	 * @param requestedResource
+	 * @return
+	 */
+	private int getAdapterAbilityAtTime(Resource adapterInstance,
+			Resource requestedResource, String startTime, String endTime) {
+
+		LOGGER.info("getAdapterAbilityAtTime");
+
+		Model adapterInstanceModel = TripletStoreAccessor
+				.getResource(adapterInstance.getURI());
+		int maxInstances = getMaxInstances(adapterInstanceModel);
+
+		int handledResourcesNum = gethandledResourcesNumAtTime(
+				requestedResource, adapterInstanceModel, startTime, endTime);
+		if ((maxInstances - handledResourcesNum) < 0) {
+			return 0;
+		} else {
+			return (maxInstances - handledResourcesNum);
+		}
 	}
 
 	/**
@@ -632,6 +725,29 @@ public class ReservationHandler {
 	}
 
 	/**
+	 * this method look in DB for reserved and provisioned instances by the
+	 * adapter instance within a specified time interval
+	 * 
+	 * @param requestedResource
+	 * @param adapterInstanceModel
+	 * @return the number of reserved and provisioned instances.
+	 */
+	private int gethandledResourcesNumAtTime(Resource requestedResource,
+			Model adapterInstanceModel, String startTime, String endTime) {
+
+		LOGGER.info("gethandledResourcesNumAtTime");
+
+		List<Resource> resourcesList = getResourcesList(adapterInstanceModel);
+
+		if (!resourcesList.isEmpty()) {
+			return checkResourcesListAtTime(resourcesList, requestedResource,
+					startTime, endTime);
+		} else {
+			return 0;
+		}
+	}
+
+	/**
 	 * counts only handled resources which have the same name as requested
 	 * resource
 	 * 
@@ -651,6 +767,86 @@ public class ReservationHandler {
 
 		}
 		return matchedResourcesNum;
+	}
+
+	/**
+	 * counts only handled resources which have the same name as requested
+	 * resource and overlap in time
+	 * 
+	 * @param resourcesList
+	 * @param requestedResource
+	 * @return
+	 */
+	private int checkResourcesListAtTime(List<Resource> resourcesList,
+			Resource requestedResource, String startTime, String endTime) {
+
+		LOGGER.info("checkResourcesListAtTime");
+
+		int matchedResourcesNum = 0;
+		RDFNode requestedResourceType = getResourceType(requestedResource);
+		for (Resource resource : resourcesList) {
+
+			if (TripletStoreAccessor.exists(resource, RDF.type,
+					requestedResourceType)
+					&& reservationTimeOverlaps(resource, startTime, endTime)) {
+				matchedResourcesNum += 1;
+			}
+		}
+		return matchedResourcesNum;
+	}
+
+	/**
+	 * Checks that the resource is reserved within the given time period
+	 * 
+	 * @param resource
+	 * @param startTime
+	 * @param endTime
+	 * @return
+	 */
+	private boolean reservationTimeOverlaps(Resource resource,
+			String startTime, String endTime) {
+
+		Model model = TripletStoreAccessor.getResource(resource.getURI());
+
+		String modelString = MessageUtil.serializeModel(model,
+				IMessageBus.SERIALIZATION_TURTLE);
+		LOGGER.info("reservationTimeOverlaps" + modelString);
+
+		if (model.contains(resource, Omn.hasReservation, (RDFNode) null)) {
+			Resource reservation = model
+					.getProperty(resource, Omn.hasReservation).getObject()
+					.asResource();
+
+			Model modelReservation = TripletStoreAccessor
+					.getResource(reservation.getURI());
+
+			String modelStringReservation = MessageUtil.serializeModel(
+					modelReservation, IMessageBus.SERIALIZATION_TURTLE);
+			LOGGER.info("reservationTimeOverlaps reservation"
+					+ modelStringReservation);
+
+			Resource reservationResource = modelReservation
+					.getResource(reservation.getURI());
+
+			String startTimeReservation = reservationResource
+					.getProperty(MessageBusOntologyModel.startTime).getObject()
+					.asLiteral().getString();
+			String endTimeReservation = reservationResource
+					.getProperty(MessageBusOntologyModel.endTime).getObject()
+					.asLiteral().getString();
+
+			try {
+				if (TimeHelperMethods.timesOverlap(startTime, endTime,
+						startTimeReservation, endTimeReservation)) {
+					return true;
+				}
+			} catch (TimeParsingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		return false;
 	}
 
 	/**
