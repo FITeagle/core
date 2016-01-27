@@ -1,18 +1,24 @@
 package org.fiteagle.core.orchestrator;
 
+import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
+import info.openmultinet.ontology.vocabulary.Omn_service;
+
+import java.util.Date;
 import java.util.logging.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 
 import org.fiteagle.api.core.IMessageBus;
+import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
 import org.fiteagle.core.orchestrator.dm.OrchestratorStateKeeper;
 import org.fiteagle.core.orchestrator.dm.Request;
 import org.fiteagle.core.orchestrator.dm.RequestContext;
-//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
-//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
+import org.fiteagle.api.core.TimeHelperMethods;
+import org.fiteagle.api.core.TimeParsingException;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
@@ -23,11 +29,8 @@ import com.hp.hpl.jena.rdf.model.SimpleSelector;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.vocabulary.RDF;
-
-import info.openmultinet.ontology.vocabulary.Acs;
-import info.openmultinet.ontology.vocabulary.Omn;
-import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
-import info.openmultinet.ontology.vocabulary.Omn_service;
+//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor;
+//import org.fiteagle.core.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 /**
  * Created by dne on 12.02.15.
@@ -63,15 +66,14 @@ public class RequestHandler {
 
 	private Model getRequestedResources(Model requestModel, String method) {
 		Model returnModel = ModelFactory.createDefaultModel();
-		
+
 		String modelString1 = MessageUtil.serializeModel(requestModel,
 				IMessageBus.SERIALIZATION_TURTLE);
 		LOGGER.info("getRequestResource requestModel: " + modelString1);
-		
-		
+
 		ResIterator resIterator = requestModel.listSubjectsWithProperty(
 				RDF.type, Omn.Resource);
-		
+
 		if (!resIterator.hasNext()) {
 			LOGGER.info("Looking for resource");
 			ResIterator resIterator1 = requestModel.listSubjectsWithProperty(
@@ -235,13 +237,66 @@ public class RequestHandler {
 
 	public String checkValidity(Model messageModel) {
 		String error_message = isValidURN(messageModel);
-		if(error_message == null || error_message.isEmpty()){
+		if (error_message == null || error_message.isEmpty()) {
 			error_message = checkTimes(messageModel);
 		}
 		return error_message;
 	}
 
 	private String checkTimes(Model messageModel) {
-		return null;
+		String error_message = null;
+
+		String modelString = MessageUtil.serializeModel(messageModel,
+				IMessageBus.SERIALIZATION_TURTLE);
+		LOGGER.info("checkTimes messageModel: " + modelString);
+
+		ResIterator resIterator1 = messageModel.listSubjectsWithProperty(
+				RDF.type, Omn.Topology);
+
+		Resource resource = null;
+		Model topologyModel = null;
+		if (resIterator1.hasNext()) {
+			resource = resIterator1.next();
+			topologyModel = TripletStoreAccessor.getResource(resource.getURI());
+		}
+
+		boolean provisionTimeIsCurrent = false;
+
+		if (topologyModel != null) {
+			String modelString1 = MessageUtil.serializeModel(topologyModel,
+					IMessageBus.SERIALIZATION_TURTLE);
+			LOGGER.info("checkTimes topologyModel: " + modelString1);
+
+			ResIterator resIterator2 = topologyModel.listSubjectsWithProperty(
+					RDF.type, Omn.Topology);
+
+			Resource topologyResource = null;
+			if (resIterator2.hasNext()) {
+				topologyResource = resIterator2.next();
+				String startTime = topologyResource
+						.getProperty(MessageBusOntologyModel.startTime)
+						.getObject().asLiteral().getString();
+				String endTime = topologyResource
+						.getProperty(MessageBusOntologyModel.endTime)
+						.getObject().asLiteral().getString();
+				Date currentTime = new Date();
+
+				try {
+					provisionTimeIsCurrent = TimeHelperMethods.timesOverlap(
+							TimeHelperMethods.getTimeFromString(startTime),
+							TimeHelperMethods.getTimeFromString(endTime),
+							currentTime, currentTime);
+				} catch (TimeParsingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+
+		if (!provisionTimeIsCurrent) {
+			error_message = "Resource can only be provisioned within the reserved time window.";
+		}
+
+		return error_message;
 	}
 }

@@ -27,6 +27,8 @@ import org.fiteagle.api.core.IConfig;
 import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageBusOntologyModel;
 import org.fiteagle.api.core.MessageUtil;
+import org.fiteagle.api.core.TimeHelperMethods;
+import org.fiteagle.api.core.TimeParsingException;
 import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
 
 import com.hp.hpl.jena.rdf.model.Model;
@@ -431,6 +433,7 @@ public class ReservationHandler {
 			}
 
 			checkResourceAdapterInstance(resource, requestModel, errorsList);
+			checkTimes(resource, requestModel, errorsList);
 
 			if (isExclusive(requestModel, resource)) {
 				LOGGER.info("Checking resource exclusivity");
@@ -439,6 +442,61 @@ public class ReservationHandler {
 		}
 
 		return getErrorMessage(errorsList);
+	}
+
+	private void checkTimes(Resource resource, Model requestModel,
+			List<String> errorsList) {
+
+		ResIterator resIterator = requestModel.listResourcesWithProperty(
+				RDF.type, Omn.Topology);
+		Resource topology = resIterator.nextResource();
+		if (topology.hasProperty(MessageBusOntologyModel.endTime)) {
+			LOGGER.warning("checkExclusiveResource: has start and end time");
+
+			String endTime = topology
+					.getProperty(MessageBusOntologyModel.endTime).getObject()
+					.asLiteral().getString();
+
+			String startTime = null;
+			boolean startTimeExists = false;
+			if (topology.hasProperty(MessageBusOntologyModel.startTime)) {
+				startTimeExists = true;
+				startTime = topology
+						.getProperty(MessageBusOntologyModel.startTime)
+						.getObject().asLiteral().getString();
+			} else {
+				startTime = TimeHelperMethods.getStringFromTime(new Date());
+			}
+
+			try {
+				LOGGER.warning("start or end date not in past?"
+						+ TimeHelperMethods.dateNotInPast(TimeHelperMethods
+								.getTimeFromString(startTime)));
+
+				if (startTimeExists
+						&& !TimeHelperMethods.dateNotInPast(TimeHelperMethods
+								.getTimeFromString(startTime))
+						&& !TimeHelperMethods.dateNotInPast(TimeHelperMethods
+								.getTimeFromString(endTime))) {
+					errorsList
+							.add("Start and end date must not be in the past.");
+				}
+			} catch (TimeParsingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			try {
+				if (!TimeHelperMethods.date1SameOrAfterDate2(
+						TimeHelperMethods.getTimeFromString(endTime),
+						TimeHelperMethods.getTimeFromString(startTime))) {
+					errorsList.add("End time must not be before start time.");
+				}
+			} catch (TimeParsingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 
 	/**
@@ -460,6 +518,10 @@ public class ReservationHandler {
 	private void checkExclusiveResource(Resource resource, Model requestModel,
 			final List<String> errorsList) {
 
+		String modelString = MessageUtil.serializeModel(requestModel,
+				IMessageBus.SERIALIZATION_TURTLE);
+		LOGGER.info("checkExclusiveResource requestModel" + modelString);
+
 		if (resource.hasProperty(Omn_lifecycle.implementedBy)) {
 
 			Object adapterInstance = resource.getProperty(
@@ -474,32 +536,23 @@ public class ReservationHandler {
 				// only one topology
 
 				Resource topology = resIterator.nextResource();
-				if (topology.hasProperty(MessageBusOntologyModel.endTime)
-						&& topology
-								.hasProperty(MessageBusOntologyModel.startTime)) {
+				if (topology.hasProperty(MessageBusOntologyModel.endTime)) {
 					LOGGER.warning("checkExclusiveResource: has start and end time");
 
 					String endTime = topology
 							.getProperty(MessageBusOntologyModel.endTime)
 							.getObject().asLiteral().getString();
-					String startTime = topology
-							.getProperty(MessageBusOntologyModel.startTime)
-							.getObject().asLiteral().getString();
 
-					try {
-						LOGGER.warning("checkExclusiveResource: start date not in past?"
-								+ TimeHelperMethods
-										.dateNotInPast(TimeHelperMethods
-												.getTimeFromString(startTime)));
-
-						if (!TimeHelperMethods.dateNotInPast(TimeHelperMethods
-								.getTimeFromString(startTime))) {
-							errorsList
-									.add("Start date must not be in the past.");
-						}
-					} catch (TimeParsingException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					String startTime = null;
+					boolean startTimeExists = false;
+					if (topology.hasProperty(MessageBusOntologyModel.startTime)) {
+						startTimeExists = true;
+						startTime = topology
+								.getProperty(MessageBusOntologyModel.startTime)
+								.getObject().asLiteral().getString();
+					} else {
+						startTime = TimeHelperMethods
+								.getStringFromTime(new Date());
 					}
 
 					if (!adapterAbleToCreateAtTime(adapterInstance, resource,
