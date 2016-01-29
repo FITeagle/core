@@ -67,7 +67,9 @@ public class ResourceAdapterManager {
     public void runSetup() {
 
         if (!initialized) {
-            timerService.createIntervalTimer(0, 5000, new TimerConfig());
+        	TimerConfig config = new TimerConfig();
+        	config.setPersistent(false);
+            timerService.createIntervalTimer(0, 5000, config);
         }
     }
 
