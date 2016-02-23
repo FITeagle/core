@@ -22,6 +22,7 @@ import org.fiteagle.api.core.TimeParsingException;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.NodeIterator;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
@@ -263,6 +264,7 @@ public class RequestHandler {
 		boolean provisionTimeIsCurrent = false;
 
 		if (topologyModel != null) {
+			// a slice (topology) is to be provisioned
 			String modelString1 = MessageUtil.serializeModel(topologyModel,
 					IMessageBus.SERIALIZATION_TURTLE);
 			LOGGER.info("checkTimes topologyModel: " + modelString1);
@@ -291,6 +293,68 @@ public class RequestHandler {
 					e.printStackTrace();
 				}
 			}
+		} else {
+			// a sliver (resource) is to be provisioned
+			ResIterator resIterator2 = messageModel.listSubjectsWithProperty(
+					RDF.type, Omn.Resource);
+
+			Resource sliverResource = null;
+			Model sliverModel = null;
+			if (resIterator2.hasNext()) {
+				sliverResource = resIterator2.next();
+				sliverModel = TripletStoreAccessor.getResource(sliverResource
+						.getURI());
+			}
+
+			String sliverModelString = MessageUtil.serializeModel(sliverModel,
+					IMessageBus.SERIALIZATION_TURTLE);
+			LOGGER.info("checkTimes sliver model: " + sliverModelString);
+
+			// get topology, then get times
+			NodeIterator sliverTopology = sliverModel
+					.listObjectsOfProperty(Omn.isResourceOf);
+			RDFNode topologyNode = null;
+			if (sliverTopology.hasNext()) {
+				topologyNode = sliverTopology.next();
+			}
+
+			Model reservationModel = null;
+			if (topologyNode != null) {
+				reservationModel = TripletStoreAccessor
+						.getResource(topologyNode.asResource().getURI());
+			}
+
+			if (reservationModel != null) {
+				String modelString3 = MessageUtil.serializeModel(
+						reservationModel, IMessageBus.SERIALIZATION_TURTLE);
+				LOGGER.info("topology times model: " + modelString3);
+
+				ResIterator resIterator3 = reservationModel
+						.listSubjectsWithProperty(RDF.type, Omn.Topology);
+
+				Resource topologyResource2 = null;
+				if (resIterator3.hasNext()) {
+					topologyResource2 = resIterator3.next();
+					String startTime = topologyResource2
+							.getProperty(MessageBusOntologyModel.startTime)
+							.getObject().asLiteral().getString();
+					String endTime = topologyResource2
+							.getProperty(MessageBusOntologyModel.endTime)
+							.getObject().asLiteral().getString();
+					Date currentTime = new Date();
+
+					try {
+						provisionTimeIsCurrent = TimeHelperMethods
+								.timesOverlap(TimeHelperMethods
+										.getTimeFromString(startTime),
+										TimeHelperMethods
+												.getTimeFromString(endTime),
+										currentTime, currentTime);
+					} catch (TimeParsingException e) {
+						e.printStackTrace();
+					}
+				}
+			}
 		}
 
 		if (!provisionTimeIsCurrent) {
@@ -299,4 +363,5 @@ public class RequestHandler {
 
 		return error_message;
 	}
+
 }
