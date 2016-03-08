@@ -1,10 +1,13 @@
 package org.fiteagle.core.resourceAdapterManager;
 
 import java.util.Stack;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
+import javax.ejb.AccessTimeout;
+import javax.ejb.EJBException;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.Timeout;
@@ -69,11 +72,12 @@ public class ResourceAdapterManager {
         if (!initialized) {
         	TimerConfig config = new TimerConfig();
         	config.setPersistent(false);
-            timerService.createIntervalTimer(0, 5000, config);
+            timerService.createIntervalTimer(0, 10000, config);
         }
     }
 
     @Timeout
+    @AccessTimeout(value = 5, unit = TimeUnit.MINUTES)
     public void timerMethod(Timer timer) {
         if (failureCounter < 10) {
             try {
@@ -90,18 +94,13 @@ public class ResourceAdapterManager {
                     timer.cancel();
                 }
 
-            } catch (HttpException e) {
-                LOGGER.info(
-                        "Couldn't find RDF Database - will try again");
+            } catch(Exception e){
+                LOGGER.warning(
+                        "Errored while working with Database - will try again");
                 failureCounter++;
-            } catch (TripletStoreAccessor.ResourceRepositoryException e) {
-
-                LOGGER.info(
-                        "Errored while reading Database - will try again");
-                failureCounter++;
-
             }
         } else {
+        	timer.cancel(); 
             LOGGER.severe(
                     "Tried read Database several times, but failed. Please check the OpenRDF-Database");
         }
