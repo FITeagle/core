@@ -25,6 +25,7 @@ import org.fiteagle.api.core.IMessageBus;
 import org.fiteagle.api.core.MessageUtil;
 import org.fiteagle.api.core.OntologyModelUtil;
 import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor;
+import org.fiteagle.api.tripletStoreAccessor.TripletStoreAccessor.ResourceRepositoryException;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.RDFNode;
@@ -94,7 +95,11 @@ public class ResourceAdapterManager {
                     timer.cancel();
                 }
 
-            } catch(Exception e){
+            }catch (ResourceRepositoryException e) {
+                LOGGER.log(Level.INFO,
+                        "Errored while adding something to Database - will try again");
+                failureCounter++;
+            }catch(Exception e){
                 LOGGER.warning(
                         "Errored while working with Database - will try again");
                 failureCounter++;
