@@ -114,10 +114,6 @@ public class FederationManager extends Application {
 				TripletStoreAccessor.addModel(federationModel);
 				initialized = true;
 				timer.cancel();
-			} catch (HttpException e) {
-				LOGGER.log(Level.INFO,
-						 "Couldn't find RDF Database - will try again");
-				failureCounter++;
 			} catch (ResourceRepositoryException e) {
 
 				LOGGER.log(Level.INFO,
@@ -128,7 +124,11 @@ public class FederationManager extends Application {
 				e.printStackTrace();
 				failureCounter++;
 
-			}
+			}catch (Exception e) {
+                LOGGER.log(Level.INFO,
+                        "Errored while working with the Database - will try again");
+                failureCounter++;
+            }
 		} else {
 			LOGGER.log(
 					Level.SEVERE,
