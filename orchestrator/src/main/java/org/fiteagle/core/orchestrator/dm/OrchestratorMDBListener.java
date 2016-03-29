@@ -28,6 +28,7 @@ import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.NodeIterator;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.ResIterator;
@@ -41,6 +42,7 @@ import com.hp.hpl.jena.vocabulary.RDF;
 
 import info.openmultinet.ontology.exceptions.InvalidModelException;
 import info.openmultinet.ontology.vocabulary.Omn;
+import info.openmultinet.ontology.vocabulary.Omn_domain_pc;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import info.openmultinet.ontology.vocabulary.Omn_resource;
 
@@ -735,13 +737,13 @@ public class OrchestratorMDBListener implements MessageListener {
 					.getURI());
 			ResIterator resIter = messageModel
 					.listResourcesWithProperty(Omn.hasReservation);
-
+			// hasSliverType hier bereits vorhanden
 			while (resIter.hasNext()) {
 				Resource res = resIter.nextResource();
 				Resource reservationResource = res
 						.getProperty(Omn.hasReservation).getObject()
 						.asResource();
-
+				//reservationResource ist Reservierung!
 				Model reservationModel = TripletStoreAccessor
 						.getResource(reservationResource.getURI());
 
@@ -760,6 +762,56 @@ public class OrchestratorMDBListener implements MessageListener {
 								.getResource(services.nextStatement()
 										.getObject().asResource().getURI());
 						requestModel.add(serviceInfo);
+					}
+					
+					StmtIterator blub = resource.listProperties(Omn_resource.hasSliverType);
+					
+					while (blub.hasNext()) {
+
+						String  blubObject = blub.next().getObject().asResource().getURI();
+						Model sliverType = TripletStoreAccessor.getResource(blubObject);
+						requestModel.add(sliverType);
+
+						 NodeIterator diskImage = sliverType.listObjectsOfProperty(Omn_domain_pc.hasDiskImage);
+						 Resource diskImageResource = diskImage.next().asResource();
+						 
+							Model diskImageModel = TripletStoreAccessor.getResource(diskImageResource.getURI());
+							requestModel.add(diskImageModel);
+
+							 NodeIterator diskImageLabel = diskImageModel.listObjectsOfProperty(Omn_domain_pc.hasDiskimageLabel);
+							 String diskImageLabelResource = diskImageLabel.next().asLiteral().getString();
+
+						 
+						 
+						 
+						 
+//						 Model diskBlaaa = diskImageResource.getModel();
+//						 StmtIterator diskImageIterator = diskImageResource.listProperties(Omn_domain_pc.hasDiskimageLabel);
+//						 if(diskImageIterator.hasNext()){
+//							 String dikImageUri = diskImageIterator.next().getObject().asResource().getURI();
+//						 }
+//						String test = blubObject.asNode().getURI();
+//						Resource blubResource = blubObject.asResource();
+//						String bla2 = blubResource.getURI();
+						
+//						StmtIterator blub2 = blubResource.listProperties(Omn_domain_pc.hasDiskImage);
+//						RDFNode blubObject2 = blub2.next().getObject();
+
+						String ada = "";
+
+//						requestModel.add(blubModel);
+//						Model diskImage = blubResource.
+//						Model blaaa = blubResource.getModel();
+//						Statement diskImage23 = blubResource.getModel().getProperty(blubResource,Omn_domain_pc.hasDiskImage );
+//						StmtIterator diskImage2 = blubResource.listProperties(Omn_domain_pc.hasDiskImage);
+//						while(diskImage2.hasNext()){
+//							Resource diskImageName = diskImage2.nextStatement().getObject().asResource();
+//							requestModel.add(diskImage);
+//							requestModel.add(diskImageName.getModel());
+//							String bla = "";
+//
+//						}
+						String bla4 = "";
 					}
 				}
 			}
@@ -955,7 +1007,28 @@ public class OrchestratorMDBListener implements MessageListener {
 														.next();
 												requestModel
 														.add(greatgreatgrandchildProperty);
+												
+												
+												// get the sixt level of properties
+												// fanning out from
+												// the resource
+												if (greatgreatgrandchildProperty.getObject()
+														.isResource()) {
+													Resource greatgreatgreatgrandchild = greatgreatgrandchildProperty
+															.getObject().asResource();
+													StmtIterator greatgreatgreatgrandchildProperties = greatgreatgreatgrandchild
+															.listProperties();
+													while (greatgreatgreatgrandchildProperties
+															.hasNext()) {
+														Statement greatgreatgreatgrandchildProperty = greatgreatgreatgrandchildProperties
+																.next();
+														requestModel
+																.add(greatgreatgreatgrandchildProperty);
+													}
+												}
 											}
+
+
 										}
 									}
 								}
