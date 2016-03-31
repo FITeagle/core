@@ -1,5 +1,6 @@
 package org.fiteagle.core.resourceAdapterManager;
 
+import java.util.Iterator;
 import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -18,6 +19,8 @@ import javax.inject.Inject;
 import javax.jms.JMSContext;
 import javax.jms.Message;
 import javax.jms.Topic;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 import info.openmultinet.ontology.vocabulary.Wgs84;
 import org.apache.jena.atlas.web.HttpException;
@@ -58,11 +61,29 @@ public class ResourceAdapterManager {
     private static Logger LOGGER = Logger.getLogger(ResourceAdapterManager.class.getName());
     private Resource infrastructure;
     private Stack<Message> messageStore;
+    
+    private Boolean rdfReady;
+    private Boolean allreadySearchingForTripletStore;
+    private InitialContext initialContext;
+
 
     @PostConstruct
     public void initialize(){
         initialized = false;
         messageStore = new Stack<>();
+//        TripletStoreAccessor.initialize();
+        
+
+		try {
+			initialContext = new InitialContext();
+			refreshGlobalVariables();
+		} catch (NamingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+//        rdfReady = false;
+//        allreadySearchingForTripletStore = false;
+
         runSetup();
 
     }
@@ -73,17 +94,25 @@ public class ResourceAdapterManager {
         if (!initialized) {
         	TimerConfig config = new TimerConfig();
         	config.setPersistent(false);
-            timerService.createIntervalTimer(0, 10000, config);
+            Timer timer = timerService.createIntervalTimer(0, 10000, config);
         }
     }
 
     @Timeout
     @AccessTimeout(value = 5, unit = TimeUnit.MINUTES)
     public void timerMethod(Timer timer) {
-        if (failureCounter < 10) {
-            try {
+   		
+    	refreshGlobalVariables();
 
-                 Model infModel = TripletStoreAccessor.getInfrastructure();
+    	if(!rdfReady && allreadySearchingForTripletStore){
+         	LOGGER.log(Level.SEVERE,"Someone is allready searching for Database - I'll drink a coffe");
+    	}else if(rdfReady){
+    		
+    		
+        	LOGGER.log(Level.SEVERE,"Someone found Database"); 
+        	try{
+                Model infModel = TripletStoreAccessor.getInfrastructure();
+                
                 ResIterator resIter = infModel.listResourcesWithProperty(RDF.type, Omn_federation.Infrastructure);
                 while (resIter.hasNext()){
                     infrastructure = resIter.nextResource();
@@ -92,26 +121,24 @@ public class ResourceAdapterManager {
                 if(infrastructure != null){
                     initialized = true;
                     handleStoredMessages();
-                    timer.cancel();
+                    Iterator<Timer> timerIterator = timerService.getAllTimers().iterator();
+                    while(timerIterator.hasNext()){
+                    	timerIterator.next().cancel();
+                    }
                 }
-
-            }catch (ResourceRepositoryException e) {
-                LOGGER.log(Level.INFO,
-                        "Errored while adding something to Database - will try again");
-                failureCounter++;
-            }catch(Exception e){
-                LOGGER.warning(
-                        "Errored while working with Database - will try again");
-                failureCounter++;
-            }
-        } else {
-        	timer.cancel(); 
-            LOGGER.severe(
-                    "Tried read Database several times, but failed. Please check the OpenRDF-Database");
+        	}catch (ResourceRepositoryException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}catch (Exception e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}        
+        	
+    	}else{
+        	LOGGER.log(Level.SEVERE,"Database is not ready and noone is searching for it - Please check the deployment of FederationManager!"); 
         }
-
     }
-
+    
     private void handleStoredMessages() {
        while(!messageStore.empty()){
            handleMessage(messageStore.pop());
@@ -231,5 +258,15 @@ public class ResourceAdapterManager {
 
         this.delete(model);
 
+    }
+    
+    public void refreshGlobalVariables(){
+    	try {
+			rdfReady = (Boolean) initialContext.lookup("java:global/RDF-Database-Ready");
+	     	allreadySearchingForTripletStore = (Boolean) initialContext.lookup("java:global/RDF-Database-Testing");
+		} catch (NamingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 }
