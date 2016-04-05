@@ -145,7 +145,9 @@ public class ReservationHandler {
 							MessageBusOntologyModel.endTime.getLocalName());
 					property.addProperty(RDF.type, OWL.FunctionalProperty);
 					newTopology.addProperty(property, new SimpleDateFormat(
-							"yyyy-MM-dd'T'HH:mm:ssXXX")
+              //fixme: all time values (e.g. provided endTime) should have same time zone
+              //"yyyy-MM-dd'T'HH:mm:ssXXX")
+              "yyyy-MM-dd'T'HH:mm:ssZ")
 							.format(getDefaultExpirationTime()));
 				}
 				if (topology.getProperty(MessageBusOntologyModel.startTime) != null) {
@@ -159,7 +161,9 @@ public class ReservationHandler {
 							MessageBusOntologyModel.startTime.getLocalName());
 					property.addProperty(RDF.type, OWL.FunctionalProperty);
 					newTopology.addProperty(property, new SimpleDateFormat(
-							"yyyy-MM-dd'T'HH:mm:ssXXX").format(Calendar
+              //fixme: all time values (e.g. provided endTime) should have same time zone
+              //"yyyy-MM-dd'T'HH:mm:ssXXX").format(Calendar
+              "yyyy-MM-dd'T'HH:mm:ssZ").format(Calendar
 							.getInstance().getTime()));
 				}
 
@@ -359,7 +363,7 @@ public class ReservationHandler {
 	/**
 	 * This method counts reserved resources with the same type by certain
 	 * adapter instance.
-	 * 
+	 *
 	 * @param reservationModel
 	 * @param requestedResourceType
 	 * @param adapterInstance
@@ -397,7 +401,7 @@ public class ReservationHandler {
 
 	/**
 	 * checks reservation request
-	 * 
+	 *
 	 * @param requestModel
 	 * @return error message
 	 */
@@ -501,7 +505,7 @@ public class ReservationHandler {
 
 	/**
 	 * converts errors list to a string
-	 * 
+	 *
 	 * @param errorsList
 	 * @return
 	 */
@@ -594,7 +598,7 @@ public class ReservationHandler {
 	/**
 	 * this method checks if a list of potential adapters can create the number
 	 * of the requested resources.
-	 * 
+	 *
 	 * @param adapterInstancesList
 	 * @param requestedResource
 	 * @param numberOfSameResources
@@ -616,7 +620,7 @@ public class ReservationHandler {
 	/**
 	 * this methods check reservation request and calculate the number of
 	 * resources with same resource type.
-	 * 
+	 *
 	 * @param requestedResource
 	 * @param requestModel
 	 * @return
@@ -633,7 +637,7 @@ public class ReservationHandler {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param requestedResource
 	 * @param requestModel
 	 * @param adapterInstance
@@ -665,7 +669,7 @@ public class ReservationHandler {
 
 	/**
 	 * checks if the adapter instance can create a new resource
-	 * 
+	 *
 	 * @param adapterInstance
 	 * @param resource
 	 * @return
@@ -686,7 +690,7 @@ public class ReservationHandler {
 	/**
 	 * checks if the adapter instance can create a new resource within the
 	 * specified time interval
-	 * 
+	 *
 	 * @param adapterInstance
 	 * @param resource
 	 * @return
@@ -712,7 +716,7 @@ public class ReservationHandler {
 	/**
 	 * this method calculate the number of resources which the adapter instance
 	 * currently can create.
-	 * 
+	 *
 	 * @param adapterInstance
 	 * @param requestedResource
 	 * @return
@@ -734,7 +738,7 @@ public class ReservationHandler {
 	/**
 	 * this method calculate the number of resources which the adapter instance
 	 * can create within a specified time interval
-	 * 
+	 *
 	 * @param adapterInstance
 	 * @param requestedResource
 	 * @return
@@ -760,7 +764,7 @@ public class ReservationHandler {
 	/**
 	 * this method look in DB for reserved and provisioned instances by the
 	 * adapter instance.
-	 * 
+	 *
 	 * @param requestedResource
 	 * @param adapterInstanceModel
 	 * @return the number of reserved and provisioned instances.
@@ -780,7 +784,7 @@ public class ReservationHandler {
 	/**
 	 * this method look in DB for reserved and provisioned instances by the
 	 * adapter instance within a specified time interval
-	 * 
+	 *
 	 * @param requestedResource
 	 * @param adapterInstanceModel
 	 * @return the number of reserved and provisioned instances.
@@ -803,7 +807,7 @@ public class ReservationHandler {
 	/**
 	 * counts only handled resources which have the same name as requested
 	 * resource
-	 * 
+	 *
 	 * @param resourcesList
 	 * @param requestedResource
 	 * @return
@@ -825,7 +829,7 @@ public class ReservationHandler {
 	/**
 	 * counts only handled resources which have the same name as requested
 	 * resource and overlap in time
-	 * 
+	 *
 	 * @param resourcesList
 	 * @param requestedResource
 	 * @return
@@ -850,7 +854,7 @@ public class ReservationHandler {
 
 	/**
 	 * Checks that the resource is reserved within the given time period
-	 * 
+	 *
 	 * @param resource
 	 * @param startTime
 	 * @param endTime
@@ -905,7 +909,7 @@ public class ReservationHandler {
 	/**
 	 * this method returns back a list of resources URIs which are reserved and
 	 * provisioned by the adapter instance
-	 * 
+	 *
 	 * @param adapterInstanceModel
 	 * @return list of resources
 	 */
@@ -937,7 +941,7 @@ public class ReservationHandler {
 	/**
 	 * This method is to give back the maximum instances which an adapter
 	 * instance can provide.
-	 * 
+	 *
 	 * @param model
 	 * @return
 	 */
@@ -995,7 +999,7 @@ public class ReservationHandler {
 	/**
 	 * this method looks for adapter instances supporting requested resource
 	 * type.
-	 * 
+	 *
 	 * @param resource
 	 * @param requestModel
 	 * @return
@@ -1040,7 +1044,7 @@ public class ReservationHandler {
 
 	/**
 	 * checks if resource type is supported by the requested adapter instance
-	 * 
+	 *
 	 * @param type
 	 * @param adapterInstance
 	 * @param errorList
@@ -1061,7 +1065,7 @@ public class ReservationHandler {
 
 	/**
 	 * checks if the adapter instance is available
-	 * 
+	 *
 	 * @param adapterInstance
 	 */
 	private boolean checkResourceAdapterAvailability(Object adapterInstance) {
@@ -1078,7 +1082,7 @@ public class ReservationHandler {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param resource
 	 * @return the type of the resource
 	 */
