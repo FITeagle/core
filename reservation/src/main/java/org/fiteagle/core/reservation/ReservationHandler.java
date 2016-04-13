@@ -145,9 +145,7 @@ public class ReservationHandler {
 							MessageBusOntologyModel.endTime.getLocalName());
 					property.addProperty(RDF.type, OWL.FunctionalProperty);
 					newTopology.addProperty(property, new SimpleDateFormat(
-              //fixme: all time values (e.g. provided endTime) should have same time zone
-              //"yyyy-MM-dd'T'HH:mm:ssXXX")
-              "yyyy-MM-dd'T'HH:mm:ssZ")
+							"yyyy-MM-dd'T'HH:mm:ssXXX")
 							.format(getDefaultExpirationTime()));
 				}
 				if (topology.getProperty(MessageBusOntologyModel.startTime) != null) {
@@ -161,9 +159,7 @@ public class ReservationHandler {
 							MessageBusOntologyModel.startTime.getLocalName());
 					property.addProperty(RDF.type, OWL.FunctionalProperty);
 					newTopology.addProperty(property, new SimpleDateFormat(
-              //fixme: all time values (e.g. provided endTime) should have same time zone
-              //"yyyy-MM-dd'T'HH:mm:ssXXX").format(Calendar
-              "yyyy-MM-dd'T'HH:mm:ssZ").format(Calendar
+							"yyyy-MM-dd'T'HH:mm:ssXXX").format(Calendar
 							.getInstance().getTime()));
 				}
 
