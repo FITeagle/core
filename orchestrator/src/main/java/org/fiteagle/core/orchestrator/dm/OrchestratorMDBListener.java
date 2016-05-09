@@ -773,45 +773,20 @@ public class OrchestratorMDBListener implements MessageListener {
 						requestModel.add(sliverType);
 
 						 NodeIterator diskImage = sliverType.listObjectsOfProperty(Omn_domain_pc.hasDiskImage);
-						 Resource diskImageResource = diskImage.next().asResource();
-						 
-							Model diskImageModel = TripletStoreAccessor.getResource(diskImageResource.getURI());
-							requestModel.add(diskImageModel);
+						 if(diskImage != null){
+							 if(diskImage.hasNext()){
+								 Resource diskImageResource = diskImage.next().asResource();
+								 
+									Model diskImageModel = TripletStoreAccessor.getResource(diskImageResource.getURI());
+									requestModel.add(diskImageModel);
 
-							 NodeIterator diskImageLabel = diskImageModel.listObjectsOfProperty(Omn_domain_pc.hasDiskimageLabel);
-							 String diskImageLabelResource = diskImageLabel.next().asLiteral().getString();
+									 NodeIterator diskImageLabel = diskImageModel.listObjectsOfProperty(Omn_domain_pc.hasDiskimageLabel);
+									 String diskImageLabelResource = diskImageLabel.next().asLiteral().getString();	 
+							 }
+						 }
 
 						 
-						 
-						 
-						 
-//						 Model diskBlaaa = diskImageResource.getModel();
-//						 StmtIterator diskImageIterator = diskImageResource.listProperties(Omn_domain_pc.hasDiskimageLabel);
-//						 if(diskImageIterator.hasNext()){
-//							 String dikImageUri = diskImageIterator.next().getObject().asResource().getURI();
-//						 }
-//						String test = blubObject.asNode().getURI();
-//						Resource blubResource = blubObject.asResource();
-//						String bla2 = blubResource.getURI();
-						
-//						StmtIterator blub2 = blubResource.listProperties(Omn_domain_pc.hasDiskImage);
-//						RDFNode blubObject2 = blub2.next().getObject();
 
-						String ada = "";
-
-//						requestModel.add(blubModel);
-//						Model diskImage = blubResource.
-//						Model blaaa = blubResource.getModel();
-//						Statement diskImage23 = blubResource.getModel().getProperty(blubResource,Omn_domain_pc.hasDiskImage );
-//						StmtIterator diskImage2 = blubResource.listProperties(Omn_domain_pc.hasDiskImage);
-//						while(diskImage2.hasNext()){
-//							Resource diskImageName = diskImage2.nextStatement().getObject().asResource();
-//							requestModel.add(diskImage);
-//							requestModel.add(diskImageName.getModel());
-//							String bla = "";
-//
-//						}
-						String bla4 = "";
 					}
 				}
 			}
