@@ -1,6 +1,8 @@
 package org.fiteagle.core.reservation.dm;
 
 
+import java.util.Iterator;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -174,8 +176,13 @@ public class ReservationMDBListener implements MessageListener {
 
     private void addResources(Model resultModel) {
         StmtIterator stmtIterator = resultModel.listStatements(new SimpleSelector(null, Omn.hasResource,(Object)null));
-        while(stmtIterator.hasNext()){
-            Resource resource = stmtIterator.nextStatement().getObject().asResource();
+        CopyOnWriteArrayList<Statement> statementList = new CopyOnWriteArrayList<Statement>();
+        for(Statement s : stmtIterator.toList()){
+        	statementList.add(s);
+        }
+        Iterator<Statement> statementIterator = statementList.iterator();
+        while(statementIterator.hasNext()){
+            Resource resource = statementIterator.next().getObject().asResource();
             Model resourceModel = TripletStoreAccessor.getResource(resource.getURI());
             resultModel.add(resourceModel);
             
