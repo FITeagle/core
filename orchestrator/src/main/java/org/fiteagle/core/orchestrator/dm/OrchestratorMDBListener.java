@@ -130,6 +130,8 @@ public class OrchestratorMDBListener implements MessageListener {
 		LOGGER.log(Level.INFO, "Orchestrator received a create");
 
 		RequestContext requestContext = new RequestContext(jmsCorrelationID);
+		Resource topology =  messageModel.listStatements(null, RDF.type, Omn.Topology).next().getSubject();
+	    requestContext.setTopologyId(topology.getURI());	
 		String error_message = requestHandler.checkValidity(messageModel);
 
 		if (error_message == null ||error_message.isEmpty()) {
@@ -706,7 +708,7 @@ public class OrchestratorMDBListener implements MessageListener {
 
 		if (!requestMap.isEmpty()) {
 			for (String requestId : requestMap.keySet()) {
-				sendCreateToResource(requestMap.get(requestId));
+				sendCreateToResource(requestMap.get(requestId), requestContext.getTopologyId());
 			}
 		} else {
 			sendErrorMessage(
@@ -725,11 +727,10 @@ public class OrchestratorMDBListener implements MessageListener {
 		}
 	}
 
-	private void sendCreateToResource(Request request) {
+	private void sendCreateToResource(Request request, String topoId ) {
 		Model requestModel = ModelFactory.createDefaultModel();
 		Resource requestTopology = requestModel
-				.createResource(IConfig.TOPOLOGY_NAMESPACE_VALUE
-						+ UUID.randomUUID());
+				.createResource(topoId);
 		requestTopology.addProperty(RDF.type, Omn.Topology);
 
 		for (Resource resource : request.getResourceList()) {

@@ -14,12 +14,26 @@ public class RequestContext {
     public RequestContext(String requestContextId) {
         this.requestContextId = requestContextId;
         this.requestMap = new HashMap<>();
+     
     }
 
     private String requestContextId;
     private Map<String,Request> requestMap;
+    private String topologyId;
 
-    public Map<String, Request> getRequestMap() {
+    public String getTopologyId() {
+		return topologyId;
+	}
+
+
+
+	public void setTopologyId(String topologyId) {
+		this.topologyId = topologyId;
+	}
+
+
+
+	public Map<String, Request> getRequestMap() {
         return requestMap;
     }
 
