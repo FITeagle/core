@@ -880,13 +880,21 @@ public class ReservationHandler {
 
 			Resource reservationResource = modelReservation
 					.getResource(reservation.getURI());
-
-			String startTimeReservation = reservationResource
-					.getProperty(MessageBusOntologyModel.startTime).getObject()
-					.asLiteral().getString();
-			String endTimeReservation = reservationResource
-					.getProperty(MessageBusOntologyModel.endTime).getObject()
-					.asLiteral().getString();
+			
+			// Dirty workaround!!
+			String startTimeReservation;
+			String endTimeReservation;
+			try {
+				 startTimeReservation = reservationResource
+						.getProperty(MessageBusOntologyModel.startTime).getObject()
+						.asLiteral().getString();
+				 endTimeReservation = reservationResource
+						.getProperty(MessageBusOntologyModel.endTime).getObject()
+						.asLiteral().getString();	
+			}catch (Exception e) {
+				return true;
+			}
+			
 
 			try {
 				if (TimeHelperMethods.timesOverlap(startTime, endTime,
