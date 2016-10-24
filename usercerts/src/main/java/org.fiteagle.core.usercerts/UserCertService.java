@@ -66,18 +66,42 @@ public class UserCertService {
 
     @GET
     @Produces("text/plain")
-    public String getUserCert(@QueryParam("id")String username, @QueryParam("pw")String password){
+    public String getUserCert(@QueryParam("id")String username, @QueryParam("pw")String password, @QueryParam("valid")String daysValid){
+        int valid = 0;
+        if(daysValid == null) {
+            valid = 1;
+        }
+        else {
+            valid = getIntValid(daysValid);
+        }
+        long validSeconds= getSeconds(valid);
+
         try {
-            return createUserCertificate(username, password, generateKeyPair());
+            return createUserCertificate(username, password, generateKeyPair() , validSeconds);
         } catch (Exception e) {
             log.error(e.getMessage(),e);
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
-    private String createUserCertificate(String username, String password, KeyPair keyPair) throws Exception {
+    private long getSeconds(int valid) {
+
+        return 3600 * 24 * valid;
+    }
+
+    private int getIntValid(String daysValid) {
+        int ret = 0;
+        try {
+            ret = Integer.parseInt(daysValid);
+        }catch (Exception e){
+            ret = 1;
+        }
+        return ret;
+    }
+
+    private String createUserCertificate(String username, String password, KeyPair keyPair, long validSeconds) throws Exception {
         //String pubKeyEncoded = encodePublicKey(keyPair.getPublic());
-        String userCertString = createUserCertificate(username,	keyPair.getPublic());
+        String userCertString = createUserCertificate(username,	keyPair.getPublic(), validSeconds);
         String privateKeyEncoded = encryptPrivateKey(keyPair.getPrivate(), password);
         return privateKeyEncoded + "\n" + userCertString;
     }
@@ -100,9 +124,9 @@ public class UserCertService {
         return returnString;
     }
 
-    private String createUserCertificate(String username, PublicKey aPublic) throws Exception {
+    private String createUserCertificate(String username, PublicKey aPublic, long validSeconds) throws Exception {
 
-        X509Certificate cert = createX509Certificate(username, aPublic);
+        X509Certificate cert = createX509Certificate(username, aPublic, validSeconds);
         return getCertficateEncoded(cert);
     }
 
@@ -129,7 +153,7 @@ public class UserCertService {
     }
 
 
-    private X509Certificate createX509Certificate(String username, PublicKey aPublic) throws CertificateException, IOException, OperatorCreationException, KeyStoreException, NoSuchAlgorithmException, UnrecoverableEntryException {
+    private X509Certificate createX509Certificate(String username, PublicKey aPublic, long validSeconds) throws CertificateException, IOException, OperatorCreationException, KeyStoreException, NoSuchAlgorithmException, UnrecoverableEntryException {
         X509Certificate caCert = getCACert();
         X500Name issuer = new JcaX509CertificateHolder(caCert).getSubject();
         PrivateKey caPrivateKey = getCAPrivateKey();
@@ -141,7 +165,7 @@ public class UserCertService {
         X509v3CertificateBuilder ca_gen = new X509v3CertificateBuilder(issuer,
                 new BigInteger(new SecureRandom().generateSeed(256)),
                 new Date(),
-                new Date(System.currentTimeMillis() + 31500000000L), subject,
+                new Date(System.currentTimeMillis() + validSeconds), subject,
                 subjectsPublicKeyInfo);
         BasicConstraints ca_constraint = new BasicConstraints(false);
         ca_gen.addExtension(X509Extension.basicConstraints, true, ca_constraint);
