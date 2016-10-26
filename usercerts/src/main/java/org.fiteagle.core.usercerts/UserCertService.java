@@ -85,8 +85,8 @@ public class UserCertService {
     }
 
     private long getSeconds(int valid) {
-
-        return 3600 * 24 * valid * 1000;
+        long longVal = valid;
+        return 3600L * 24L * longVal * 1000L;
     }
 
     private int getIntValid(String daysValid) {
