@@ -10,6 +10,8 @@ import org.fiteagle.api.core.usermanagement.UserPublicKey;
 
 import javax.security.auth.x500.X500Principal;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.*;
@@ -19,10 +21,13 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
+
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
+import java.util.List;
+
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -66,7 +71,7 @@ public class UserCertService {
 
     @GET
     @Produces("text/plain")
-    public String getUserCert(@QueryParam("id")String username, @QueryParam("pw")String password, @QueryParam("valid")String daysValid,@QueryParam("key")String secretKey){
+    public String getUserCert(@QueryParam("id")String username, @QueryParam("pw")String password, @QueryParam("valid")String daysValid,@Context HttpHeaders headers){
         int valid = 0;
         if(daysValid == null) {
             valid = 1;
@@ -77,16 +82,22 @@ public class UserCertService {
         long validSeconds= getSeconds(valid);
 
         try {
+        	List<String> key;
+        	if(headers.getRequestHeader("key") != null){
+        		key = headers.getRequestHeader("key");
+	        }
+        	
+        	
         	if(config.getProperty("secretKey") != null && !config.getProperty("secretKey").equals("")){
-        		if(secretKey.equals(config.getProperty("secretKey"))){
+        		if(!key.isEmpty() && key.get(0).equals(config.getProperty("secretKey"))){
         			return createUserCertificate(username, password, generateKeyPair() , validSeconds);
-        			
         		}else{
-            		return "Your Secret-Key was empty or Incorrect. Please try again";
-            	}	
+        			return "Your Secret-Key was empty or Incorrect. Please try again";
+        		}
         	}else{
         		return createUserCertificate(username, password, generateKeyPair() , validSeconds);
         	}
+        	
             
         } catch (Exception e) {
             log.error(e.getMessage(),e);
