@@ -66,7 +66,7 @@ public class UserCertService {
 
     @GET
     @Produces("text/plain")
-    public String getUserCert(@QueryParam("id")String username, @QueryParam("pw")String password, @QueryParam("valid")String daysValid){
+    public String getUserCert(@QueryParam("id")String username, @QueryParam("pw")String password, @QueryParam("valid")String daysValid,@QueryParam("key")String secretKey){
         int valid = 0;
         if(daysValid == null) {
             valid = 1;
@@ -77,7 +77,17 @@ public class UserCertService {
         long validSeconds= getSeconds(valid);
 
         try {
-            return createUserCertificate(username, password, generateKeyPair() , validSeconds);
+        	if(config.getProperty("secretKey") != null){
+        		if(secretKey.equals(config.getProperty("secretKey"))){
+        			return createUserCertificate(username, password, generateKeyPair() , validSeconds);
+        			
+        		}else{
+            		return "Your Secret-Key was empty or Incorrect. Please try again";
+            	}	
+        	}else{
+        		return "The Secret-Key is not set on the Fiteagle-Server. Please contact the Admin";
+        	}
+            
         } catch (Exception e) {
             log.error(e.getMessage(),e);
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
