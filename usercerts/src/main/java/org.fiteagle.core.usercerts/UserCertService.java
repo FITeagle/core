@@ -77,7 +77,7 @@ public class UserCertService {
         long validSeconds= getSeconds(valid);
 
         try {
-        	if(config.getProperty("secretKey") != null){
+        	if(config.getProperty("secretKey") != null && !config.getProperty("secretKey").equals("")){
         		if(secretKey.equals(config.getProperty("secretKey"))){
         			return createUserCertificate(username, password, generateKeyPair() , validSeconds);
         			
@@ -85,7 +85,7 @@ public class UserCertService {
             		return "Your Secret-Key was empty or Incorrect. Please try again";
             	}	
         	}else{
-        		return "The Secret-Key is not set on the Fiteagle-Server. Please contact the Admin";
+        		return createUserCertificate(username, password, generateKeyPair() , validSeconds);
         	}
             
         } catch (Exception e) {
