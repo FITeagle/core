@@ -82,7 +82,7 @@ public class UserCertService {
         long validSeconds= getSeconds(valid);
 
         try {
-        	List<String> key;
+        	List<String> key = null;
         	if(headers.getRequestHeader("key") != null){
         		key = headers.getRequestHeader("key");
 	        }
@@ -92,7 +92,7 @@ public class UserCertService {
         		if(!key.isEmpty() && key.get(0).equals(config.getProperty("secretKey"))){
         			return createUserCertificate(username, password, generateKeyPair() , validSeconds);
         		}else{
-        			return "Your Secret-Key was empty or Incorrect. Please try again";
+        			throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         		}
         	}else{
         		return createUserCertificate(username, password, generateKeyPair() , validSeconds);
