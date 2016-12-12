@@ -78,11 +78,9 @@ public class ResourceAdapterManager {
 			initialContext = new InitialContext();
 			refreshGlobalVariables();
 		} catch (NamingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+            LOGGER.severe(e.getExplanation());
 		}
-//        rdfReady = false;
-//        allreadySearchingForTripletStore = false;
+
 
         runSetup();
 
@@ -105,11 +103,9 @@ public class ResourceAdapterManager {
     	refreshGlobalVariables();
 
     	if(!rdfReady && allreadySearchingForTripletStore){
-         	LOGGER.log(Level.SEVERE,"Someone is allready searching for Database - I'll drink a coffe");
     	}else if(rdfReady){
     		
     		
-        	LOGGER.log(Level.SEVERE,"Someone found Database"); 
         	try{
                 Model infModel = TripletStoreAccessor.getInfrastructure();
                 
@@ -127,11 +123,9 @@ public class ResourceAdapterManager {
                     }
                 }
         	}catch (ResourceRepositoryException e) {
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
+                LOGGER.log(Level.SEVERE,e.getMessage());
     		}catch (Exception e) {
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
+                LOGGER.log(Level.SEVERE,e.getMessage());
     		}        
         	
     	}else{
@@ -151,14 +145,11 @@ public class ResourceAdapterManager {
             Resource resource = resIterator.next();
             infrastructure.addProperty(Omn.hasResource, resource);
             try {
-        	LOGGER.info("START: Adding adapter");
-        	LOGGER.fine("CONTENT: \n" + OntologyModelUtil.toString(resource.getModel()));
-        	
+
         	addDefaultGeoInformation(model);
         	        	
                 TripletStoreAccessor.addResource(resource);
                 TripletStoreAccessor.updateModel(infrastructure.getModel());
-                LOGGER.info("END: Adding adapter");
             } catch (TripletStoreAccessor.ResourceRepositoryException e) {
                 LOGGER.log(Level.INFO, "Could not add " + resource, e);
             } catch (InvalidModelException e) {
@@ -169,15 +160,12 @@ public class ResourceAdapterManager {
 
 
     public void addDefaultGeoInformation(Model model) {
-	LOGGER.info("Looking for GEO information");
 	ResIterator adapters = model.listSubjectsWithProperty(Omn_lifecycle.implements_);
 	while (adapters.hasNext()) {
 	    Resource adapter = adapters.next();
-	    LOGGER.info("Checking: " + adapter.getURI());
 	    if (null == adapter.getProperty(Wgs84.lat)) {
 		RDFNode globalLat = infrastructure.getProperty(Wgs84.lat).getObject();
 	    	RDFNode globalLong = infrastructure.getProperty(Wgs84.long_).getObject();
-	    	LOGGER.info("Adding: " + globalLat + ", " + globalLong);
 		adapter.addProperty(Wgs84.lat, globalLat);
 		adapter.addProperty(Wgs84.long_, globalLong);
 	    }        	    
@@ -185,7 +173,6 @@ public class ResourceAdapterManager {
     }
 
     public void delete(Model model) throws InvalidModelException, TripletStoreAccessor.ResourceRepositoryException {
-	LOGGER.info("START: Removing adapter: " + OntologyModelUtil.toString(model));
         TripletStoreAccessor.deleteModel(model);
     }
 
@@ -212,7 +199,6 @@ public class ResourceAdapterManager {
         String messageType = MessageUtil.getMessageType(message);
         String serialization = MessageUtil.getMessageSerialization(message);
         String rdfString = MessageUtil.getStringBody(message);
-        LOGGER.info("Received a " + messageType + " message");
         try {
             if (messageType != null && rdfString != null) {
                 if (messageType.equals(IMessageBus.TYPE_CREATE)) {
@@ -265,8 +251,7 @@ public class ResourceAdapterManager {
 			rdfReady = (Boolean) initialContext.lookup("java:global/RDF-Database-Ready");
 	     	allreadySearchingForTripletStore = (Boolean) initialContext.lookup("java:global/RDF-Database-Testing");
 		} catch (NamingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE,e.getExplanation());
 		}
     }
 }
