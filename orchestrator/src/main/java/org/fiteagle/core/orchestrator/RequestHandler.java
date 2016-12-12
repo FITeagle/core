@@ -5,6 +5,7 @@ import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import info.openmultinet.ontology.vocabulary.Omn_service;
 
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ejb.Stateless;
@@ -70,30 +71,25 @@ public class RequestHandler {
 
 		String modelString1 = MessageUtil.serializeModel(requestModel,
 				IMessageBus.SERIALIZATION_TURTLE);
-		LOGGER.info("getRequestResource requestModel: " + modelString1);
 
 		ResIterator resIterator = requestModel.listSubjectsWithProperty(
 				RDF.type, Omn.Resource);
 
 		if (!resIterator.hasNext()) {
-			LOGGER.info("Looking for resource");
 			ResIterator resIterator1 = requestModel.listSubjectsWithProperty(
 					RDF.type, Omn.Topology);
 
-			LOGGER.info("Has topology: "
-					+ Boolean.toString(resIterator1.hasNext()));
+
 
 			while (resIterator1.hasNext()) {
 
 				Resource topo = resIterator1.nextResource();
-				LOGGER.info("Topology: " + topo.getURI());
 
 				Model topoModel = TripletStoreAccessor.getResource(topo
 						.getURI());
 
 				String modelString = MessageUtil.serializeModel(topoModel,
 						IMessageBus.SERIALIZATION_TURTLE);
-				LOGGER.info("getRequestResource: " + modelString);
 
 				requestModel.add(topoModel);
 				resIterator = requestModel.listSubjectsWithProperty(
@@ -118,12 +114,11 @@ public class RequestHandler {
 			}
 
 		} else {
-			LOGGER.info("Found resource");
+
 		}
 
 		while (resIterator.hasNext()) {
 			Resource requestedResource = resIterator.nextResource();
-			LOGGER.info("Resource: " + requestedResource.getURI());
 			Model resourceModel = TripletStoreAccessor
 					.getResource(requestedResource.getURI());
 
@@ -152,7 +147,6 @@ public class RequestHandler {
 
 				switch (method) {
 				case IMessageBus.TYPE_CONFIGURE:
-					LOGGER.info("Adding model for CONFIGURE");
 					addConfigurations(resourceModel, requestModel);
 					returnModel.add(resourceModel);
 					returnModel.add(requestedResource.getModel());
@@ -249,7 +243,6 @@ public class RequestHandler {
 
 		String modelString = MessageUtil.serializeModel(messageModel,
 				IMessageBus.SERIALIZATION_TURTLE);
-		LOGGER.info("checkTimes messageModel: " + modelString);
 
 		ResIterator resIterator1 = messageModel.listSubjectsWithProperty(
 				RDF.type, Omn.Topology);
@@ -267,7 +260,6 @@ public class RequestHandler {
 			// a slice (topology) is to be provisioned
 			String modelString1 = MessageUtil.serializeModel(topologyModel,
 					IMessageBus.SERIALIZATION_TURTLE);
-			LOGGER.info("checkTimes topologyModel: " + modelString1);
 
 			ResIterator resIterator2 = topologyModel.listSubjectsWithProperty(
 					RDF.type, Omn.Topology);
@@ -290,7 +282,7 @@ public class RequestHandler {
 							currentTime, currentTime);
 				} catch (TimeParsingException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					LOGGER.log(Level.SEVERE, e.getMessage());
 				}
 			}
 		} else {
@@ -327,7 +319,6 @@ public class RequestHandler {
 			if (reservationModel != null) {
 				String modelString3 = MessageUtil.serializeModel(
 						reservationModel, IMessageBus.SERIALIZATION_TURTLE);
-				LOGGER.info("topology times model: " + modelString3);
 
 				ResIterator resIterator3 = reservationModel
 						.listSubjectsWithProperty(RDF.type, Omn.Topology);
@@ -351,7 +342,7 @@ public class RequestHandler {
 												.getTimeFromString(endTime),
 										currentTime, currentTime);
 					} catch (TimeParsingException e) {
-						e.printStackTrace();
+						LOGGER.log(Level.SEVERE, e.getMessage());
 					}
 				}
 			}

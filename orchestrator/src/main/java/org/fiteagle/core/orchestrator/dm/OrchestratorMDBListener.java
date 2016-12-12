@@ -53,8 +53,7 @@ import info.openmultinet.ontology.vocabulary.Omn_resource;
 		@ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
 public class OrchestratorMDBListener implements MessageListener {
 
-	private static Logger LOGGER = Logger
-			.getLogger(OrchestratorMDBListener.class.toString());
+	private static Logger LOGGER = Logger.getLogger(OrchestratorMDBListener.class.toString());
 
 	@Inject
 	OrchestratorStateKeeper stateKeeper;
@@ -72,9 +71,7 @@ public class OrchestratorMDBListener implements MessageListener {
 		String serialization = MessageUtil.getMessageSerialization(message);
 		String messageBody = MessageUtil.getStringBody(message);
 		String messageTarget = MessageUtil.getMessageTarget(message);
-		LOGGER.log(Level.INFO, "Received a/an " + messageType + " message");
-		LOGGER.log(Level.INFO, "Target: " + messageTarget);
-		LOGGER.log(Level.INFO, "CONTENT: " + messageBody);
+
 
 		if (messageType != null && messageBody != null) {
 			if (messageType.equals(IMessageBus.TYPE_CONFIGURE)) {
@@ -90,11 +87,10 @@ public class OrchestratorMDBListener implements MessageListener {
 			} else if (messageType.equals(IMessageBus.TYPE_INFORM)) {
 				try {
 					if (IMessageBus.TARGET_ORCHESTRATOR.equals(messageTarget)) {
-						LOGGER.info("For me");
+
 						handleUpdate(messageBody);
 					} else {
-						LOGGER.info("Not for me: "
-								+ MessageUtil.getJMSCorrelationID(message));
+
 						handleInform(messageBody,
 								MessageUtil.getJMSCorrelationID(message));
 					}
@@ -118,8 +114,7 @@ public class OrchestratorMDBListener implements MessageListener {
 
 	private void handleUpdate(String messageBody) throws InvalidModelException,
 			ResourceRepositoryException {
-		LOGGER.log(Level.INFO, "Orchestrator received an update");
-		LOGGER.log(Level.FINE, "CONTENT:\n" + messageBody);
+
 		Model model = null;
 		model = MessageUtil.parseSerializedModel(messageBody,
 				IMessageBus.SERIALIZATION_TURTLE);
@@ -127,7 +122,7 @@ public class OrchestratorMDBListener implements MessageListener {
 	}
 
 	private void handleCreateRequest(Model messageModel, String jmsCorrelationID) {
-		LOGGER.log(Level.INFO, "Orchestrator received a create");
+
 
 		RequestContext requestContext = new RequestContext(jmsCorrelationID);
 		Resource topology =  messageModel.listStatements(null, RDF.type, Omn.Topology).next().getSubject();
@@ -153,7 +148,7 @@ public class OrchestratorMDBListener implements MessageListener {
 
 	private void handleInform(String body, String requestID)
 			throws ResourceRepositoryException, InvalidModelException {
-		LOGGER.info("Handling: " + requestID);
+
 		Request request = stateKeeper.getRequest(requestID);
 		Model model = null;
 		ResIterator resIterator = null;
@@ -163,7 +158,7 @@ public class OrchestratorMDBListener implements MessageListener {
 			switch (request.getMethod()) {
 			case IMessageBus.TYPE_CREATE:
 
-				LOGGER.log(Level.INFO, "Orchestrator received a reply");
+
 				model = MessageUtil.parseSerializedModel(body,
 						IMessageBus.SERIALIZATION_TURTLE);
 				TripletStoreAccessor.updateModel(model);
@@ -238,7 +233,7 @@ public class OrchestratorMDBListener implements MessageListener {
 				break;
 			case IMessageBus.TYPE_CONFIGURE:
 
-				LOGGER.log(Level.INFO, "Orchestrator received a reply");
+
 				model = MessageUtil.parseSerializedModel(body,
 						IMessageBus.SERIALIZATION_TURTLE);
 				TripletStoreAccessor.updateModel(model);
@@ -294,7 +289,7 @@ public class OrchestratorMDBListener implements MessageListener {
 				}
 				break;
 			case IMessageBus.TYPE_DELETE:
-				LOGGER.log(Level.INFO, "Received response to delete request");
+
 				model = MessageUtil.parseSerializedModel(body,
 						IMessageBus.SERIALIZATION_TURTLE);
 				ResIterator subjects = model.listSubjects();
@@ -372,7 +367,7 @@ public class OrchestratorMDBListener implements MessageListener {
 
 	private void handleConfigureRequest(Model requestModel,
 			String serialization, String requestID) {
-		LOGGER.log(Level.INFO, "handling configure request: " + requestID);
+
 
 		RequestContext requestContext = new RequestContext(requestID);
 
@@ -385,7 +380,6 @@ public class OrchestratorMDBListener implements MessageListener {
 
 	private void handleDeleteRequest(Model requestModel, String serialization,
 			String requestID) {
-		LOGGER.log(Level.INFO, "handling delete request ...");
 
 		final Model modelDelete = ModelFactory.createDefaultModel();
 		ResIterator resIterator = requestModel.listSubjectsWithProperty(
@@ -632,11 +626,11 @@ public class OrchestratorMDBListener implements MessageListener {
 
 		String serializedResponse = MessageUtil.serializeModel(responseModel,
 				IMessageBus.SERIALIZATION_TURTLE);
-		System.out.println("response model " + serializedResponse);
+
 		Message responseMessage = MessageUtil.createRDFMessage(
 				serializedResponse, IMessageBus.TYPE_INFORM, null,
 				IMessageBus.SERIALIZATION_TURTLE, requestID, context);
-		LOGGER.log(Level.INFO, " a reply is sent to SFA ...");
+
 		context.createProducer().send(topic, responseMessage);
 	}
 
@@ -802,7 +796,7 @@ public class OrchestratorMDBListener implements MessageListener {
 		// TODO perhaps better use "canImplement" to identify target
 		final Resource resourceToBeCreated = targetModel.getResource(request
 				.getTarget());
-		LOGGER.log(Level.INFO, "Creating new resource: " + resourceToBeCreated);
+
 
 		StmtIterator resourceTypesToBeCreated = resourceToBeCreated
 				.listProperties(RDF.type);
@@ -815,8 +809,7 @@ public class OrchestratorMDBListener implements MessageListener {
 			}
 		}
 
-		LOGGER.log(Level.INFO, "Creating new resource of type: "
-				+ resourceTypeToBeCreated);
+
 
 		if (null == resourceTypeToBeCreated) {
 			// @todo: send a proper error message, since
@@ -1039,8 +1032,7 @@ public class OrchestratorMDBListener implements MessageListener {
 			}
 		}
 
-		LOGGER.log(Level.INFO, "Configuring resource of type: "
-				+ resourceTypeToBeConfigured);
+
 
 		if (null == resourceTypeToBeConfigured) {
 			// @todo: send a proper error message, since
@@ -1055,12 +1047,11 @@ public class OrchestratorMDBListener implements MessageListener {
 
 		String target = resourceTypeToBeConfigured.getObject().asResource()
 				.getURI();
-		LOGGER.log(Level.INFO, "sendConfigureToResource target: " + target);
+
 
 		String modelString = MessageUtil.serializeModel(requestModel,
 				IMessageBus.SERIALIZATION_TURTLE);
-		LOGGER.log(Level.INFO, "sendConfigureToResource requestModel: "
-				+ modelString);
+
 
 		Message message = MessageUtil.createRDFMessage(requestModel,
 				IMessageBus.TYPE_CONFIGURE, target,
