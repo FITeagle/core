@@ -43,7 +43,6 @@ import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
         @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge")})
 public class ReservationMDBListener implements MessageListener {
 
-    private static Logger LOGGER = Logger.getLogger(ReservationMDBListener.class.toString());
 
     @Inject
     private JMSContext context;
@@ -54,7 +53,6 @@ public class ReservationMDBListener implements MessageListener {
         String messageType = MessageUtil.getMessageType(message);
         String serialization = MessageUtil.getMessageSerialization(message);
         String rdfString = MessageUtil.getStringBody(message);
-        LOGGER.log(Level.INFO, "Received a " + messageType + " message");
         try {
 
         if (messageType != null && rdfString != null) {
@@ -204,7 +202,6 @@ public class ReservationMDBListener implements MessageListener {
 
 
     private void handleCreate(Model requestModel, String serialization, String requestID) throws ResourceRepositoryException, ResourceRepositoryException {
-        LOGGER.log(Level.INFO, "handling reservation request ...");
         ReservationHandler reservationHandler = new ReservationHandler();
         Message responseMessage = reservationHandler.handleReservation(requestModel, serialization, requestID, context);
 

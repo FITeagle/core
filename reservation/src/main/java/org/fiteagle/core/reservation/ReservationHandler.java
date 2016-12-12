@@ -48,22 +48,17 @@ import com.hp.hpl.jena.vocabulary.RDFS;
  * Created by dne on 15.02.15.
  */
 public class ReservationHandler {
-	private static final Logger LOGGER = Logger
-			.getLogger(ReservationHandler.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(ReservationHandler.class.getName());
 
 	public Message handleReservation(Model requestModel, String serialization,
 			String requestID, JMSContext context)
 			throws TripletStoreAccessor.ResourceRepositoryException {
 
-		LOGGER.log(Level.INFO, "START: handle reservation");
 		Message responseMessage = null;
-		LOGGER.log(Level.INFO, "Checking reservation request");
 		String errorMessage = checkReservationRequest(requestModel);
 		if (errorMessage == null || errorMessage.isEmpty()) {
 			Model reservationModel = ModelFactory.createDefaultModel();
-			LOGGER.log(Level.INFO, "Creating reservation model");
 			createReservationModel(requestModel, reservationModel);
-			LOGGER.log(Level.INFO, "Reserving model");
 			reserve(reservationModel);
 			String serializedResponse = MessageUtil.serializeModel(
 					reservationModel, serialization);
@@ -81,7 +76,6 @@ public class ReservationHandler {
 					requestID, context);
 		}
 
-		LOGGER.log(Level.INFO, "END: handle reservation");
 		return responseMessage;
 	}
 
@@ -97,7 +91,6 @@ public class ReservationHandler {
 			Resource topology = iterator.nextResource();
 			assistantModel.add(topology, RDF.type, Omn.Topology);
 			if (TripletStoreAccessor.exists(topology.getURI())) {
-				LOGGER.log(Level.INFO, "Topology already exists");
 				Model topologyModel = TripletStoreAccessor.getResource(topology
 						.getURI());
 
@@ -249,17 +242,9 @@ public class ReservationHandler {
 			StmtIterator stmtIter = res.listProperties();
 			while (stmtIter.hasNext()) {
 				Statement stmt = stmtIter.nextStatement();
-				// removed temporarily for testing 5g (fiveg) adapter robynml
-				// if("deployedOn".equals(stmt.getPredicate().getLocalName()) ||
-				// "requires".equals(stmt.getPredicate().getLocalName())){
-				// Statement newStatement = new StatementImpl(stmt.getSubject(),
-				// stmt.getPredicate(),
-				// resourcesIDs.get(stmt.getObject().toString()));
-				// reservationModel.add(newStatement);
-				// }
-				// else{
+
 				reservationModel.add(stmt);
-				// }
+
 			}
 		}
 
@@ -307,7 +292,6 @@ public class ReservationHandler {
 			Resource resourceType = typeStatement.getObject().asResource();
 			String typeURI = resourceType.getURI();
 
-			LOGGER.info("TODO: we should either not get the complete resource here or cache the result");
 			Model adapterModel;
 			if (cache.containsKey(typeURI))
 				adapterModel = cache.get(typeURI);
@@ -316,14 +300,12 @@ public class ReservationHandler {
 
 			if (modelHasProperty(adapterModel, resourceType)) {
 
-				LOGGER.info("Model has property");
 				SimpleSelector adapterInstancesSelector = new SimpleSelector(
 						null, Omn_lifecycle.canImplement, (RDFNode) null);
 				StmtIterator adapterInstancesIterator = adapterModel
 						.listStatements(adapterInstancesSelector);
 
 				while (adapterInstancesIterator.hasNext()) {
-					LOGGER.info("Adapter instance has instance");
 					Statement adapterInstanceStatement = adapterInstancesIterator
 							.nextStatement();
 					String resourceURI = adapterInstanceStatement.getObject()
@@ -413,21 +395,16 @@ public class ReservationHandler {
 			Resource resource = resIterator.nextResource();
 
 			String uri = resource.getURI();
-			LOGGER.info("Checking resource adapter instance: " + uri);
 
 			Statement implementdBy = resource
 					.getProperty(Omn_lifecycle.implementedBy);
 			if (null == implementdBy) {
 				LOGGER.warning("Resource is not implemented: " + uri);
 			} else {
-				LOGGER.info("Resource implemented by: " + implementdBy);
 				String implURI = implementdBy.getObject().asResource().getURI();
-				LOGGER.info("Caching: " + implURI);
 				if (cache.contains(implURI)) {
-					LOGGER.info("CACHE: HIT");
 					continue;
 				} else {
-					LOGGER.info("CACHE: MISS");
 					cache.add(implURI);
 				}
 			}
@@ -436,7 +413,6 @@ public class ReservationHandler {
 			checkTimes(resource, requestModel, errorsList);
 
 			if (isExclusive(requestModel, resource)) {
-				LOGGER.info("Checking resource exclusivity");
 				checkExclusiveResource(resource, requestModel, errorsList);
 			}
 		}
@@ -451,7 +427,6 @@ public class ReservationHandler {
 				RDF.type, Omn.Topology);
 		Resource topology = resIterator.nextResource();
 		if (topology.hasProperty(MessageBusOntologyModel.endTime)) {
-			LOGGER.warning("checkExclusiveResource: has start and end time");
 
 			String endTime = topology
 					.getProperty(MessageBusOntologyModel.endTime).getObject()
@@ -469,9 +444,6 @@ public class ReservationHandler {
 			}
 
 			try {
-				LOGGER.warning("start or end date not in past?"
-						+ TimeHelperMethods.dateNotInPast(TimeHelperMethods
-								.getTimeFromString(startTime)));
 
 				if (startTimeExists
 						&& !TimeHelperMethods.dateNotInPast(TimeHelperMethods
@@ -520,7 +492,6 @@ public class ReservationHandler {
 
 		String modelString = MessageUtil.serializeModel(requestModel,
 				IMessageBus.SERIALIZATION_TURTLE);
-		LOGGER.info("checkExclusiveResource requestModel" + modelString);
 
 		if (resource.hasProperty(Omn_lifecycle.implementedBy)) {
 
@@ -537,7 +508,6 @@ public class ReservationHandler {
 
 				Resource topology = resIterator.nextResource();
 				if (topology.hasProperty(MessageBusOntologyModel.endTime)) {
-					LOGGER.warning("checkExclusiveResource: has start and end time");
 
 					String endTime = topology
 							.getProperty(MessageBusOntologyModel.endTime)
@@ -561,7 +531,6 @@ public class ReservationHandler {
 								.add(" Requested resource is exclusive. Adapter instance can't handle resources more than its limit at the time interval specified.");
 					}
 				} else {
-					LOGGER.warning("checkExclusiveResource: does not have start and end time");
 					if (!adapterAbleToCreate(adapterInstance, resource,
 							sameResFromSameAdpater)) {
 						errorsList
@@ -577,9 +546,7 @@ public class ReservationHandler {
 			if (!adapterInstancesList.isEmpty()) {
 				int numberOfSameResourceType = getNumberOfSameResourceType(
 						resource, requestModel);
-				LOGGER.log(Level.INFO,
-						"Number of requested resources from the same type is "
-								+ numberOfSameResourceType);
+
 
 				if (!checkAdaptersAbility(adapterInstancesList, resource,
 						numberOfSameResourceType)) {
@@ -695,7 +662,6 @@ public class ReservationHandler {
 			Resource resource, int numberOfRequestedResources,
 			String startTime, String endTime) {
 
-		LOGGER.info("adapterAbleToCreateAtTime");
 
 		Model model = ModelFactory.createDefaultModel();
 		Resource adapter = model.createResource(adapterInstance.toString());
@@ -742,7 +708,6 @@ public class ReservationHandler {
 	private int getAdapterAbilityAtTime(Resource adapterInstance,
 			Resource requestedResource, String startTime, String endTime) {
 
-		LOGGER.info("getAdapterAbilityAtTime");
 
 		Model adapterInstanceModel = TripletStoreAccessor
 				.getResource(adapterInstance.getURI());
@@ -788,7 +753,6 @@ public class ReservationHandler {
 	private int gethandledResourcesNumAtTime(Resource requestedResource,
 			Model adapterInstanceModel, String startTime, String endTime) {
 
-		LOGGER.info("gethandledResourcesNumAtTime");
 
 		List<Resource> resourcesList = getResourcesList(adapterInstanceModel);
 
@@ -833,7 +797,6 @@ public class ReservationHandler {
 	private int checkResourcesListAtTime(List<Resource> resourcesList,
 			Resource requestedResource, String startTime, String endTime) {
 
-		LOGGER.info("checkResourcesListAtTime");
 
 		int matchedResourcesNum = 0;
 		RDFNode requestedResourceType = getResourceType(requestedResource);
@@ -863,7 +826,6 @@ public class ReservationHandler {
 
 		String modelString = MessageUtil.serializeModel(model,
 				IMessageBus.SERIALIZATION_TURTLE);
-		LOGGER.info("reservationTimeOverlaps" + modelString);
 
 		if (model.contains(resource, Omn.hasReservation, (RDFNode) null)) {
 			Resource reservation = model
@@ -875,8 +837,6 @@ public class ReservationHandler {
 
 			String modelStringReservation = MessageUtil.serializeModel(
 					modelReservation, IMessageBus.SERIALIZATION_TURTLE);
-			LOGGER.info("reservationTimeOverlaps reservation"
-					+ modelStringReservation);
 
 			Resource reservationResource = modelReservation
 					.getResource(reservation.getURI());
@@ -980,16 +940,13 @@ public class ReservationHandler {
 		if (resource.hasProperty(Omn_lifecycle.implementedBy)) {
 			Object adapterInstance = resource.getProperty(
 					Omn_lifecycle.implementedBy).getObject();
-			LOGGER.info("Checking resource adapter type");
 			checkResourceAdapterType(type, adapterInstance, errorList);
-			LOGGER.info("Checking resource adapter availability");
 			if (!checkResourceAdapterAvailability(adapterInstance)) {
 				String errorMessage = "the requested component_id "
 						+ adapterInstance.toString() + "is not available";
 				errorList.add(errorMessage);
 			}
 		} else {
-			LOGGER.info("Checking if resource's type is supported by any adapter instance");
 			List<Resource> adapterInstancesList = getAdapterInstancesList(
 					resource, requestModel);
 			if (adapterInstancesList.isEmpty()) {
@@ -1021,7 +978,6 @@ public class ReservationHandler {
 			Statement typeStatement = typeStatementIterator.next();
 			String uri = typeStatement.getObject().asResource().getURI();
 
-			LOGGER.info("Getting resource: " + uri);
 			Model model = TripletStoreAccessor.getResource(uri);
 
 			if (!model.isEmpty()
